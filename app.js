@@ -1,94 +1,14 @@
-const config = window.SUPABASE_CONFIG;
-const dialog = document.querySelector('#auth-dialog');
-const form = document.querySelector('#auth-form');
-const setupMessage = document.querySelector('#auth-setup');
-const message = document.querySelector('#auth-message');
-let mode = 'login';
-let supabase = null;
-
-function isConfigured() {
-  return config && config.url && config.publishableKey && !config.url.includes('TU-PROYECTO') && !config.publishableKey.includes('TU_CLAVE');
-}
-
-function setMessage(text, success = false) {
-  message.textContent = text;
-  message.classList.toggle('success', success);
-}
-
-function setMode(nextMode) {
-  mode = nextMode;
-  const signup = mode === 'signup';
-  document.querySelector('#auth-kicker').textContent = signup ? 'CREA TU ESPACIO' : 'BIENVENIDO';
-  document.querySelector('#auth-title').textContent = signup ? 'Crea tu cuenta' : 'Entra a tu cuenta';
-  document.querySelector('#auth-intro').textContent = signup ? 'Te enviaremos un correo para confirmar tu cuenta.' : 'Usa el correo con el que creaste tu cuenta.';
-  document.querySelector('#auth-submit').textContent = signup ? 'Crear cuenta' : 'Entrar';
-  document.querySelector('#switch-copy').textContent = signup ? '¿Ya tienes una cuenta?' : '¿Aún no tienes cuenta?';
-  document.querySelector('#switch-auth').textContent = signup ? 'Entrar' : 'Crear cuenta';
-  document.querySelector('#password').autocomplete = signup ? 'new-password' : 'current-password';
-  setMessage('');
-}
-
-function openAuth(nextMode) {
-  setMode(nextMode);
-  if (!isConfigured()) {
-    form.classList.add('hidden');
-    setupMessage.classList.remove('hidden');
-  } else {
-    form.classList.remove('hidden');
-    setupMessage.classList.add('hidden');
-  }
-  dialog.showModal();
-}
-
-function showDashboard(user) {
-  document.querySelector('#public-home').classList.add('hidden');
-  document.querySelector('#dashboard').classList.remove('hidden');
-  document.querySelector('#user-name').textContent = user.user_metadata?.name || user.email.split('@')[0];
-  document.querySelector('#header-actions').innerHTML = '<button class="text-button" id="sign-out">Salir</button><span class="account-dot" title="Sesión activa">●</span>';
-  document.querySelector('#sign-out').addEventListener('click', async () => { await supabase.auth.signOut(); showPublicHome(); });
-}
-
-function showPublicHome() {
-  document.querySelector('#public-home').classList.remove('hidden');
-  document.querySelector('#dashboard').classList.add('hidden');
-  document.querySelector('#header-actions').innerHTML = '<button class="text-button" data-open-auth="login">Entrar</button><button class="button small" data-open-auth="signup">Crear cuenta</button>';
-  bindAuthButtons();
-}
-
-function bindAuthButtons() { document.querySelectorAll('[data-open-auth]').forEach(button => button.addEventListener('click', () => openAuth(button.dataset.openAuth))); }
-
-async function init() {
-  bindAuthButtons();
-  document.querySelector('#close-dialog').addEventListener('click', () => dialog.close());
-  document.querySelector('#switch-auth').addEventListener('click', () => setMode(mode === 'login' ? 'signup' : 'login'));
-  ['#new-project', '#connect-sheet'].forEach(selector => document.querySelector(selector).addEventListener('click', () => {
-    const notice = document.querySelector('#setup-notice');
-    notice.textContent = 'Próximo paso: aquí conectaremos tu cuenta de Google y elegirás una hoja.';
-    notice.classList.remove('hidden');
-  }));
-  if (!isConfigured()) return;
-  supabase = window.supabase.createClient(config.url, config.publishableKey);
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user) showDashboard(session.user);
-  supabase.auth.onAuthStateChange((_event, session) => { if (session?.user) showDashboard(session.user); });
-}
-
-form.addEventListener('submit', async event => {
-  event.preventDefault();
-  if (!supabase) return;
-  const email = document.querySelector('#email').value.trim();
-  const password = document.querySelector('#password').value;
-  const submit = document.querySelector('#auth-submit');
-  submit.disabled = true;
-  setMessage('');
-  const result = mode === 'signup'
-    ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
-    : await supabase.auth.signInWithPassword({ email, password });
-  submit.disabled = false;
-  if (result.error) return setMessage(result.error.message);
-  if (mode === 'signup' && !result.data.session) return setMessage('Revisa tu correo y confirma tu cuenta para continuar.', true);
-  dialog.close();
-});
-
-init();
-
+const cfg=window.SUPABASE_CONFIG,ad=document.querySelector('#auth-dialog'),sd=document.querySelector('#sheet-dialog');let mode='login',sb,user,token;
+const ready=()=>cfg?.url&&cfg?.publishableKey&&!cfg.url.includes('TU-');const note=t=>{let e=document.querySelector('#setup-notice');e.textContent=t;e.classList.remove('hidden')};
+function modeSet(m){mode=m;let s=m==='signup';document.querySelector('#auth-kicker').textContent=s?'CREA TU ESPACIO':'BIENVENIDO';document.querySelector('#auth-title').textContent=s?'Crea tu cuenta':'Entra a tu cuenta';document.querySelector('#auth-submit').textContent=s?'Crear cuenta':'Entrar';document.querySelector('#switch-copy').textContent=s?'¿Ya tienes una cuenta?':'¿Aún no tienes cuenta?';document.querySelector('#switch-auth').textContent=s?'Entrar':'Crear cuenta'}
+function bind(){document.querySelectorAll('[data-open-auth]').forEach(b=>b.onclick=()=>{modeSet(b.dataset.openAuth);document.querySelector('#auth-setup').classList.toggle('hidden',ready());document.querySelector('#auth-form').classList.toggle('hidden',!ready());ad.showModal()})}
+async function dashboard(u){user=u;document.querySelector('#public-home').classList.add('hidden');document.querySelector('#dashboard').classList.remove('hidden');document.querySelector('#user-name').textContent=u.email.split('@')[0];await projects()}
+async function projects(){let {data,error}=await sb.from('projects').select('*').order('created_at',{ascending:false});if(error)return note(error.message);let e=document.querySelector('#project-empty'),g=document.querySelector('#projects-grid');e.classList.toggle('hidden',!!data.length);g.classList.toggle('hidden',!data.length);g.innerHTML=data.map(p=>`<article class="project-card"><p>GOOGLE SHEETS</p><h3>${p.name}</h3><p>${p.sheet_name}</p><div class="project-actions"><button class="action-button" data-read="${p.id}">Ver datos</button><button class="action-button" data-format="${p.id}">Formatear títulos</button></div></article>`).join('');g.querySelectorAll('[data-read]').forEach(b=>b.onclick=()=>preview(data.find(p=>p.id===b.dataset.read)));g.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>format(data.find(p=>p.id===b.dataset.format)))}
+async function google(){if(token)return token;if(!window.google?.accounts?.oauth2)throw Error('Google está cargando; vuelve a intentarlo.');return new Promise((ok,bad)=>window.google.accounts.oauth2.initTokenClient({client_id:cfg.googleClientId,scope:'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.metadata.readonly',callback:r=>r.error?bad(Error(r.error)):ok(token=r.access_token)}).requestAccessToken({prompt:'consent'}))}
+async function gf(url,opt={}){let r=await fetch(url,{...opt,headers:{Authorization:`Bearer ${await google()}`,'Content-Type':'application/json'}});if(!r.ok)throw Error((await r.json()).error?.message||'Error en Google');return r.json()}
+async function sheets(){let m=document.querySelector('#sheet-message'),b=document.querySelector('#authorize-google');b.disabled=true;m.textContent='Buscando tus hojas…';try{let d=await gf("https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27%20and%20trashed%3Dfalse&fields=files(id%2Cname)&pageSize=50");document.querySelector('#sheets-list').innerHTML=(d.files||[]).map(f=>`<button class="sheet-option" data-id="${f.id}" data-name="${f.name}">▦ ${f.name}</button>`).join('');document.querySelectorAll('.sheet-option').forEach(x=>x.onclick=()=>add(x.dataset.id,x.dataset.name));b.classList.add('hidden')}catch(e){m.textContent=e.message;b.disabled=false}}
+async function add(id,name){try{let d=await gf(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties`),sheet=d.sheets[0].properties.title,{error}=await sb.from('projects').insert({user_id:user.id,name,spreadsheet_id:id,sheet_name:sheet});if(error)throw error;sd.close();note('Proyecto conectado. Ya puedes consultar y formatear.');projects()}catch(e){document.querySelector('#sheet-message').textContent=e.message}}
+async function preview(p){try{let d=await gf(`https://sheets.googleapis.com/v4/spreadsheets/${p.spreadsheet_id}/values/${encodeURIComponent(p.sheet_name)}!A:Z`),r=d.values||[],g=document.querySelector('#projects-grid');document.querySelectorAll('.preview').forEach(x=>x.remove());let e=document.createElement('section');e.className='preview';e.innerHTML=r.length?`<strong>${p.name}</strong><table><thead><tr>${r[0].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${r.slice(1,11).map(x=>`<tr>${r[0].map((_,i)=>`<td>${x[i]||''}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'Esta hoja no tiene datos.';g.before(e)}catch(e){note(e.message)}}
+async function format(p){try{let d=await gf(`https://sheets.googleapis.com/v4/spreadsheets/${p.spreadsheet_id}?fields=sheets.properties`),s=d.sheets.find(x=>x.properties.title===p.sheet_name)||d.sheets[0];await gf(`https://sheets.googleapis.com/v4/spreadsheets/${p.spreadsheet_id}:batchUpdate`,{method:'POST',body:JSON.stringify({requests:[{repeatCell:{range:{sheetId:s.properties.sheetId,startRowIndex:0,endRowIndex:1},cell:{userEnteredFormat:{backgroundColor:{red:.03,green:.48,blue:.44},textFormat:{foregroundColor:{red:1,green:1,blue:1},bold:true}}},fields:'userEnteredFormat(backgroundColor,textFormat)'}}]})});note('Encabezados formateados.')}catch(e){note(e.message)}}
+document.querySelector('#auth-form').onsubmit=async e=>{e.preventDefault();let email=document.querySelector('#email').value,password=document.querySelector('#password').value,r=mode==='signup'?await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin}}):await sb.auth.signInWithPassword({email,password});if(r.error)return document.querySelector('#auth-message').textContent=r.error.message;if(mode==='signup'&&!r.data.session)return document.querySelector('#auth-message').textContent='Revisa tu correo y confirma tu cuenta.';ad.close()};
+document.querySelector('#close-dialog').onclick=()=>ad.close();document.querySelector('#close-sheet-dialog').onclick=()=>sd.close();document.querySelector('#switch-auth').onclick=()=>modeSet(mode==='login'?'signup':'login');document.querySelector('#authorize-google').onclick=sheets;['#new-project','#connect-sheet'].forEach(x=>document.querySelector(x).onclick=()=>sd.showModal());bind();if(ready()){sb=window.supabase.createClient(cfg.url,cfg.publishableKey);sb.auth.getSession().then(({data})=>data.session&&dashboard(data.session.user));sb.auth.onAuthStateChange((_,s)=>s?.user&&dashboard(s.user))}

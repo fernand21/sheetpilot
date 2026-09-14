@@ -2,6 +2,6 @@
 // La clave publishable/anon es segura para usar en el navegador si las políticas RLS están activas.
 window.SUPABASE_CONFIG = {
   url: "https://TU-PROYECTO.supabase.co",
-  publishableKey: "TU_CLAVE_PUBLICA_O_ANON"
+  publishableKey: "TU_CLAVE_PUBLICA_O_ANON",
+  googleClientId: "TU_CLIENTE_DE_GOOGLE.apps.googleusercontent.com"
 };
-
