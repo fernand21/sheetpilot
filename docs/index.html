@@ -3,143 +3,306 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Referencia oficial de LittleAPI: convierte tus hojas de Google en APIs REST públicas y potentes.">
-  <title>LittleAPI · Documentación de la API</title>
+  <meta name="description" content="Documentación de LittleAPI: convierte Google Sheets y Drive en APIs REST fáciles de integrar.">
+  <title>LittleAPI · Documentación</title>
   <style>
-    :root{--ink:#102c2b;--muted:#617673;--paper:#f7f8f4;--line:#d9e1dc;--teal:#087a70;--dark:#064f4a;--lime:#d8ff7d;--white:#fff;--orange:#c77b16}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--teal)}.top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:18px clamp(20px,6vw,90px);background:#f7f8f4ee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{font-weight:850;letter-spacing:-.04em;text-decoration:none;color:var(--ink);font-size:1.2rem}.mark{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:8px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#7657f6);color:#fff}.top nav{display:flex;gap:20px;font-size:.9rem}.top nav a{text-decoration:none;color:var(--muted)}.wrap{display:grid;grid-template-columns:245px minmax(0,870px);gap:55px;max-width:1280px;margin:0 auto;padding:60px clamp(20px,5vw,70px) 100px}.side{position:sticky;top:100px;height:max-content}.side strong{display:block;margin-bottom:13px}.side a{display:block;padding:5px 0;color:var(--muted);text-decoration:none;font-size:.9rem}.side a:hover{color:var(--teal)}main{min-width:0}.eyebrow{color:var(--teal);font-weight:850;letter-spacing:.13em;font-size:.72rem;margin:0 0 12px}h1{font-size:clamp(2.7rem,6vw,5rem);line-height:.98;letter-spacing:-.07em;margin:0;max-width:760px}h2{font-size:2rem;letter-spacing:-.05em;margin:62px 0 15px}h3{font-size:1.2rem;margin:30px 0 8px}p{color:var(--muted)}.lead{font-size:1.14rem;max-width:720px;margin:23px 0 30px}.hero-card{padding:25px;background:var(--ink);color:#fff;border-radius:12px;box-shadow:12px 12px 0 var(--lime);margin:35px 0 65px}.hero-card p{color:#c2d7d3}.hero-card code{color:#e6f4f0;background:#1b4f4a}.url-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.url-card{display:grid;gap:4px;padding:17px;border:1px solid var(--line);border-radius:9px;background:#fff}.url-card span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.url-card code{overflow-wrap:anywhere;font-size:.83rem}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}table{width:100%;border-collapse:collapse;min-width:720px;font-size:.88rem}th,td{padding:12px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#eef7f2;color:var(--dark);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em}tr:last-child td{border-bottom:0}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;background:#e9f2ed;border-radius:4px;padding:2px 5px;color:var(--dark)}pre{overflow:auto;padding:18px;border-radius:9px;background:var(--ink);color:#e6f4f0;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}pre code{padding:0;background:none;color:inherit}.callout{border-left:4px solid var(--teal);padding:13px 17px;background:#e7f4ef;border-radius:0 8px 8px 0}.warning{border-color:var(--orange);background:#fff6e5}.danger{border-color:#b84a44;background:#fff0ef}.checklist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0}.checklist div{padding:13px 15px;border:1px solid var(--line);border-radius:8px;background:#fff}.badge{display:inline-block;padding:2px 8px;border-radius:99px;background:#d8ff7d;color:var(--dark);font-size:.75rem;font-weight:800}.method{font-weight:800;color:var(--dark);white-space:nowrap}.small{font-size:.9rem}footer{border-top:1px solid var(--line);padding:25px clamp(20px,6vw,90px);color:var(--muted);font-size:.85rem}@media(max-width:800px){.wrap{display:block;padding-top:35px}.side{position:static;margin-bottom:35px;padding-bottom:20px;border-bottom:1px solid var(--line)}.side nav{display:flex;gap:12px;flex-wrap:wrap}.side a{padding:0}.top nav{display:none}.url-grid,.checklist{grid-template-columns:1fr}h2{margin-top:48px}}
+    :root{--ink:#102c2b;--muted:#617673;--paper:#f7f8f4;--line:#d9e1dc;--teal:#087a70;--dark:#064f4a;--lime:#d8ff7d;--white:#fff;--orange:#c77b16;--red:#a8423a}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--teal)}.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:15px clamp(20px,5vw,80px);background:#f7f8f4ee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{font-weight:850;letter-spacing:-.04em;text-decoration:none;color:var(--ink);font-size:1.2rem;white-space:nowrap}.mark{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:8px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#7657f6);color:#fff}.top nav{display:flex;align-items:center;gap:19px;font-size:.88rem}.top nav a{text-decoration:none;color:var(--muted)}.top nav a:hover{color:var(--teal)}.language-control{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.84rem;font-weight:750}.language-control select{padding:7px 27px 7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit;cursor:pointer}.layout{display:grid;grid-template-columns:230px minmax(0,900px);gap:55px;max-width:1280px;margin:0 auto;padding:55px clamp(20px,5vw,70px) 100px}.side{position:sticky;top:91px;height:max-content}.side strong{display:block;margin-bottom:13px}.side a{display:block;padding:4px 0;color:var(--muted);text-decoration:none;font-size:.88rem}.side a:hover{color:var(--teal)}main{min-width:0}.eyebrow{color:var(--teal);font-weight:850;letter-spacing:.13em;font-size:.72rem;margin:0 0 12px}h1{font-size:clamp(2.7rem,6vw,5rem);line-height:.98;letter-spacing:-.07em;margin:0;max-width:800px}h2{font-size:2rem;letter-spacing:-.05em;margin:65px 0 14px}h3{font-size:1.2rem;margin:30px 0 8px}p{color:var(--muted)}.lead{font-size:1.14rem;max-width:760px;margin:23px 0 30px}.hero-card{display:grid;gap:12px;padding:24px;background:var(--ink);color:#fff;border-radius:12px;box-shadow:12px 12px 0 var(--lime);margin:35px 0 60px}.hero-card p{margin:0;color:#c2d7d3}.hero-card code{color:#e6f4f0;background:#1b4f4a}.code-wrap{position:relative}.code-wrap pre{margin:10px 0 0}.copy-button{position:absolute;right:10px;top:10px;border:1px solid #4b716d;border-radius:6px;padding:5px 9px;background:#173f3b;color:#e6f4f0;font:700 12px inherit;cursor:pointer}.copy-button:hover{background:#28615a}.url-grid,.card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.url-card,.mini-card{display:grid;gap:5px;padding:17px;border:1px solid var(--line);border-radius:9px;background:#fff}.url-card span,.mini-card span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}.url-card code{overflow-wrap:anywhere;font-size:.82rem}.mini-card strong{font-size:1.05rem}.mini-card p{margin:0;font-size:.9rem}.steps{display:grid;gap:12px;padding:0;list-style:none;counter-reset:step}.steps li{counter-increment:step;display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;padding:17px;border:1px solid var(--line);border-radius:9px;background:#fff}.steps li::before{content:counter(step);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;font-weight:850}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}table{width:100%;border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{padding:12px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#eef7f2;color:var(--dark);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}tr:last-child td{border-bottom:0}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;background:#e9f2ed;border-radius:4px;padding:2px 5px;color:var(--dark)}pre{overflow:auto;padding:18px;border-radius:9px;background:var(--ink);color:#e6f4f0;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}pre code{padding:0;background:none;color:inherit}.callout{border-left:4px solid var(--teal);padding:14px 17px;background:#e7f4ef;border-radius:0 8px 8px 0}.callout p{margin:5px 0 0}.warning{border-color:var(--orange);background:#fff6e5}.danger{border-color:var(--red);background:#fff0ef}.checklist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0}.checklist div{padding:13px 15px;border:1px solid var(--line);border-radius:8px;background:#fff}.badge{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--lime);color:var(--dark);font-size:.75rem;font-weight:800}.method{font-weight:800;color:var(--dark);white-space:nowrap}.small{font-size:.88rem}.tester{padding:23px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 8px 25px #102c2b0d}.tester-grid{display:grid;grid-template-columns:1fr 170px;gap:12px}.tester-row{display:grid;grid-template-columns:1fr 170px;gap:12px;margin-top:12px}.tester label{display:grid;gap:6px;color:var(--dark);font-weight:750;font-size:.86rem}.tester input,.tester select,.tester textarea{width:100%;border:1px solid #c9d6d0;border-radius:7px;padding:10px 11px;background:#fff;color:var(--ink);font:14px ui-monospace,SFMono-Regular,Consolas,monospace}.tester textarea{min-height:105px;resize:vertical}.tester-actions{display:flex;align-items:center;gap:10px;margin-top:14px}.primary-button,.secondary-button{border:0;border-radius:7px;padding:10px 16px;font-weight:800;cursor:pointer}.primary-button{background:var(--teal);color:#fff}.primary-button:hover{background:var(--dark)}.secondary-button{background:#eef7f2;color:var(--dark)}.tester-status{min-height:24px;color:var(--muted);font-size:.85rem}.tester-output{min-height:150px;margin-bottom:0;white-space:pre-wrap;word-break:break-word}.inline-note{margin:12px 0 0;font-size:.83rem}.footer{border-top:1px solid var(--line);padding:25px clamp(20px,5vw,80px);color:var(--muted);font-size:.85rem}@media(max-width:900px){.layout{display:block;padding-top:35px}.side{position:static;margin-bottom:35px;padding-bottom:20px;border-bottom:1px solid var(--line)}.side nav{display:flex;gap:12px;flex-wrap:wrap}.side a{padding:0}.top nav{display:none}}@media(max-width:620px){.top{align-items:flex-start;flex-wrap:wrap}.language-control{margin-left:auto}.url-grid,.card-grid,.checklist,.tester-grid,.tester-row{grid-template-columns:1fr}h2{margin-top:48px}.tester-actions{align-items:stretch;flex-direction:column}.tester-actions button{width:100%}}
   </style>
 </head>
 <body>
-  <header class="top"><a class="brand" href="../"><span class="mark">↗</span>Little<span style="color:var(--teal)">API</span></a><nav><a href="../">Aplicación</a><a href="../pricing.html">Precios</a><a href="https://github.com/fernand21/sheetpilot">Código</a></nav></header>
-  <div class="wrap">
-    <aside class="side"><strong>Referencia LittleAPI</strong><nav><a href="#inicio">Inicio</a><a href="#primer-request">Primer request</a><a href="#respuesta">Respuestas</a><a href="#lecturas">Lecturas</a><a href="#escrituras">Escrituras</a><a href="#pestanas">Pestañas</a><a href="#herramientas">Herramientas</a><a href="#drive">Drive</a><a href="#sdk">Ejemplos</a><a href="#seguridad">Seguridad</a><a href="#errores">Errores</a><a href="#cuotas">Cuotas</a></nav></aside>
+  <header class="top">
+    <a class="brand" href="../"><span class="mark">↗</span>Little<span style="color:var(--teal)">API</span></a>
+    <nav><a href="../" data-es="Aplicación" data-en="App">Aplicación</a><a href="../pricing.html" data-es="Precios" data-en="Pricing">Precios</a><a href="https://github.com/fernand21/sheetpilot" data-es="Código" data-en="Code">Código</a></nav>
+    <label class="language-control"><span data-es="Idioma" data-en="Language">Idioma</span><select id="language-select" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option></select></label>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <strong data-es="Referencia LittleAPI" data-en="LittleAPI reference">Referencia LittleAPI</strong>
+      <nav>
+        <a href="#inicio" data-es="Inicio" data-en="Overview">Inicio</a><a href="#primeros-pasos" data-es="Primeros pasos" data-en="Quick start">Primeros pasos</a><a href="#probador" data-es="Probador" data-en="Tester">Probador</a><a href="#url-auth" data-es="URL y autenticación" data-en="URL and auth">URL y autenticación</a><a href="#lecturas" data-es="Lecturas" data-en="Reads">Lecturas</a><a href="#escrituras" data-es="Escrituras" data-en="Writes">Escrituras</a><a href="#pestanas" data-es="Pestañas" data-en="Sheets tabs">Pestañas</a><a href="#herramientas" data-es="Herramientas" data-en="Tools">Herramientas</a><a href="#drive" data-es="Drive" data-en="Drive">Drive</a><a href="#sdks" data-es="Ejemplos de código" data-en="Code examples">Ejemplos de código</a><a href="#respuestas" data-es="Respuestas y errores" data-en="Responses and errors">Respuestas y errores</a><a href="#cuotas" data-es="Cuotas" data-en="Quotas">Cuotas</a><a href="#seguridad" data-es="Seguridad" data-en="Security">Seguridad</a>
+      </nav>
+    </aside>
+
     <main>
       <section id="inicio">
-        <p class="eyebrow">LITTLEAPI · API REST OFICIAL</p>
-        <h1>Tu hoja se convierte en una API.</h1>
-        <p class="lead">LittleAPI expone tus datos de Google Sheets y Drive con una URL estable. Lee desde cualquier sitio del mundo sin iniciar sesión y usa una clave para crear, actualizar, eliminar y automatizar.</p>
-        <div class="hero-card"><strong>La URL pública siempre tiene esta forma</strong><pre><code>https://littleapi.online/api/v1/{API_ID}</code></pre><p>El <code>API_ID</code> aparece en tu panel al publicar una API. La cuenta del propietario sólo es necesaria para crearla y administrarla; tus consumidores usan HTTP.</p></div>
+        <p class="eyebrow" data-es="LITTLEAPI · DOCUMENTACIÓN OFICIAL" data-en="LITTLEAPI · OFFICIAL DOCUMENTATION">LITTLEAPI · DOCUMENTACIÓN OFICIAL</p>
+        <h1 data-es="Conecta cualquier aplicación con tu hoja." data-en="Connect any app to your sheet.">Conecta cualquier aplicación con tu hoja.</h1>
+        <p class="lead" data-es="LittleAPI convierte Google Sheets y Drive en APIs REST con una URL estable. Lee datos públicos desde cualquier lenguaje y protege las operaciones que cambian información con X-API-Key." data-en="LittleAPI turns Google Sheets and Drive into REST APIs with a stable URL. Read public data from any language and protect operations that change data with X-API-Key.">LittleAPI convierte Google Sheets y Drive en APIs REST con una URL estable. Lee datos públicos desde cualquier lenguaje y protege las operaciones que cambian información con X-API-Key.</p>
+        <div class="hero-card">
+          <strong data-es="La URL base de todas las APIs" data-en="The base URL for every API">La URL base de todas las APIs</strong>
+          <div class="code-wrap"><pre><code>https://littleapi.online/api/v1/YOUR_API_ID</code></pre><button class="copy-button" data-copy="https://littleapi.online/api/v1/YOUR_API_ID" data-es="Copiar" data-en="Copy">Copiar</button></div>
+          <p data-es="Reemplaza YOUR_API_ID por el identificador que aparece en tu panel. No copies un ID de ejemplo como si fuera tuyo: cada API tiene su propia URL." data-en="Replace YOUR_API_ID with the identifier shown in your dashboard. Do not treat an example ID as yours: every API has its own URL.">Reemplaza YOUR_API_ID por el identificador que aparece en tu panel. No copies un ID de ejemplo como si fuera tuyo: cada API tiene su propia URL.</p>
+        </div>
+        <div class="card-grid">
+          <div class="mini-card"><span>GET</span><strong data-es="Leer filas" data-en="Read rows">Leer filas</strong><p data-es="Lectura pública opcional, con filtros y paginación." data-en="Optional public reads with filters and pagination.">Lectura pública opcional, con filtros y paginación.</p></div>
+          <div class="mini-card"><span>POST · PATCH · DELETE</span><strong data-es="Cambiar datos" data-en="Change data">Cambiar datos</strong><p data-es="Escrituras autenticadas con tu clave de administración." data-en="Authenticated writes with your administration key.">Escrituras autenticadas con tu clave de administración.</p></div>
+          <div class="mini-card"><span>OPENAPI</span><strong data-es="Contrato automático" data-en="Automatic contract">Contrato automático</strong><p data-es="Importa /openapi.json en Postman, Insomnia o Swagger." data-en="Import /openapi.json into Postman, Insomnia, or Swagger.">Importa /openapi.json en Postman, Insomnia o Swagger.</p></div>
+          <div class="mini-card"><span>429</span><strong data-es="Cuota transparente" data-en="Transparent quota">Cuota transparente</strong><p data-es="Cuando se agota, recibes used, limit, remaining y reset_at." data-en="When exhausted, receive used, limit, remaining, and reset_at.">Cuando se agota, recibes used, limit, remaining y reset_at.</p></div>
+        </div>
       </section>
 
-      <section id="primer-request"><h2>Primer request</h2><p>Esta es una API real publicada en LittleAPI: <strong>Medidores Catalogo</strong>.</p><div class="url-grid"><div class="url-card"><span>Endpoint real</span><code>https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_</code></div><div class="url-card"><span>Contrato OpenAPI</span><code>https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_/openapi.json</code></div><div class="url-card"><span>CSV de la pestaña</span><code>https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_/export.csv</code></div><div class="url-card"><span>Datos públicos</span><code>https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_?limit=20</code></div></div><pre><code>curl "https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_?limit=5"</code></pre><p>La respuesta de filas tiene una envoltura consistente: <code>data</code>, <code>total</code>, <code>limit</code>, <code>offset</code> y <code>meta</code>.</p></section>
+      <section id="primeros-pasos">
+        <h2 data-es="Primeros pasos en tres minutos" data-en="Quick start in three minutes">Primeros pasos en tres minutos</h2>
+        <ol class="steps">
+          <li><div><strong data-es="Crea y publica tu API" data-en="Create and publish your API">Crea y publica tu API</strong><p data-es="Inicia sesión, conecta un libro de Google Sheets o un recurso de Drive y pulsa Publicar. La aplicación genera un API ID y una clave para escrituras." data-en="Sign in, connect a Google Sheet or Drive resource, and choose Publish. The app generates an API ID and a key for writes.">Inicia sesión, conecta un libro de Google Sheets o un recurso de Drive y pulsa Publicar. La aplicación genera un API ID y una clave para escrituras.</p></div></li>
+          <li><div><strong data-es="Copia tu URL, no la de este ejemplo" data-en="Copy your URL, not this example">Copia tu URL, no la de este ejemplo</strong><p data-es="Tu endpoint empieza por https://littleapi.online/api/v1/YOUR_API_ID. El API ID se puede ver en el panel y en el catálogo que compartas." data-en="Your endpoint starts with https://littleapi.online/api/v1/YOUR_API_ID. You can find the API ID in the dashboard and in the catalog you share.">Tu endpoint empieza por <code>https://littleapi.online/api/v1/YOUR_API_ID</code>. El API ID se puede ver en el panel y en el catálogo que compartas.</p></div></li>
+          <li><div><strong data-es="Prueba una lectura" data-en="Test a read">Prueba una lectura</strong><p data-es="Si la lectura es pública, abre la URL en el navegador o usa el probador de esta página. Si es privada, añade X-API-Key." data-en="If the read is public, open the URL in a browser or use this page's tester. If private, add X-API-Key.">Si la lectura es pública, abre la URL en el navegador o usa el probador de esta página. Si es privada, añade <code>X-API-Key</code>.</p></div></li>
+        </ol>
+        <div class="code-wrap"><pre><code>const API = "https://littleapi.online/api/v1/YOUR_API_ID";
+const response = await fetch(`${API}?limit=20`);
+const payload = await response.json();
+console.table(payload.data);</code></pre><button class="copy-button" data-copy="const API = \"https://littleapi.online/api/v1/YOUR_API_ID\";\nconst response = await fetch(`${API}?limit=20`);\nconst payload = await response.json();\nconsole.table(payload.data);" data-es="Copiar" data-en="Copy">Copiar</button></div>
+      </section>
 
-      <section id="respuesta"><h2>Autenticación y respuestas</h2><div class="checklist"><div><span class="badge">GET público</span><br>Si publicaste la lectura, no se requiere login ni clave.</div><div><span class="badge">X-API-Key</span><br>Las escrituras viajan desde cualquier aplicación con tu clave.</div><div><span class="badge">JSON</span><br>Los errores y operaciones responden con JSON descriptivo.</div><div><span class="badge">OpenAPI</span><br>Cada API publica su contrato en <code>/openapi.json</code>.</div></div><pre><code>const API = "https://littleapi.online/api/v1/TU_API_ID";
-const headers = { "X-API-Key": "sp_live_..." };
+      <section id="probador">
+        <h2 data-es="Probador interactivo" data-en="Interactive tester">Probador interactivo</h2>
+        <p data-es="Envía una solicitud directamente desde tu navegador para validar una URL, un filtro o una escritura. La clave sólo vive en esta pestaña: no se guarda en LittleAPI ni en localStorage. Úsala únicamente con una API y un dominio de confianza." data-en="Send a request directly from your browser to validate a URL, a filter, or a write. The key lives only in this tab: it is not saved in LittleAPI or localStorage. Use it only with an API and a domain you trust.">Envía una solicitud directamente desde tu navegador para validar una URL, un filtro o una escritura. La clave sólo vive en esta pestaña: no se guarda en LittleAPI ni en localStorage. Úsala únicamente con una API y un dominio de confianza.</p>
+        <form class="tester" id="api-tester">
+          <div class="tester-grid"><label><span data-es="Endpoint" data-en="Endpoint">Endpoint</span><input id="tester-url" type="url" value="https://littleapi.online/api/v1/YOUR_API_ID" required></label><label><span data-es="Método" data-en="Method">Método</span><select id="tester-method"><option>GET</option><option>POST</option><option>PATCH</option><option>DELETE</option></select></label></div>
+          <div class="tester-row"><label><span data-es="X-API-Key (opcional para GET público)" data-en="X-API-Key (optional for public GET)">X-API-Key (opcional para GET público)</span><input id="tester-key" type="password" autocomplete="off" placeholder="sp_live_YOUR_API_KEY"></label><label><span data-es="Parámetros de consulta" data-en="Query parameters">Parámetros de consulta</span><input id="tester-query" placeholder="limit=20&amp;sheet=Sheet1"></label></div>
+          <label style="margin-top:12px"><span data-es="Cuerpo JSON (POST, PATCH o DELETE)" data-en="JSON body (POST, PATCH, or DELETE)">Cuerpo JSON (POST, PATCH o DELETE)</span><textarea id="tester-body" spellcheck="false" placeholder='{"data":{"name":"Ana","status":"ACTIVE"}}'></textarea></label>
+          <div class="tester-actions"><button class="primary-button" type="submit" data-es="Enviar solicitud" data-en="Send request">Enviar solicitud</button><button class="secondary-button" id="tester-clear" type="button" data-es="Limpiar" data-en="Clear">Limpiar</button><span class="tester-status" id="tester-status" role="status"></span></div>
+          <pre class="tester-output" id="tester-output"><code data-es="La respuesta aparecerá aquí." data-en="The response will appear here.">La respuesta aparecerá aquí.</code></pre>
+        </form>
+        <p class="inline-note" data-es="El probador respeta CORS. Una API privada requiere X-API-Key; nunca pegues una clave en una web pública o en código que se descargue a todos los visitantes." data-en="The tester relies on CORS. A private API requires X-API-Key; never put a key in a public website or code downloaded by every visitor.">El probador respeta CORS. Una API privada requiere <code>X-API-Key</code>; nunca pegues una clave en una web pública o en código que se descargue a todos los visitantes.</p>
+      </section>
 
-// Sólo el propietario ve la clave completa en el panel de LittleAPI.
-// Nunca la pongas en una aplicación pública del navegador.</code></pre><div class="callout warning"><strong>Clave de administración:</strong> LittleAPI la muestra al propietario autenticado y la guarda cifrada. Las lecturas públicas no la necesitan; protégela como una contraseña porque permite modificar la hoja.</div></section>
+      <section id="url-auth">
+        <h2 data-es="URL, autenticación y permisos" data-en="URL, authentication, and permissions">URL, autenticación y permisos</h2>
+        <div class="url-grid"><div class="url-card"><span>Base URL</span><code>https://littleapi.online/api/v1/YOUR_API_ID</code></div><div class="url-card"><span>OpenAPI</span><code>https://littleapi.online/api/v1/YOUR_API_ID/openapi.json</code></div><div class="url-card"><span>Clave</span><code>X-API-Key: sp_live_YOUR_API_KEY</code></div><div class="url-card"><span>Formato</span><code>application/json</code></div></div>
+        <div class="checklist"><div><span class="badge">GET público</span><br><span data-es="Funciona sin cuenta si activaste lectura pública." data-en="Works without an account when public reads are enabled.">Funciona sin cuenta si activaste lectura pública.</span></div><div><span class="badge">X-API-Key</span><br><span data-es="Necesaria para escrituras, Drive, pestañas, formato y exportación Excel." data-en="Required for writes, Drive, sheet tabs, formatting, and Excel export.">Necesaria para escrituras, Drive, pestañas, formato y exportación Excel.</span></div><div><span class="badge" data-es="Permisos" data-en="Permissions">Permisos</span><br><span data-es="El propietario decide si la API puede leer, buscar, crear, actualizar o eliminar." data-en="The owner decides whether the API can read, search, create, update, or delete.">El propietario decide si la API puede leer, buscar, crear, actualizar o eliminar.</span></div><div><span class="badge">OpenAPI</span><br><span data-es="El contrato se genera automáticamente para cada API." data-en="The contract is generated automatically for every API.">El contrato se genera automáticamente para cada API.</span></div></div>
+        <div class="callout warning"><strong data-es="No confundas API ID con API key" data-en="Do not confuse API ID with API key">No confundas API ID con API key</strong><p data-es="YOUR_API_ID identifica la API y puede aparecer en una URL pública. YOUR_API_KEY permite modificar datos; trátala como una contraseña y no la compartas en el frontend." data-en="YOUR_API_ID identifies the API and may appear in a public URL. YOUR_API_KEY can modify data; treat it like a password and never expose it in frontend code.">YOUR_API_ID identifica la API y puede aparecer en una URL pública. YOUR_API_KEY permite modificar datos; trátala como una contraseña y no la compartas en el frontend.</p></div>
+      </section>
 
-      <section id="lecturas"><h2>Lecturas y consultas</h2><p>La primera fila de la pestaña son los nombres de propiedades. La API usa la pestaña configurada al crearla; puedes cambiarla en una request con <code>sheet</code>.</p><div class="table-wrap"><table><thead><tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>Clave</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/{API_ID}</code></td><td>Lista filas con paginación, orden y metadatos.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/{API_ID}/search</code></td><td>Combina todas las condiciones y texto completo.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/{API_ID}/search_or</code></td><td>Devuelve filas que coinciden con cualquier condición.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/keys</code></td><td>Lista columnas de la primera fila.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/name</code></td><td>Nombre e identificador de la API.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/count</code></td><td>Cuenta las filas de datos.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/cells/A1,B2</code></td><td>Lee celdas puntuales por coordenada.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/stats</code></td><td>Columnas disponibles, conteo, suma, promedio, mínimo y máximo.</td><td>Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/metadata</code></td><td>Configuración pública de la API.</td><td>Según <code>public_read</code></td></tr></tbody></table></div><h3>Filtros, paginación y orden</h3><pre><code># Página 2 de 20 filas, ordenada por LECTURA
-curl "$API?limit=20&amp;offset=20&amp;sort=LECTURA&amp;order=desc"
+      <section id="lecturas">
+        <h2 data-es="Lecturas, filtros y paginación" data-en="Reads, filters, and pagination">Lecturas, filtros y paginación</h2>
+        <p data-es="La primera fila de cada pestaña se interpreta como encabezado. Los nombres de las columnas se usan como propiedades JSON. La pestaña por defecto es la configurada al publicar; puedes elegir otra con sheet." data-en="The first row of each sheet is treated as the header. Column names become JSON properties. The default sheet is configured when publishing; choose another with sheet.">La primera fila de cada pestaña se interpreta como encabezado. Los nombres de las columnas se usan como propiedades JSON. La pestaña por defecto es la configurada al publicar; puedes elegir otra con <code>sheet</code>.</p>
+        <div class="table-wrap"><table><thead><tr><th data-es="Método" data-en="Method">Método</th><th data-es="Ruta" data-en="Path">Ruta</th><th data-es="Descripción" data-en="Description">Descripción</th><th data-es="Clave" data-en="Key">Clave</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/{API_ID}</code></td><td data-es="Lista filas con data, total, limit, offset y meta." data-en="Lists rows with data, total, limit, offset, and meta.">Lista filas con data, total, limit, offset y meta.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/{API_ID}/search</code></td><td data-es="Filtra con todas las condiciones y texto completo." data-en="Filters with all conditions and full-text search.">Filtra con todas las condiciones y texto completo.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/search_or</code></td><td data-es="Filtra cuando coincide cualquier condición." data-en="Filters when any condition matches.">Filtra cuando coincide cualquier condición.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/keys</code></td><td data-es="Devuelve los encabezados." data-en="Returns the headers.">Devuelve los encabezados.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/count</code></td><td data-es="Cuenta las filas de datos." data-en="Counts data rows.">Cuenta las filas de datos.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/cells/A1,B2</code></td><td data-es="Lee celdas concretas por coordenada." data-en="Reads specific cells by coordinate.">Lee celdas concretas por coordenada.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr><tr><td class="method">GET</td><td><code>/stats</code></td><td data-es="Calcula conteo, suma, promedio, mínimo y máximo." data-en="Calculates count, sum, average, minimum, and maximum.">Calcula conteo, suma, promedio, mínimo y máximo.</td><td data-es="Según public_read" data-en="Depends on public_read">Según <code>public_read</code></td></tr></tbody></table></div>
+        <h3 data-es="Parámetros más usados" data-en="Most-used parameters">Parámetros más usados</h3>
+        <div class="code-wrap"><pre><code>const API = "https://littleapi.online/api/v1/YOUR_API_ID";
 
-# Igualdad, negación, comparación numérica y comodines
-curl "$API/search?MARCA=Honeywell&amp;SACO=!0&amp;LECTURA=%3E1000&amp;SERIE=35*"
+// Paginación y orden
+GET `${API}?limit=20&amp;offset=20&amp;sort=name&amp;order=asc`
 
-# Búsqueda de texto en todas las columnas
-curl "$API/search?search=Honeywell"
+// Cambiar de pestaña y conservar el formato de filas antiguo
+GET `${API}?sheet=Orders&amp;legacy=true`
 
-# Buscar coincidencias en cualquier condición
-curl "$API/search_or?MARCA=Honeywell&amp;TIPO=2s"
+// Buscar texto o comparar propiedades
+GET `${API}/search?search=Acme&amp;status=ACTIVE&amp;amount=%3E100`
 
-# Convertir columnas numéricas y devolver un objeto
-curl "$API?cast_numbers=LECTURA&amp;single_object=true"
+// Comodines, columnas numéricas y un solo objeto
+GET `${API}/search?name=Ana*&amp;cast_numbers=amount&amp;single_object=true`
 
-# Leer otra pestaña del mismo libro
-curl "$API?sheet=Ventas&amp;limit=50"</code></pre><p>También puedes enviar una condición repetida como <code>estado[]=NUEVO&amp;estado[]=ACTIVO</code>. Para preservar el formato antiguo de sólo filas usa <code>legacy=true</code>.</p><h3>Agregados</h3><pre><code># Una respuesta agrupada por MARCA
-curl "$API?group_by=MARCA&amp;count=ITEM&amp;sum=LECTURA&amp;avg=LECTURA"</code></pre><pre><code>{
-  "data": [{ "MARCA": "Honeywell", "count": 12, "count_ITEM": 12, "sum_LECTURA": 51920, "avg_LECTURA": 4326.66 }],
-  "total": 1,
-  "limit": 1,
-  "offset": 0
-}</code></pre></section>
+// Agrupar y calcular
+GET `${API}?group_by=status&amp;count=id&amp;sum=amount&amp;avg=amount`</code></pre><button class="copy-button" data-copy="const API = \"https://littleapi.online/api/v1/YOUR_API_ID\";\n\n// Paginación y orden\nGET `${API}?limit=20&offset=20&sort=name&order=asc`\n\n// Cambiar de pestaña\nGET `${API}?sheet=Orders&legacy=true`" data-es="Copiar" data-en="Copy">Copiar</button></div>
+        <p data-es="Los filtros aceptan igualdad, !valor para negar, >, <, >=, <= y * como comodín. Repite un parámetro con [] cuando necesites varias opciones." data-en="Filters support equality, !value for negation, >, <, >=, <=, and * as a wildcard. Repeat a parameter with [] when you need several options.">Los filtros aceptan igualdad, <code>!valor</code> para negar, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code> y <code>*</code> como comodín. Repite un parámetro con <code>[]</code> cuando necesites varias opciones.</p>
+      </section>
 
-      <section id="escrituras"><h2>Crear, actualizar y eliminar</h2><p>Todas las mutaciones funcionan sin login del consumidor. Sólo añade la clave en <code>X-API-Key</code>. Los objetos usan los nombres de la fila de encabezados.</p><h3>Insertar filas · <code>POST /{API_ID}</code></h3><pre><code>curl -X POST "$API" \
-  -H "X-API-Key: $LITTLEAPI_KEY" \
+      <section id="escrituras">
+        <h2 data-es="Crear, actualizar y eliminar filas" data-en="Create, update, and delete rows">Crear, actualizar y eliminar filas</h2>
+        <p data-es="Todas las mutaciones requieren X-API-Key y respetan los permisos de la API. Los objetos usan exactamente los nombres de la primera fila de la pestaña." data-en="All mutations require X-API-Key and respect the API permissions. Objects use the exact names from the sheet's first row.">Todas las mutaciones requieren <code>X-API-Key</code> y respetan los permisos de la API. Los objetos usan exactamente los nombres de la primera fila de la pestaña.</p>
+        <h3>POST · insertar</h3><pre><code>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: sp_live_YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"data":{"ITEM":"43","MARCA":"Honeywell","LECTURA":"3200"}}'
-
-# Varias filas en una sola llamada
-curl -X POST "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -d '{"data":{"id":"42","name":"Ana","status":"ACTIVE"}}'</code></pre>
+        <h3>PATCH · actualizar</h3><pre><code>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: sp_live_YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"rows":[{"ITEM":"44","MARCA":"Acme"},{"ITEM":"45","MARCA":"Acme"}]}'</code></pre><h3>Actualizar filas · <code>PATCH /{API_ID}</code></h3><pre><code># Cambia todas las filas que cumplen where
-curl -X PATCH "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -d '{"where":{"id":"42"},"data":{"status":"CLOSED"}}'</code></pre>
+        <h3>DELETE · eliminar</h3><pre><code>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: sp_live_YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"where":{"ITEM":"43"},"data":{"LECTURA":"3500","SACO":"1"}}'
+  -d '{"where":{"id":"42"}}'</code></pre>
+        <div class="callout danger"><strong data-es="Escrituras permanentes" data-en="Writes are permanent">Escrituras permanentes</strong><p data-es="Prueba primero con una copia de tu hoja. Un DELETE puede retirar varias filas si el filtro coincide con más de una." data-en="Test with a copy of your sheet first. A DELETE can remove several rows if the filter matches more than one.">Prueba primero con una copia de tu hoja. Un DELETE puede retirar varias filas si el filtro coincide con más de una.</p></div>
+      </section>
 
-# Actualiza un rango directamente (matriz de valores)
-curl -X PATCH "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+      <section id="pestanas">
+        <h2 data-es="Administrar pestañas de Sheets" data-en="Manage Sheets tabs">Administrar pestañas de Sheets</h2>
+        <p data-es="Estas rutas modifican la estructura del libro y por eso siempre requieren la clave. Usa un nombre de pestaña o el ID que devuelva la API." data-en="These routes change the workbook structure and always require the key. Use a sheet name or the ID returned by the API.">Estas rutas modifican la estructura del libro y por eso siempre requieren la clave. Usa un nombre de pestaña o el ID que devuelva la API.</p>
+        <div class="table-wrap"><table><thead><tr><th>Método</th><th>Ruta</th><th data-es="Cuerpo o resultado" data-en="Body or result">Cuerpo o resultado</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/sheets</code></td><td data-es="Lista títulos, índices y dimensiones." data-en="Lists titles, indexes, and dimensions.">Lista títulos, índices y dimensiones.</td></tr><tr><td class="method">POST</td><td><code>/sheets</code></td><td><code>{"name":"Orders 2026"}</code></td></tr><tr><td class="method">PATCH</td><td><code>/sheets/YOUR_SHEET</code></td><td><code>{"name":"Archive"}</code></td></tr><tr><td class="method">DELETE</td><td><code>/sheets/YOUR_SHEET</code></td><td data-es="Sin cuerpo." data-en="No body.">Sin cuerpo.</td></tr><tr><td class="method">POST</td><td><code>/sheets/copy</code></td><td><code>{"sheet":"YOUR_SHEET","destination_spreadsheet_id":"YOUR_SPREADSHEET_ID"}</code></td></tr></tbody></table></div>
+        <pre><code>curl -X POST "$API/sheets" \
+  -H "X-API-Key: $LITTLEAPI_KEY" -H "Content-Type: application/json" \
+  -d '{"name":"Orders 2026"}'</code></pre>
+      </section>
+
+      <section id="herramientas">
+        <h2 data-es="Rangos, formato, lotes y exportación" data-en="Ranges, formatting, batches, and export">Rangos, formato, lotes y exportación</h2>
+        <p data-es="Las herramientas usan el mismo endpoint y la misma clave. Las solicitudes de lote siguen el formato de Google Sheets batchUpdate y aceptan hasta 50 operaciones." data-en="Tools use the same endpoint and key. Batch requests follow Google's Sheets batchUpdate format and accept up to 50 operations.">Las herramientas usan el mismo endpoint y la misma clave. Las solicitudes de lote siguen el formato de Google Sheets <code>batchUpdate</code> y aceptan hasta 50 operaciones.</p>
+        <pre><code># Limpiar un rango
+curl -X POST "$API/clear" -H "X-API-Key: $LITTLEAPI_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"sheet":"Medidores","range":"A2:C2","values":[["43","34800000","Acme"]]}'</code></pre><h3>Eliminar filas · <code>DELETE /{API_ID}</code></h3><pre><code>curl -X DELETE "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -d '{"sheet":"YOUR_SHEET","range":"H2:Z1000"}'
+
+# Dar formato al encabezado
+curl -X POST "$API/format" -H "X-API-Key: $LITTLEAPI_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"where":{"ITEM":"43"}}'</code></pre><p>Las condiciones aceptan igualdad, <code>!</code>, comodines con <code>*</code> y comparadores <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code> y <code>&lt;=</code>.</p></section>
+  -d '{"sheet":"YOUR_SHEET","range":"A1:G1","bold":true,"bgColor":"#087a70","textColor":"#ffffff","horizontalAlignment":"CENTER"}'
 
-      <section id="pestanas"><h2>Administrar pestañas</h2><p>Una API de Sheets puede crear, consultar, renombrar, eliminar y copiar pestañas.</p><div class="table-wrap"><table><thead><tr><th>Método</th><th>Ruta</th><th>Cuerpo</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/sheets</code></td><td>Lista las pestañas y sus dimensiones. Requiere clave.</td></tr><tr><td class="method">POST</td><td><code>/sheets</code></td><td><code>{"name":"Ventas 2026"}</code></td></tr><tr><td class="method">PATCH</td><td><code>/sheets/Medidores</code></td><td><code>{"name":"Lecturas"}</code></td></tr><tr><td class="method">DELETE</td><td><code>/sheets/Lecturas</code></td><td>Sin cuerpo.</td></tr><tr><td class="method">POST</td><td><code>/sheets/copy</code></td><td><code>{"sheet":"Medidores","destination_spreadsheet_id":"ID_DESTINO"}</code></td></tr></tbody></table></div><pre><code>curl -X POST "$API/sheets" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" -d '{"name":"Ventas 2026"}'
-
-curl -X POST "$API/sheets/copy" -H "X-API-Key: $LITTLEAPI_KEY" \
+# Ejecutar cambios atómicos
+curl -X POST "$API/batch" -H "X-API-Key: $LITTLEAPI_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"sheet":"Medidores","destination_spreadsheet_id":"ID_DESTINO"}'</code></pre></section>
+  -d '{"requests":[{"addSheet":{"properties":{"title":"Import"}}}]}'
 
-      <section id="herramientas"><h2>Rangos, formato y automatización</h2><h3>Limpiar · <code>POST /clear</code></h3><pre><code>curl -X POST "$API/clear" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" -d '{"sheet":"Medidores","range":"H2:Z1000"}'</code></pre><h3>Dar formato · <code>POST /format</code></h3><pre><code>curl -X POST "$API/format" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"sheet":"Medidores","range":"A1:G1","bold":true,"bgColor":"#087a70","textColor":"#ffffff","horizontalAlignment":"CENTER"}'</code></pre><p>Propiedades disponibles: <code>bold</code>, <code>fontSize</code>, <code>textColor</code>, <code>bgColor</code> y <code>horizontalAlignment</code>. También puedes indicar <code>gridRange</code> con índices de Google Sheets.</p><h3>Lote atómico · <code>POST /batch</code></h3><pre><code>curl -X POST "$API/batch" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"requests":[{"addSheet":{"properties":{"title":"Importación"}}},{"updateSpreadsheetProperties":{"properties":{"title":"Catálogo 2026"},"fields":"title"}}]}'</code></pre><p>Envía de 1 a 50 objetos del formato <code>spreadsheets.batchUpdate</code>. Si Google rechaza uno, no se presenta el lote como aplicado.</p><h3>Descargas</h3><pre><code># CSV público de una pestaña
-curl -L "$API/export.csv?sheet=Medidores" -o medidores.csv
+# Descargar CSV o Excel
+curl -L "$API/export.csv?sheet=YOUR_SHEET" -o export.csv
+curl -L "$API/export.xlsx" -H "X-API-Key: $LITTLEAPI_KEY" -o workbook.xlsx</code></pre>
+      </section>
 
-# Libro Excel; requiere X-API-Key
-curl -L "$API/export.xlsx" -H "X-API-Key: $LITTLEAPI_KEY" -o catalogo.xlsx</code></pre></section>
+      <section id="drive">
+        <h2 data-es="APIs de Google Drive" data-en="Google Drive APIs">APIs de Google Drive</h2>
+        <p data-es="Publica un recurso de Drive para usar archivos y carpetas desde una URL REST. Drive siempre exige X-API-Key porque las rutas pueden crear, renombrar o borrar archivos." data-en="Publish a Drive resource to use files and folders through a REST URL. Drive always requires X-API-Key because routes can create, rename, or delete files.">Publica un recurso de Drive para usar archivos y carpetas desde una URL REST. Drive siempre exige <code>X-API-Key</code> porque las rutas pueden crear, renombrar o borrar archivos.</p>
+        <div class="table-wrap"><table><thead><tr><th>Método</th><th>Ruta</th><th data-es="Uso" data-en="Use">Uso</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/{API_ID}</code></td><td data-es="Metadatos del recurso raíz." data-en="Root resource metadata.">Metadatos del recurso raíz.</td></tr><tr><td class="method">GET</td><td><code>/children/YOUR_FOLDER_ID</code></td><td data-es="Lista archivos de una carpeta." data-en="Lists files in a folder.">Lista archivos de una carpeta.</td></tr><tr><td class="method">GET</td><td><code>/search?name=report&amp;parent_id=YOUR_FOLDER_ID</code></td><td data-es="Busca por nombre y carpeta." data-en="Searches by name and folder.">Busca por nombre y carpeta.</td></tr><tr><td class="method">GET</td><td><code>/download/YOUR_FILE_ID</code></td><td data-es="Descarga el archivo." data-en="Downloads the file.">Descarga el archivo.</td></tr><tr><td class="method">GET</td><td><code>/quota</code></td><td data-es="Muestra la cuota de almacenamiento." data-en="Shows storage quota.">Muestra la cuota de almacenamiento.</td></tr><tr><td class="method">POST</td><td><code>/YOUR_FOLDER_ID</code></td><td data-es="Crea una carpeta o sube base64." data-en="Creates a folder or uploads base64.">Crea una carpeta o sube base64.</td></tr><tr><td class="method">PATCH</td><td><code>/YOUR_FILE_ID</code></td><td data-es="Renombra un archivo." data-en="Renames a file.">Renombra un archivo.</td></tr><tr><td class="method">DELETE</td><td><code>/YOUR_FILE_ID</code></td><td data-es="Elimina o envía a la papelera." data-en="Deletes or trashes a file.">Elimina o envía a la papelera.</td></tr></tbody></table></div>
+        <pre><code>curl "$DRIVE_API/search?name=report&amp;parent_id=YOUR_FOLDER_ID" \
+  -H "X-API-Key: $LITTLEAPI_KEY"
 
-      <section id="drive"><h2>APIs de Drive</h2><p>Al publicar un recurso de tipo Drive, la misma URL se convierte en una puerta REST para archivos y carpetas del Drive autorizado.</p><div class="table-wrap"><table><thead><tr><th>Método</th><th>Ruta</th><th>Uso</th></tr></thead><tbody><tr><td class="method">GET</td><td><code>/{API_ID}</code></td><td>Metadatos/listado del archivo raíz configurado.</td></tr><tr><td class="method">GET</td><td><code>/children/{FOLDER_ID}</code></td><td>Lista archivos de una carpeta.</td></tr><tr><td class="method">GET</td><td><code>/search?name=informe&amp;parent_id=ID</code></td><td>Busca archivos por nombre y carpeta.</td></tr><tr><td class="method">GET</td><td><code>/quota</code></td><td>Cuota de almacenamiento del propietario.</td></tr><tr><td class="method">GET</td><td><code>/about</code></td><td>Cuenta, cuota y formatos de importación/exportación.</td></tr><tr><td class="method">GET</td><td><code>/download/{FILE_ID}</code></td><td>Descarga el contenido como archivo.</td></tr><tr><td class="method">POST</td><td><code>/{FOLDER_ID}</code></td><td>Crea una carpeta/archivo o sube base64.</td></tr><tr><td class="method">PATCH</td><td><code>/{FILE_ID}</code></td><td>Renombra un archivo.</td></tr><tr><td class="method">DELETE</td><td><code>/{FILE_ID}</code></td><td>Mueve el archivo a la papelera/elimina.</td></tr></tbody></table></div><pre><code># Buscar un archivo
-curl "$DRIVE_API/search?name=presupuesto&amp;parent_id=ID_CARPETA" -H "X-API-Key: $LITTLEAPI_KEY"
+curl -X POST "$DRIVE_API/YOUR_FOLDER_ID" \
+  -H "X-API-Key: $LITTLEAPI_KEY" -H "Content-Type: application/json" \
+  -d '{"name":"hello.txt","mimeType":"text/plain","content_base64":"SG9sYSBMaXR0bGVBUEk="}'</code></pre>
+      </section>
 
-# Crear una carpeta
-curl -X POST "$DRIVE_API/ID_PADRE" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" -d '{"name":"Reportes","mimeType":"application/vnd.google-apps.folder"}'
+      <section id="sdks">
+        <h2 data-es="Ejemplos desde cualquier lenguaje" data-en="Examples in any language">Ejemplos desde cualquier lenguaje</h2>
+        <h3>JavaScript / TypeScript</h3><pre><code>const API = "https://littleapi.online/api/v1/YOUR_API_ID";
+const KEY = "sp_live_YOUR_API_KEY";
 
-# Subir contenido base64
-curl -X POST "$DRIVE_API/ID_CARPETA" -H "X-API-Key: $LITTLEAPI_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"saludo.txt","mimeType":"text/plain","content_base64":"SG9sYSBMaXR0bGVBUEk="}'
+const rows = await fetch(`${API}?limit=50`).then(async (response) =&gt; {
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+});
+console.table(rows.data);
 
-# Renombrar y borrar
-curl -X PATCH "$DRIVE_API/ID_ARCHIVO" -H "X-API-Key: $LITTLEAPI_KEY" -H "Content-Type: application/json" -d '{"name":"final.txt"}'
-curl -X DELETE "$DRIVE_API/ID_ARCHIVO" -H "X-API-Key: $LITTLEAPI_KEY"</code></pre></section>
-
-      <section id="sdk"><h2>Ejemplos desde cualquier lenguaje</h2><h3>JavaScript / TypeScript</h3><pre><code>const API = "https://littleapi.online/api/v1/TU_API_ID";
-const read = await fetch(`${API}?limit=50`).then((r) =&gt; r.json());
-console.table(read.data);
-
-const created = await fetch(API, {
+await fetch(API, {
   method: "POST",
-  headers: { "Content-Type": "application/json", "X-API-Key": "sp_live_TU_CLAVE" },
-  body: JSON.stringify({ data: { nombre: "Ana", estado: "ACTIVO" } })
-}).then((r) =&gt; r.json());</code></pre><h3>Python</h3><pre><code>import requests
+  headers: { "Content-Type": "application/json", "X-API-Key": KEY },
+  body: JSON.stringify({ data: { id: "42", name: "Ana" } })
+});</code></pre>
+        <h3>Python</h3><pre><code>import requests
 
-API = "https://littleapi.online/api/v1/TU_API_ID"
-KEY = "sp_live_TU_CLAVE"
-rows = requests.get(API, params={"limit": 50}).json()["data"]
-requests.patch(API, headers={"X-API-Key": KEY}, json={
-    "where": {"id": "42"}, "data": {"estado": "CERRADO"}
-})</code></pre><h3>PHP</h3><pre><code>$api = 'https://littleapi.online/api/v1/TU_API_ID';
-$json = file_get_contents($api . '?limit=20');
-$rows = json_decode($json, true)['data'];
+API = "https://littleapi.online/api/v1/YOUR_API_ID"
+KEY = "sp_live_YOUR_API_KEY"
+
+response = requests.get(API, params={"limit": 50})
+response.raise_for_status()
+rows = response.json()["data"]
+
+requests.patch(API,
+    headers={"X-API-Key": KEY},
+    json={"where": {"id": "42"}, "data": {"status": "CLOSED"}},
+).raise_for_status()</code></pre>
+        <h3>PHP</h3><pre><code>$api = 'https://littleapi.online/api/v1/YOUR_API_ID';
+$key = 'sp_live_YOUR_API_KEY';
+$rows = json_decode(file_get_contents($api . '?limit=20'), true);
+
 $ch = curl_init($api);
 curl_setopt_array($ch, [
   CURLOPT_CUSTOMREQUEST =&gt; 'POST',
-  CURLOPT_HTTPHEADER =&gt; ['Content-Type: application/json', 'X-API-Key: sp_live_TU_CLAVE'],
-  CURLOPT_POSTFIELDS =&gt; json_encode(['data' =&gt; ['nombre' =&gt; 'Ana']]),
+  CURLOPT_HTTPHEADER =&gt; ['Content-Type: application/json', 'X-API-Key: ' . $key],
+  CURLOPT_POSTFIELDS =&gt; json_encode(['data' =&gt; ['id' =&gt; '42', 'name' =&gt; 'Ana']]),
   CURLOPT_RETURNTRANSFER =&gt; true,
 ]);
-$created = curl_exec($ch);</code></pre></section>
+$created = curl_exec($ch);</code></pre>
+      </section>
 
-      <section id="seguridad"><h2>Seguridad y publicación</h2><ul><li>El consumidor no necesita cuenta ni sesión de LittleAPI.</li><li>Activa lectura pública sólo para datos que realmente quieras exponer.</li><li>Usa <code>X-API-Key</code> para POST, PATCH, DELETE, formato, pestañas, Drive y exportación Excel.</li><li>La clave completa sólo aparece al propietario autenticado; nunca se incluye en el catálogo público ni en OpenAPI.</li><li>Si la clave se filtra, genera una nueva desde el panel y reemplázala en tus aplicaciones.</li><li>Google sigue aplicando sus cuotas de Sheets y Drive; usa paginación y evita pedir miles de filas en cada request.</li></ul><div class="callout danger"><strong>Importante:</strong> no pongas una clave de escritura en JavaScript que se descargue al navegador de todos. Para una web pública usa un servidor intermedio o limita la API a operaciones de lectura.</div></section>
+      <section id="respuestas">
+        <h2 data-es="Respuestas y errores" data-en="Responses and errors">Respuestas y errores</h2>
+        <p data-es="Las respuestas JSON mantienen una forma predecible para que tu aplicación pueda manejar éxito y error sin analizar texto libre." data-en="JSON responses keep a predictable shape so your application can handle success and errors without parsing free text.">Las respuestas JSON mantienen una forma predecible para que tu aplicación pueda manejar éxito y error sin analizar texto libre.</p>
+        <pre><code>// GET /{API_ID}?limit=2
+{
+  "data": [{ "id": "42", "name": "Ana", "status": "ACTIVE" }],
+  "total": 1,
+  "limit": 2,
+  "offset": 0,
+  "meta": { "api_id": "YOUR_API_ID", "name": "YOUR_API_NAME", "sheet": "YOUR_SHEET" }
+}
 
-      <section id="errores"><h2>Errores y diagnóstico</h2><p>Los errores tienen siempre <code>error</code> y <code>message</code>. Ejemplo:</p><pre><code>{ "error": "api_key_required", "message": "Las operaciones de escritura requieren la cabecera X-API-Key." }</code></pre><div class="table-wrap"><table><thead><tr><th>HTTP</th><th>Código</th><th>Solución</th></tr></thead><tbody><tr><td>400</td><td><code>invalid_*</code></td><td>Corrige el cuerpo, rango, nombre o parámetro indicado.</td></tr><tr><td>401</td><td><code>api_key_required</code></td><td>Envía <code>X-API-Key</code> o publica la lectura.</td></tr><tr><td>403</td><td><code>permission_denied</code></td><td>Activa ese permiso en la configuración de la API.</td></tr><tr><td>404</td><td><code>api_not_found</code> / <code>sheet_not_found</code></td><td>Comprueba el identificador y el nombre de pestaña.</td></tr><tr><td>502</td><td><code>upstream_error</code></td><td>Comprueba que la hoja siga compartida y que Google esté disponible.</td></tr></tbody></table></div><h3>Contrato automático</h3><p>Abre <code>/openapi.json</code> para importar la API en Postman, Insomnia, Swagger UI o cualquier generador de clientes.</p></section>
-      <section id="cuotas"><h2>Cuotas mensuales</h2><p>Cada API comienza con <strong>5.000 consultas al mes</strong>. El límite se aplica por API y se reinicia el primer día de cada mes UTC. Las respuestas <code>OPTIONS</code> y la autenticación del propietario no consumen cuota.</p><pre><code># Consultar el consumo (sólo el propietario)<br>curl "$API/usage" -H "X-API-Key: $LITTLEAPI_KEY"<br><br># Respuesta cuando aún hay cuota<br>{ "api_id": "TU_API_ID", "quota": { "used": 124, "limit": 5000, "remaining": 4876, "reset_at": "2026-10-01T00:00:00.000Z" } }</code></pre><div class="callout warning"><strong>Cuando se agota:</strong> LittleAPI devuelve HTTP <code>429</code> con <code>error: "quota_exceeded"</code>, <code>used</code>, <code>limit</code>, <code>remaining: 0</code> y <code>reset_at</code>. Tu aplicación puede mostrar ese mensaje o reintentar después de la fecha indicada.</div><p>Consulta los planes y las capacidades disponibles en <a href="../pricing.html">la página de precios</a>.</p></section>
+// Error de autenticación
+{ "error": "api_key_required", "message": "Las operaciones de escritura requieren la cabecera X-API-Key." }</code></pre>
+        <div class="table-wrap"><table><thead><tr><th>HTTP</th><th data-es="Código" data-en="Code">Código</th><th data-es="Qué revisar" data-en="What to check">Qué revisar</th></tr></thead><tbody><tr><td>400</td><td><code>invalid_*</code></td><td data-es="Cuerpo, rango, filtro o parámetro." data-en="Body, range, filter, or parameter.">Cuerpo, rango, filtro o parámetro.</td></tr><tr><td>401</td><td><code>api_key_required</code></td><td data-es="Publica la lectura o envía X-API-Key." data-en="Publish the read or send X-API-Key.">Publica la lectura o envía <code>X-API-Key</code>.</td></tr><tr><td>403</td><td><code>permission_denied</code></td><td data-es="Activa ese permiso en la configuración." data-en="Enable that permission in settings.">Activa ese permiso en la configuración.</td></tr><tr><td>404</td><td><code>api_not_found</code> / <code>sheet_not_found</code></td><td data-es="Comprueba API ID, pestaña o recurso." data-en="Check API ID, sheet, or resource.">Comprueba API ID, pestaña o recurso.</td></tr><tr><td>429</td><td><code>quota_exceeded</code></td><td data-es="Espera reset_at o reduce el volumen." data-en="Wait for reset_at or reduce volume.">Espera <code>reset_at</code> o reduce el volumen.</td></tr><tr><td>502</td><td><code>upstream_error</code></td><td data-es="Revisa permisos de Google y disponibilidad de Sheets/Drive." data-en="Check Google permissions and Sheets/Drive availability.">Revisa permisos de Google y disponibilidad de Sheets/Drive.</td></tr></tbody></table></div>
+        <p data-es="Cada API también expone https://littleapi.online/api/v1/YOUR_API_ID/openapi.json para generar clientes y probar rutas desde herramientas compatibles." data-en="Every API also exposes https://littleapi.online/api/v1/YOUR_API_ID/openapi.json to generate clients and test routes in compatible tools.">Cada API también expone <code>/openapi.json</code> para generar clientes y probar rutas desde herramientas compatibles.</p>
+      </section>
+
+      <section id="cuotas">
+        <h2 data-es="Cuotas mensuales" data-en="Monthly quotas">Cuotas mensuales</h2>
+        <p data-es="El límite se aplica por API y se reinicia el primer día de cada mes UTC. El plan y la cuenta determinan el valor configurado; una cuenta autorizada puede tener una cuota personalizada o ilimitada." data-en="The limit applies per API and resets on the first day of each UTC month. The plan and account determine the configured value; an authorized account may have a custom or unlimited quota.">El límite se aplica por API y se reinicia el primer día de cada mes UTC. El plan y la cuenta determinan el valor configurado; una cuenta autorizada puede tener una cuota personalizada o ilimitada.</p>
+        <pre><code># Consultar consumo (requiere la clave del propietario)
+curl "https://littleapi.online/api/v1/YOUR_API_ID/usage" \
+  -H "X-API-Key: sp_live_YOUR_API_KEY"
+
+// Cuenta con cuota normal
+{ "api_id": "YOUR_API_ID", "quota": {
+  "used": 124, "limit": 5000, "remaining": 4876,
+  "reset_at": "2026-10-01T00:00:00.000Z"
+} }
+
+// Cuenta autorizada sin límite de LittleAPI
+{ "api_id": "YOUR_API_ID", "quota": {
+  "used": 124, "limit": null, "remaining": null,
+  "reset_at": null, "unlimited": true
+} }</code></pre>
+        <div class="callout warning"><strong data-es="Cuando se agota" data-en="When the quota is exhausted">Cuando se agota</strong><p data-es="LittleAPI responde HTTP 429 con error quota_exceeded y la fecha reset_at. Las cuotas propias de Google Sheets y Drive siguen aplicando aunque tu cuota de LittleAPI sea personalizada." data-en="LittleAPI returns HTTP 429 with quota_exceeded and reset_at. Google Sheets and Drive provider quotas still apply even when your LittleAPI quota is custom.">LittleAPI responde HTTP <code>429</code> con <code>quota_exceeded</code> y la fecha <code>reset_at</code>. Las cuotas propias de Google Sheets y Drive siguen aplicando aunque tu cuota de LittleAPI sea personalizada.</p></div>
+      </section>
+
+      <section id="seguridad">
+        <h2 data-es="Seguridad y publicación" data-en="Security and publishing">Seguridad y publicación</h2>
+        <ul><li data-es="Publica sólo las pestañas que realmente quieras exponer." data-en="Publish only the sheets you actually want to expose.">Publica sólo las pestañas que realmente quieras exponer.</li><li data-es="Guarda X-API-Key en variables de entorno o en el servidor, nunca en el navegador de tus clientes." data-en="Store X-API-Key in environment variables or on the server, never in your customers' browser.">Guarda <code>X-API-Key</code> en variables de entorno o en el servidor, nunca en el navegador de tus clientes.</li><li data-es="Si una clave se filtra, regénérala desde el panel y reemplázala en tus aplicaciones." data-en="If a key leaks, regenerate it from the dashboard and replace it in your applications.">Si una clave se filtra, regénérala desde el panel y reemplázala en tus aplicaciones.</li><li data-es="Usa paginación, filtros y caché para no pedir miles de filas repetidamente." data-en="Use pagination, filters, and cache to avoid requesting thousands of rows repeatedly.">Usa paginación, filtros y caché para no pedir miles de filas repetidamente.</li><li data-es="El consumidor de una lectura pública no necesita cuenta de LittleAPI." data-en="A public-read consumer does not need a LittleAPI account.">El consumidor de una lectura pública no necesita cuenta de LittleAPI.</li></ul>
+        <div class="callout danger"><strong data-es="Nunca expongas la clave en frontend" data-en="Never expose the key in frontend code">Nunca expongas la clave en frontend</strong><p data-es="El probador es útil para desarrollo. En producción, las escrituras deben salir de tu backend o de un entorno seguro." data-en="The tester is useful for development. In production, writes should come from your backend or another secure environment.">El probador es útil para desarrollo. En producción, las escrituras deben salir de tu backend o de un entorno seguro.</p></div>
+      </section>
+
+      <section id="faq">
+        <h2 data-es="Preguntas frecuentes" data-en="Frequently asked questions">Preguntas frecuentes</h2>
+        <details><summary data-es="¿Necesito iniciar sesión para leer?" data-en="Do I need to sign in to read?">¿Necesito iniciar sesión para leer?</summary><p data-es="No, si el propietario activó public_read. Las lecturas privadas requieren X-API-Key." data-en="No, if the owner enabled public_read. Private reads require X-API-Key.">No, si el propietario activó <code>public_read</code>. Las lecturas privadas requieren <code>X-API-Key</code>.</p></details>
+        <details><summary data-es="¿Puedo cambiar de pestaña?" data-en="Can I change sheets?">¿Puedo cambiar de pestaña?</summary><p data-es="Sí. Añade ?sheet=NombreDePestana a una lectura o incluye sheet en el cuerpo de una escritura." data-en="Yes. Add ?sheet=SheetName to a read or include sheet in a write body.">Sí. Añade <code>?sheet=NombreDePestana</code> a una lectura o incluye <code>sheet</code> en el cuerpo de una escritura.</p></details>
+        <details><summary data-es="¿Qué pasa si Google revoca el acceso?" data-en="What if Google revokes access?">¿Qué pasa si Google revoca el acceso?</summary><p data-es="La API devolverá upstream_error. El propietario debe conectar Google otra vez y comprobar los permisos del libro o recurso." data-en="The API returns upstream_error. The owner must reconnect Google and check the permissions of the sheet or resource.">La API devolverá <code>upstream_error</code>. El propietario debe conectar Google otra vez y comprobar los permisos del libro o recurso.</p></details>
+        <details><summary data-es="¿Cómo genero un cliente?" data-en="How do I generate a client?">¿Cómo genero un cliente?</summary><p data-es="Abre /openapi.json, copia el contrato e impórtalo en Postman, Insomnia, Swagger UI o un generador OpenAPI." data-en="Open /openapi.json, copy the contract, and import it into Postman, Insomnia, Swagger UI, or an OpenAPI generator.">Abre <code>/openapi.json</code>, copia el contrato e impórtalo en Postman, Insomnia, Swagger UI o un generador OpenAPI.</p></details>
+      </section>
     </main>
   </div>
-  <footer>© 2026 LittleAPI · <a href="../pricing.html">Precios</a> · <a href="../privacy.html">Privacidad</a> · <a href="../terms.html">Términos</a> · <a href="https://github.com/fernand21/sheetpilot">Código fuente</a></footer>
+
+  <footer class="footer">© 2026 LittleAPI · <a href="../pricing.html" data-es="Precios" data-en="Pricing">Precios</a> · <a href="../privacy.html" data-es="Privacidad" data-en="Privacy">Privacidad</a> · <a href="../terms.html" data-es="Términos" data-en="Terms">Términos</a> · <a href="https://github.com/fernand21/sheetpilot" data-es="Código fuente" data-en="Source code">Código fuente</a></footer>
+
+  <script>
+    const languageSelect = document.querySelector("#language-select");
+    function applyLanguage(language) {
+      const lang = language === "en" ? "en" : "es";
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-es][data-en]").forEach((node) => {
+        const value = node.dataset[lang];
+        if (value !== undefined) node.textContent = value;
+      });
+      languageSelect.value = lang;
+      try { localStorage.setItem("littleapi-doc-language", lang); } catch (_) {}
+    }
+    let savedLanguage = "es";
+    try { savedLanguage = localStorage.getItem("littleapi-doc-language") || "es"; } catch (_) {}
+    applyLanguage(savedLanguage);
+    languageSelect.addEventListener("change", () => applyLanguage(languageSelect.value));
+
+    document.querySelectorAll("[data-copy]").forEach((button) => button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy);
+        const old = button.textContent;
+        button.textContent = languageSelect.value === "en" ? "Copied" : "Copiado";
+        setTimeout(() => { button.textContent = old; }, 1400);
+      } catch (_) { button.textContent = languageSelect.value === "en" ? "Select and copy" : "Selecciona y copia"; }
+    }));
+
+    const tester = document.querySelector("#api-tester"), testerOutput = document.querySelector("#tester-output code"), testerStatus = document.querySelector("#tester-status");
+    tester.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const method = document.querySelector("#tester-method").value, rawUrl = document.querySelector("#tester-url").value.trim(), rawQuery = document.querySelector("#tester-query").value.trim().replace(/^\?/, ""), key = document.querySelector("#tester-key").value.trim(), rawBody = document.querySelector("#tester-body").value.trim();
+      if (!/^https?:\/\//i.test(rawUrl)) { testerStatus.textContent = languageSelect.value === "en" ? "Use a complete http(s) URL." : "Usa una URL completa con http(s)."; return; }
+      let target; try { const url = new URL(rawUrl); if (rawQuery) new URLSearchParams(rawQuery).forEach((value, name) => url.searchParams.set(name, value)); target = url.toString(); } catch (_) { testerStatus.textContent = languageSelect.value === "en" ? "The URL is not valid." : "La URL no es válida."; return; }
+      const headers = {}; if (key) headers["X-API-Key"] = key; let body;
+      if (rawBody && ["POST", "PATCH", "DELETE"].includes(method)) { try { body = JSON.stringify(JSON.parse(rawBody)); headers["Content-Type"] = "application/json"; } catch (_) { testerStatus.textContent = languageSelect.value === "en" ? "The JSON body is invalid." : "El cuerpo JSON no es válido."; return; } }
+      testerStatus.textContent = languageSelect.value === "en" ? "Sending…" : "Enviando…"; testerOutput.textContent = ""; const started = performance.now();
+      try {
+        const response = await fetch(target, { method, headers, body }), text = await response.text(); let payload; try { payload = JSON.parse(text); } catch (_) { payload = text; }
+        testerStatus.textContent = `HTTP ${response.status} · ${Math.round(performance.now() - started)} ms`;
+        testerOutput.textContent = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+      } catch (error) { testerStatus.textContent = languageSelect.value === "en" ? "Request failed (check CORS and the URL)." : "La solicitud falló (comprueba CORS y la URL)."; testerOutput.textContent = String(error?.message || error); }
+    });
+    document.querySelector("#tester-clear").addEventListener("click", () => { document.querySelector("#tester-key").value = ""; document.querySelector("#tester-query").value = ""; document.querySelector("#tester-body").value = ""; testerStatus.textContent = ""; testerOutput.textContent = languageSelect.value === "en" ? "The response will appear here." : "La respuesta aparecerá aquí."; });
+  </script>
 </body>
 </html>
