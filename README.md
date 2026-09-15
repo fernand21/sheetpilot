@@ -84,7 +84,7 @@ Al pulsar **Crear API** en un proyecto se genera una URL como:
 
 La API pública ofrece `GET /{API_ID}`, `GET /search`, `GET /search_or`, `GET /keys`, `GET /name`, `GET /count`, `GET /cells/A1,B2`, `GET /metadata`, `GET /openapi.json` y `GET /stats`. La primera fila de la hoja se convierte en las propiedades de cada objeto JSON y las respuestas de filas usan `{data,total,limit,offset,meta}`. Usa `legacy=true` si necesitas la matriz de objetos de la primera versión.
 
-Al crear una API, LittleAPI intenta compartir automáticamente la hoja como “cualquiera con el enlace puede ver” (rol lector). Si Google no permite ese cambio, puedes compartirla manualmente desde Drive. La pantalla de creación muestra la URL y genera una clave de administración; la clave se almacena únicamente como hash.
+Al crear una API, LittleAPI intenta compartir automáticamente la hoja como “cualquiera con el enlace puede ver” (rol lector). Si Google no permite ese cambio, puedes compartirla manualmente desde Drive. La pantalla de creación muestra la URL y genera una clave de administración; la clave se muestra al propietario autenticado y se guarda cifrada, mientras que el hash se usa para validarla.
 
 `POST`, `PATCH` y `DELETE` funcionan desde cualquier aplicación sin login, siempre que envíes `X-API-Key`. El servidor usa el refresh token cifrado del propietario para llamar a Google. También están disponibles `POST/PATCH/DELETE /{API_ID}/sheets`, `POST /format`, `POST /clear`, `POST /batch` y operaciones de Drive en APIs registradas como `resource_type=drive`.
 
