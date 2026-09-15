@@ -1,5 +1,5 @@
 /*
- * SheetPilot API compatible with the simple SheetDB-style URL model.
+ * API REST de LittleAPI: una URL estable por cada hoja conectada.
  *
  * GET requests read a public/published Google Sheet through Visualization API,
  * so no Google credential is exposed by this function. Mutations intentionally
@@ -250,7 +250,7 @@ async function handler(request: Request) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   const url = new URL(request.url);
   const path = partsFor(url);
-  if (!path[0]) return response({ name: "SheetPilot API", version: "1", usage: "/sheetpilot-api/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"] });
+  if (!path[0]) return response({ name: "LittleAPI", version: "1", usage: "/sheetpilot-api/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"] });
   const api = await getApi(path[0]);
   if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada.");
   if (api.resource_type === "drive") return failure(501, "drive_api_not_ready", "Las APIs de Drive están previstas en el mismo registro, pero requieren OAuth de servidor para proteger los archivos. Esta API es de Google Sheets.");

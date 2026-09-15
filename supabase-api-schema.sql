@@ -1,4 +1,4 @@
--- Registro de APIs públicas de SheetPilot.
+-- Registro de APIs públicas de LittleAPI.
 -- Ejecutar en Supabase SQL Editor después de supabase-schema.sql.
 -- La clave completa nunca se guarda: solo se almacena su hash SHA-256.
 create table if not exists public.api_endpoints (

@@ -10,6 +10,7 @@ const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
+const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
 let sb = null, user = null, token = null, tokenExpiresAt = 0, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [];
 
@@ -35,7 +36,7 @@ function friendlyError(error) {
   const text = String(error && (error.message || error.error_description) || error || "Ha ocurrido un error.");
   if (text.includes("permission denied for table projects") || text.includes("42501")) return "Supabase aún no permite acceder a proyectos. Ejecuta supabase-schema.sql en el SQL Editor y vuelve a cargar.";
   if (text.includes("insufficientPermissions") || text.includes("Insufficient Permission")) return "Google no concedió permisos suficientes. Cierra sesión, vuelve a entrar y acepta el acceso a Sheets y Drive.";
-  if (text.includes("access_denied")) return "Google bloqueó el acceso. Comprueba que tu cuenta esté en Audience > Test users del proyecto SheetPilot.";
+  if (text.includes("access_denied")) return "Google bloqueó el acceso. Comprueba que tu cuenta esté en Audience > Test users del proyecto " + BRAND_NAME + ".";
   return text;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -222,7 +223,7 @@ function renderProjects(data) {
   projectsCache = data || [];
   $("#project-empty").classList.toggle("hidden", projectsCache.length > 0);
   const grid = $("#projects-grid"); grid.classList.toggle("hidden", projectsCache.length === 0);
-  grid.innerHTML = projectsCache.map(project => { const api = apiForProject(project); return '<article class="project-card"><p>GOOGLE SHEETS</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || "Sin pestaña seleccionada") + '</p><div class="project-api">' + (api ? '<span class="api-status">● API activa</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">○ Sin API publicada</span>') + '</div><div class="project-actions"><button class="action-button" data-open-project="' + project.id + '">Abrir espacio</button><button class="action-button" data-api-project="' + project.id + '">' + (api ? "Ver endpoint" : "Crear API") + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">Eliminar API</button>' : '') + '<button class="action-button" data-format-project="' + project.id + '">Formatear</button><button class="text-button" data-remove-project="' + project.id + '">Quitar</button></div></article>'; }).join("");
+  grid.innerHTML = projectsCache.map(project => { const api = apiForProject(project); return '<article class="project-card"><p>LITTLEAPI · GOOGLE SHEETS</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || "Sin pestaña seleccionada") + '</p><div class="project-api">' + (api ? '<span class="api-status">● API activa</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">○ Sin API publicada</span>') + '</div><div class="project-actions"><button class="action-button" data-open-project="' + project.id + '">Abrir espacio</button><button class="action-button" data-api-project="' + project.id + '">' + (api ? "Ver endpoint" : "Crear API") + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">Eliminar API</button>' : '') + '<button class="action-button" data-format-project="' + project.id + '">Formatear</button><button class="text-button" data-remove-project="' + project.id + '">Quitar</button></div></article>'; }).join("");
 }
 async function projects() {
   if (!sb || !user) return;
@@ -405,7 +406,7 @@ function bindEvents() {
   $("#drive-list").onclick = event => { const button = event.target.closest("button"); if (!button) return; if (button.dataset.driveOpen) { driveParent = button.dataset.driveOpen; driveParentName = button.dataset.driveName; loadDrive(); } if (button.dataset.driveDownload) downloadDrive(button.dataset.driveDownload, button.dataset.driveName); if (button.dataset.driveRename) renameDrive(button.dataset.driveRename, button.dataset.driveName); if (button.dataset.driveDelete) deleteDrive(button.dataset.driveDelete); };
   $("#projects-grid").onclick = event => { const button = event.target.closest("button"); if (!button) return; const project = projectsCache.find(item => item.id === (button.dataset.openProject || button.dataset.formatProject || button.dataset.removeProject || button.dataset.apiProject || button.dataset.removeApi)); if (!project) return; if (button.dataset.openProject) openProject(project, "data"); if (button.dataset.formatProject) openProject(project, "format"); if (button.dataset.removeProject) removeProject(project); if (button.dataset.apiProject) { const api = apiForProject(project); api ? showApiDialog(project, api) : createApi(project); } if (button.dataset.removeApi) removeApi(project); };
 }
-async function removeProject(project) { if (!confirm("¿Quitar " + project.name + " de SheetPilot? La hoja de Google no se eliminará.")) return; const result = await sb.from("projects").delete().eq("id", project.id).eq("user_id", user.id); if (result.error) return notice(friendlyError(result.error), "error"); notice("Proyecto quitado. La hoja original sigue en tu Drive.", "success"); projects(); }
+async function removeProject(project) { if (!confirm("¿Quitar " + project.name + " de " + BRAND_NAME + "? La hoja de Google no se eliminará.")) return; const result = await sb.from("projects").delete().eq("id", project.id).eq("user_id", user.id); if (result.error) return notice(friendlyError(result.error), "error"); notice("Proyecto quitado. La hoja original sigue en tu Drive.", "success"); projects(); }
 bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);

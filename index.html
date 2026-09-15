@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Convierte tus hojas de cálculo en una API sencilla." />
-    <title>SheetPilot — Tus hojas, listas para usar</title>
+    <title>LittleAPI — Convierte tus hojas en APIs</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b766e'/%3E%3Cpath d='M17 18h30v28H17z' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M17 29h30M28 18v28' stroke='white' stroke-width='4'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#inicio" aria-label="SheetPilot, inicio"><span class="brand-mark">▦</span>SheetPilot</a>
+      <a class="brand" href="#inicio" aria-label="LittleAPI, inicio"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
       <nav aria-label="Navegación principal">
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#api">API</a>
@@ -24,14 +24,14 @@
     <main id="inicio">
       <section class="hero" id="public-home">
         <div class="hero-copy">
-          <p class="eyebrow">DE GOOGLE SHEETS A JSON</p>
-          <h1>Tu hoja de cálculo puede ser una API.</h1>
-          <p class="lead">Conecta una hoja, configura el acceso y úsala desde cualquier aplicación. Sin servidores que administrar.</p>
+          <p class="eyebrow">DATOS LISTOS PARA CRECER</p>
+          <h1>Tu hoja de cálculo, convertida en una API.</h1>
+          <p class="lead">Conecta Google Sheets, publica una URL y lleva tus datos a cualquier web, app o automatización. Sin servidores que administrar.</p>
           <div class="hero-actions">
             <button class="button" data-open-auth="google">Continuar con Google <span aria-hidden="true">→</span></button>
             <a class="text-link" href="#api">Ver un ejemplo</a>
           </div>
-          <p class="microcopy">Primera versión · acceso seguro con Google</p>
+          <p class="microcopy"><span class="micro-dot"></span>Empieza gratis · acceso seguro con Google</p>
         </div>
         <div class="code-window" aria-label="Ejemplo de respuesta JSON">
           <div class="window-head"><span></span><span></span><span></span><code>GET /v1/clientes</code></div>
@@ -42,6 +42,15 @@
     <span class="code-key">"activo"</span>: <span class="code-bool">true</span>
   <span class="code-muted">}</span>
 <span class="code-muted">]</span></pre>
+        </div>
+      </section>
+
+      <section class="value-strip" aria-label="Beneficios de LittleAPI">
+        <div class="value-intro"><p class="eyebrow">HECHO PARA CREADORES</p><h2>Menos backend.<br><span>Más producto.</span></h2></div>
+        <div class="value-grid">
+          <article><span class="value-icon">↗</span><h3>Una URL, muchos usos</h3><p>Consume tus filas como JSON desde JavaScript, Python, no-code o cualquier cliente HTTP.</p></article>
+          <article><span class="value-icon">⌁</span><h3>Tu hoja sigue siendo tuya</h3><p>Google guarda los datos. LittleAPI se encarga de conectar, consultar y dar estructura.</p></article>
+          <article><span class="value-icon">▤</span><h3>Control desde un panel</h3><p>Busca, edita, formatea y administra pestañas y archivos sin cambiar de herramienta.</p></article>
         </div>
       </section>
 
@@ -57,7 +66,7 @@
 
       <section class="api-section" id="api">
         <div><p class="eyebrow">SIMPLE DE INTEGRAR</p><h2>Una URL para cada tabla.</h2><p>La estructura de tus columnas se convierte en datos JSON fáciles de consumir.</p></div>
-        <div class="request"><code>GET</code><span>https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api/{API_ID}</span></div>
+        <div><p class="api-preview-label">Tu URL de marca al conectar el dominio</p><div class="request"><code>GET</code><span>https://littleapi.online/api/v1/{API_ID}</span></div></div>
       </section>
 
       <section class="dashboard hidden" id="dashboard" aria-live="polite">
@@ -73,7 +82,7 @@
       </section>
     </main>
 
-    <footer><span>© 2026 SheetPilot</span><span><a href="privacy.html">Privacidad</a> · <a href="terms.html">Términos</a></span></footer>
+    <footer><span>© 2026 LittleAPI</span><span><a href="privacy.html">Privacidad</a> · <a href="terms.html">Términos</a></span></footer>
 
     <dialog id="auth-dialog" aria-labelledby="auth-title">
       <button class="dialog-close" id="close-dialog" aria-label="Cerrar">×</button>
@@ -81,7 +90,7 @@
       <p class="form-intro">Usa tu cuenta de Google para identificarte y conectar tus hojas.</p>
       <button class="button full google-login" data-open-auth="google">Continuar con Google <span aria-hidden="true">→</span></button>
       <p class="form-message" id="auth-message" role="status"></p>
-      <p class="auth-legal">Al continuar aceptas que SheetPilot solicite los permisos de Google necesarios para las funciones que elijas.</p>
+      <p class="auth-legal">Al continuar aceptas que LittleAPI solicite los permisos de Google necesarios para las funciones que elijas.</p>
     </dialog>
     <dialog id="sheet-dialog"><button class="dialog-close" id="close-sheet-dialog" aria-label="Cerrar">×</button><p class="eyebrow">GOOGLE SHEETS</p><h2>Elige una hoja</h2><p class="form-intro">Conecta un libro de Google Sheets para crear tu proyecto.</p><button class="button full" id="authorize-google">Conectar con Google</button><div class="sheet-list" id="sheets-list"></div><p class="form-message" id="sheet-message"></p></dialog>
     <dialog id="workspace-dialog" class="workspace-dialog" aria-labelledby="workspace-title">
@@ -100,7 +109,7 @@
         <div class="tool-grid"><div><h3>Administrar pestaña</h3><label>Nueva pestaña<input id="new-sheet-name" placeholder="Ventas 2026" /></label><button class="button" id="add-sheet">Añadir pestaña</button><label>Renombrar actual<input id="rename-sheet-name" /></label><button class="action-button" id="rename-sheet">Renombrar pestaña</button><button class="danger-button" id="delete-sheet">Eliminar pestaña actual</button><button class="text-button" id="clear-filters">Limpiar filtros de la pestaña</button></div><div><h3>Copiar pestaña</h3><p class="muted">Copia la pestaña actual a otro libro que tengas conectado.</p><label>Libro destino<select id="copy-destination"></select></label><button class="action-button" id="copy-sheet">Copiar pestaña</button><h3 class="section-gap">Capacidad del libro</h3><button class="action-button" id="check-capacity">Comprobar capacidad</button><p id="capacity-result" class="result-box"></p></div></div>
       </section>
       <section class="workspace-panel hidden" data-panel="format">
-        <div class="tool-grid"><div><h3>Formato de rango</h3><label>Rango<input id="format-range" value="A1:Z1" /></label><div class="inline-fields"><label>Tamaño<input id="format-size" type="number" min="6" max="72" value="14" /></label><label><span>Negrita</span><input id="format-bold" type="checkbox" checked /></label></div><label>Color de fondo<input id="format-bg" type="color" value="#087a70" /></label><label>Color de texto<input id="format-fg" type="color" value="#ffffff" /></label><button class="button" id="apply-format">Aplicar formato</button></div><div><h3>Acciones rápidas</h3><p class="muted">Da formato al encabezado con el estilo de SheetPilot y ajusta las columnas automáticamente.</p><button class="action-button" id="format-header">Formatear encabezado</button><button class="action-button" id="resize-columns">Ajustar columnas</button></div></div>
+        <div class="tool-grid"><div><h3>Formato de rango</h3><label>Rango<input id="format-range" value="A1:Z1" /></label><div class="inline-fields"><label>Tamaño<input id="format-size" type="number" min="6" max="72" value="14" /></label><label><span>Negrita</span><input id="format-bold" type="checkbox" checked /></label></div><label>Color de fondo<input id="format-bg" type="color" value="#087a70" /></label><label>Color de texto<input id="format-fg" type="color" value="#ffffff" /></label><button class="button" id="apply-format">Aplicar formato</button></div><div><h3>Acciones rápidas</h3><p class="muted">Da formato al encabezado con el estilo de LittleAPI y ajusta las columnas automáticamente.</p><button class="action-button" id="format-header">Formatear encabezado</button><button class="action-button" id="resize-columns">Ajustar columnas</button></div></div>
       </section>
       <section class="workspace-panel hidden" data-panel="query">
         <div class="tool-grid"><div><h3>Consulta personalizada</h3><label>Query Google Visualization<textarea id="custom-query" rows="5">SELECT * LIMIT 100</textarea></label><button class="button" id="run-query">Ejecutar consulta</button></div><div><h3>Filtro avanzado</h3><p class="muted">Ejemplos: <code>Estado = 'ACTIVO'</code> · <code>Cantidad &gt; 10</code> · <code>Nombre CONTAINS 'ana'</code></p><label>Condición WHERE<input id="advanced-where" placeholder="Estado = 'ACTIVO'" /></label><button class="action-button" id="run-advanced">Filtrar datos</button></div></div><div class="data-table-wrap" id="query-result"></div>
@@ -126,6 +135,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="config.js"></script>
-    <script src="app.js?v=20260914-4"></script>
+    <script src="app.js?v=20260914-5"></script>
   </body>
 </html>
