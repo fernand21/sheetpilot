@@ -3,35 +3,105 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Precios transparentes de LittleAPI para convertir Google Sheets en APIs REST.">
-  <title>LittleAPI · Precios</title>
+  <meta name="description" content="Planes mensuales y renovación manual de LittleAPI para convertir Google Sheets en APIs REST.">
+  <title>LittleAPI · Planes mensuales</title>
   <style>
     :root{--ink:#102c2b;--muted:#617673;--paper:#f7f8f4;--line:#d9e1dc;--teal:#087a70;--dark:#064f4a;--lime:#d8ff7d;--orange:#c77b16;--white:#fff}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--teal)}.top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:18px clamp(20px,6vw,90px);background:#f7f8f4ee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{font-weight:850;letter-spacing:-.04em;text-decoration:none;color:var(--ink);font-size:1.2rem}.mark{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:8px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#7657f6);color:#fff}.top nav{display:flex;gap:22px;font-size:.9rem}.top nav a{text-decoration:none;color:var(--muted)}.top nav a:hover{color:var(--teal)}main{max-width:1160px;margin:0 auto;padding:70px 24px 110px}.hero{text-align:center;max-width:770px;margin:0 auto 44px}.eyebrow{color:var(--teal);font-weight:850;letter-spacing:.13em;font-size:.72rem;margin:0 0 12px}.hero h1{font-size:clamp(2.7rem,6vw,5rem);line-height:.98;letter-spacing:-.07em;margin:0}.hero p{color:var(--muted);font-size:1.15rem;margin:23px auto 26px}.switch{display:inline-flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:#fff}.switch button{border:0;border-radius:999px;background:transparent;color:var(--muted);padding:8px 15px;font:inherit;font-weight:750;cursor:pointer}.switch button.active{background:var(--ink);color:#fff}.save{font-size:.75rem;color:var(--teal);font-weight:800;margin-left:4px}.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch}.plan{display:flex;flex-direction:column;padding:25px 21px;border:1px solid var(--line);border-radius:13px;background:#fff;min-height:440px}.plan.featured{border:2px solid var(--teal);box-shadow:0 12px 0 var(--lime);transform:translateY(-8px)}.plan-label{font-size:.72rem;color:var(--teal);font-weight:850;letter-spacing:.1em;text-transform:uppercase}.plan h2{font-size:1.35rem;margin:7px 0 10px;letter-spacing:-.04em}.price{display:flex;align-items:baseline;gap:5px;min-height:70px}.price strong{font-size:2.55rem;letter-spacing:-.06em}.price span{color:var(--muted);font-size:.85rem}.price .annual{display:none}.plan p{color:var(--muted);font-size:.88rem;min-height:55px}.plan ul{list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;color:var(--muted);font-size:.88rem}.plan li::before{content:"✓";color:var(--teal);font-weight:900;margin-right:8px}.cta{margin-top:auto;display:block;text-align:center;text-decoration:none;padding:11px 14px;border-radius:8px;border:1px solid var(--teal);color:var(--teal);font-weight:800}.cta.primary{background:var(--teal);color:#fff}.cta:hover{background:#e7f4ef}.cta.primary:hover{background:var(--dark)}.note{max-width:800px;margin:35px auto 0;padding:15px 18px;border-left:4px solid var(--orange);background:#fff6e5;border-radius:0 8px 8px 0;color:var(--muted);font-size:.9rem}.section{margin:90px auto 0;max-width:900px}.section h2{text-align:center;font-size:2rem;letter-spacing:-.05em;margin:0 0 25px}.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.benefit{padding:20px;border:1px solid var(--line);border-radius:10px;background:#fff}.benefit strong{display:block;margin-bottom:6px}.benefit p{margin:0;color:var(--muted);font-size:.9rem}.faq{border-top:1px solid var(--line)}details{padding:17px 0;border-bottom:1px solid var(--line)}summary{cursor:pointer;font-weight:800}details p{color:var(--muted);margin:10px 0 0}.bottom{text-align:center;margin:80px auto 0;padding:30px;background:var(--ink);color:#fff;border-radius:13px}.bottom h2{margin:0;font-size:1.8rem}.bottom p{color:#c2d7d3}.bottom a{display:inline-block;background:var(--lime);color:var(--dark);padding:11px 18px;border-radius:8px;font-weight:850;text-decoration:none}footer{border-top:1px solid var(--line);padding:25px clamp(20px,6vw,90px);color:var(--muted);font-size:.85rem;text-align:center}@media(max-width:900px){.plans{grid-template-columns:repeat(2,1fr)}.plan.featured{transform:none}}@media(max-width:620px){.top nav{gap:10px;font-size:.82rem}.plans,.benefits{grid-template-columns:1fr}.plan.featured{box-shadow:none}.hero{margin-bottom:30px}main{padding-top:45px}}
+  </style>
+  <style>
+    .billing-banner{max-width:900px;margin:34px auto 0;padding:20px 22px;border:1px solid #e5c98c;border-left:5px solid var(--orange);border-radius:12px;background:#fff8e9;color:var(--ink)}
+    .billing-banner > strong{display:block;font-size:1.05rem;margin-bottom:6px}
+    .billing-banner p strong{display:inline;font-size:inherit;margin:0}
+    .billing-banner p{margin:4px 0;color:var(--muted);font-size:.93rem}
+    .plan .manual{color:var(--orange);font-weight:800}
+    .airtm-panel{max-width:760px}
+    .airtm-card{padding:24px;border:1px solid #cbd9d2;border-radius:14px;background:#fff;box-shadow:0 12px 30px #183b3212}
+    .airtm-card p{color:var(--muted);margin:0 0 18px}
+    .airtm-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end}
+    .airtm-form label{display:grid;gap:6px;color:var(--ink);font-weight:750;font-size:.88rem}
+    .airtm-form select,.airtm-form input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit}
+    .airtm-form button{grid-column:1/-1;border:0;border-radius:8px;padding:12px 16px;background:#7657f6;color:#fff;font:inherit;font-weight:850;cursor:pointer}
+    .airtm-form button:hover{background:#5e43d6}
+    .airtm-form button:disabled{opacity:.6;cursor:wait}
+    .airtm-status{min-height:24px;margin-top:15px;padding:0;color:var(--muted);font-size:.9rem}
+    .airtm-status.success{color:var(--teal)}
+    .airtm-status.error{color:#b6422d}
+    .airtm-note{margin-top:12px;font-size:.8rem;color:var(--muted)}
+    .paypal-option{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .paypal-label{margin:0 0 8px;color:var(--muted);font-size:.78rem;font-weight:800;text-align:center}
+    .paypal-note{display:block;margin-top:7px;color:var(--muted);font-size:.75rem;text-align:center}
+    .paypal-button-container{min-height:44px}
+    .plan .airtm-quick{margin-top:auto;width:100%;border:1px solid #7657f6;border-radius:8px;padding:10px 14px;background:#fff;color:#5e43d6;font:inherit;font-weight:800;cursor:pointer}
+    .plan .airtm-quick:hover{background:#f2efff}
+    @media(max-width:620px){.airtm-form{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <header class="top"><a class="brand" href="index.html"><span class="mark">↗</span>Little<span style="color:var(--teal)">API</span></a><nav><a href="index.html">Aplicación</a><a href="docs/">Documentación</a></nav></header>
   <main>
-    <section class="hero"><p class="eyebrow">PRECIOS SIN SORPRESAS</p><h1>Publica más. Paga menos.</h1><p>Empieza gratis y escala cuando tu API lo necesite. Todos los planes incluyen una URL LittleAPI, lecturas JSON y seguridad para las escrituras.</p><div class="switch" role="group" aria-label="Periodo de facturación"><button class="active" data-period="monthly">Mensual</button><button data-period="annual">Anual <span class="save">ahorra 20%</span></button></div></section>
+    <section class="hero"><p class="eyebrow">PLANES MENSUALES · RENOVACIÓN MANUAL</p><h1>Empieza con $5. Crece por $7.</h1><p>Elige la capacidad que necesitas. Los planes pagos se renuevan manualmente cada mes: tú decides cuándo continuar y nunca se realiza un cobro automático.</p></section>
     <section class="plans" aria-label="Planes de LittleAPI">
       <article class="plan"><span class="plan-label">Para probar</span><h2>Gratis</h2><div class="price"><strong>$0</strong><span>/ siempre</span></div><p>Una forma sencilla de publicar tu primera hoja.</p><ul><li>2 APIs activas</li><li>5.000 consultas por API/mes</li><li>Lectura pública JSON</li><li>Documentación y OpenAPI</li></ul><a class="cta" href="index.html">Empezar gratis</a></article>
-      <article class="plan"><span class="plan-label">Para creadores</span><h2>Creador</h2><div class="price"><strong class="monthly">$2,99</strong><strong class="annual">$2,39</strong><span>/ mes</span></div><p>Para sitios pequeños, prototipos y automatizaciones.</p><ul><li>10 APIs activas</li><li>50.000 consultas por API/mes</li><li>CRUD con X-API-Key</li><li>CSV y caché</li></ul><a class="cta" href="mailto:hola@littleapi.online?subject=Plan%20Creador">Elegir Creador</a></article>
-      <article class="plan featured"><span class="plan-label">Más elegido</span><h2>Pro</h2><div class="price"><strong class="monthly">$7,99</strong><strong class="annual">$6,39</strong><span>/ mes</span></div><p>Más capacidad para productos que ya están creciendo.</p><ul><li>50 APIs activas</li><li>250.000 consultas por API/mes</li><li>Drive, pestañas y lotes</li><li>Exportación Excel</li></ul><a class="cta primary" href="mailto:hola@littleapi.online?subject=Plan%20Pro">Elegir Pro</a></article>
-      <article class="plan"><span class="plan-label">Para equipos</span><h2>Business</h2><div class="price"><strong class="monthly">$19,99</strong><strong class="annual">$15,99</strong><span>/ mes</span></div><p>Para equipos que necesitan límites altos y acompañamiento.</p><ul><li>200 APIs activas</li><li>1 millón de consultas por API/mes</li><li>Cuotas personalizadas</li><li>Soporte prioritario</li></ul><a class="cta" href="mailto:hola@littleapi.online?subject=Plan%20Business">Hablar con nosotros</a></article>
+      <article class="plan"><span class="plan-label">Para empezar</span><h2>Inicial</h2><div class="price"><strong>$5</strong><span>/ mes</span></div><p>Para sitios pequeños, prototipos y automatizaciones.</p><ul><li>10 APIs activas</li><li>50.000 consultas por API/mes</li><li>CRUD con X-API-Key</li><li>CSV y caché</li><li class="manual">Renovación manual</li></ul><div class="paypal-option"><p class="paypal-label">Pagar con PayPal</p><div id="paypal-container-T7VT2GJLSAAQ" class="paypal-button-container"></div><span class="paypal-note">Pago único · renovación manual</span></div><button class="airtm-quick" type="button" data-airtm-plan="inicial">Pagar con Airtm</button></article>
+      <article class="plan featured"><span class="plan-label">Más elegido</span><h2>Pro</h2><div class="price"><strong>$7</strong><span>/ mes</span></div><p>Más capacidad para productos que ya están creciendo.</p><ul><li>50 APIs activas</li><li>250.000 consultas por API/mes</li><li>Drive, pestañas y lotes</li><li>Exportación Excel</li><li class="manual">Renovación manual + 24 h de gracia</li></ul><div class="paypal-option"><p class="paypal-label">Pagar con PayPal</p><div id="paypal-container-74J9AVSMN8W2S" class="paypal-button-container"></div><span class="paypal-note">Pago único · renovación manual</span></div><button class="airtm-quick" type="button" data-airtm-plan="pro">Pagar con Airtm</button></article>
+      <article class="plan"><span class="plan-label">Para equipos</span><h2>Business</h2><div class="price"><strong>$19,99</strong><span>/ mes</span></div><p>Para equipos que necesitan límites altos y acompañamiento.</p><ul><li>200 APIs activas</li><li>1 millón de consultas por API/mes</li><li>Cuotas personalizadas</li><li>Soporte prioritario</li><li class="manual">Renovación manual</li></ul><button class="airtm-quick" type="button" data-airtm-plan="business">Pagar con Airtm</button></article>
     </section>
-    <p class="note"><strong>Estado de lanzamiento:</strong> el plan Gratis está activo. Los planes de pago se activarán con el checkout. No hay cobros automáticos todavía; puedes escribirnos para reservar el precio de lanzamiento.</p>
+    <div class="billing-banner" role="note"><strong>Renovación manual, sin sorpresas.</strong><p>LittleAPI no realiza cobros automáticos. Durante este lanzamiento, la activación se coordina manualmente y cada mes debes renovar tu plan desde el enlace de pago que te enviemos o solicites.</p><p>Si tu fecha vence, conservamos el plan durante <strong>24 horas de gracia</strong> para que puedas renovarlo. Después, el plan de pago se pausa hasta confirmar la renovación; tu API no cambia de URL.</p></div>
+    <section class="section airtm-panel" id="airtm-payment"><h2>Renueva con Airtm</h2><div class="airtm-card"><p>Elige tu plan y continúa en Airtm. Es un pago único: el próximo mes vuelves a decidir si renuevas. Necesitarás una cuenta Airtm con saldo suficiente.</p><form class="airtm-form" id="airtm-form"><label>Plan<select id="airtm-plan" name="plan"><option value="inicial">Inicial · $5/mes</option><option value="pro" selected>Pro · $7/mes</option><option value="business">Business · $19,99/mes</option></select></label><label>Correo (opcional)<input id="airtm-email" name="email" type="email" autocomplete="email" placeholder="tu@correo.com"></label><button type="submit" id="airtm-submit">Continuar a Airtm →</button></form><div class="airtm-status" id="airtm-status" role="status" aria-live="polite"></div><div class="airtm-note">LittleAPI no guarda tu contraseña ni tus claves de Airtm. La confirmación se valida en el servidor.</div></div></section>
     <section class="section"><h2>Lo que recibes en todos los planes</h2><div class="benefits"><div class="benefit"><strong>Una URL estable</strong><p>Tu aplicación consume <code>littleapi.online/api/v1/{API_ID}</code> desde cualquier lenguaje.</p></div><div class="benefit"><strong>Tu hoja, siempre tuya</strong><p>Los datos permanecen en tu Google Drive y tú controlas los permisos.</p></div><div class="benefit"><strong>Límites claros</strong><p>Cuando se agota la cuota, la API devuelve <code>429 quota_exceeded</code> y la fecha de reinicio.</p></div></div></section>
-    <section class="section"><h2>Preguntas frecuentes</h2><div class="faq"><details open><summary>¿Qué cuenta como una consulta?</summary><p>Cada request a una API publicada cuenta una vez. Las opciones CORS no consumen cuota. El contador se reinicia al comenzar cada mes UTC.</p></details><details><summary>¿Qué ocurre al alcanzar el límite?</summary><p>La API responde HTTP 429 con <code>used</code>, <code>limit</code>, <code>remaining</code> y <code>reset_at</code>. Así nunca hay cobros inesperados.</p></details><details><summary>¿Puedo cambiar de plan?</summary><p>Sí. La migración sólo aumenta o reduce el límite configurado; no cambia la URL de tu API.</p></details><details><summary>¿Necesito iniciar sesión para consumir una API?</summary><p>No. Las lecturas públicas funcionan sin cuenta. Sólo el propietario entra a LittleAPI para administrar la API y consultar su consumo.</p></details></div></section>
+    <section class="section"><h2>Preguntas frecuentes</h2><div class="faq"><details open><summary>¿Se cobra automáticamente?</summary><p>No. Los planes pagos se renuevan manualmente cada mes. Tú solicitas o recibes el enlace, realizas el pago y confirmamos la renovación.</p></details><details><summary>¿Qué ocurre si me atraso?</summary><p>Tienes 24 horas de gracia después de la fecha de vencimiento. Si no se confirma el pago al terminar ese plazo, el plan de pago se pausa hasta renovarlo.</p></details><details><summary>¿Qué cuenta como una consulta?</summary><p>Cada request a una API publicada cuenta una vez. Las opciones CORS no consumen cuota. El contador se reinicia al comenzar cada mes UTC.</p></details><details><summary>¿Qué ocurre al alcanzar el límite?</summary><p>La API responde HTTP 429 con <code>used</code>, <code>limit</code>, <code>remaining</code> y <code>reset_at</code>. Así nunca hay cobros inesperados.</p></details><details><summary>¿Puedo cambiar de plan?</summary><p>Sí. La migración sólo aumenta o reduce el límite configurado; no cambia la URL de tu API.</p></details><details><summary>¿Necesito iniciar sesión para consumir una API?</summary><p>No. Las lecturas públicas funcionan sin cuenta. Sólo el propietario entra a LittleAPI para administrar la API y consultar su consumo.</p></details></div></section>
     <section class="bottom"><h2>Tu primera API puede estar lista hoy.</h2><p>Conecta una hoja, copia la URL y empieza a integrar.</p><a href="index.html">Crear una API gratis →</a></section>
   </main>
   <footer>© 2026 LittleAPI · <a href="privacy.html">Privacidad</a> · <a href="terms.html">Términos</a> · <a href="docs/">Documentación</a></footer>
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAywmESI_Yz_zjx8qtPYEnv56FiwUQGxgCWEcbP-e4fTtWeAgFoQc3tdh2doev_qf_dvV8LqRPAPLcvKg&components=hosted-buttons&disable-funding=venmo&currency=USD"></script>
   <script>
-    const buttons = [...document.querySelectorAll('[data-period]')];
-    const annual = document.querySelectorAll('.price .annual');
-    const monthly = document.querySelectorAll('.price .monthly');
-    function setPeriod(period) { buttons.forEach((button) => button.classList.toggle('active', button.dataset.period === period)); annual.forEach((node) => { node.style.display = period === 'annual' ? 'inline' : 'none'; }); monthly.forEach((node) => { node.style.display = period === 'monthly' ? 'inline' : 'none'; }); }
-    buttons.forEach((button) => button.addEventListener('click', () => setPeriod(button.dataset.period)));
-    setPeriod('monthly');
+    (() => {
+      const renderPayPalButton = hostedButtonId => {
+        const container = document.querySelector("#paypal-container-" + hostedButtonId);
+        if (!container || !window.paypal?.HostedButtons) return;
+        window.paypal.HostedButtons({ hostedButtonId }).render(container);
+      };
+      renderPayPalButton("T7VT2GJLSAAQ");
+      renderPayPalButton("74J9AVSMN8W2S");
+    })();
+  </script>
+  <script src="config.js"></script>
+  <script>
+    (() => {
+      const form = document.querySelector("#airtm-form"), plan = document.querySelector("#airtm-plan"), email = document.querySelector("#airtm-email"), submit = document.querySelector("#airtm-submit"), status = document.querySelector("#airtm-status");
+      const cfg = window.SUPABASE_CONFIG || {}, endpoint = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/airtm-payments";
+      const show = (text, kind = "") => { status.textContent = text; status.className = "airtm-status" + (kind ? " " + kind : ""); };
+      const reference = () => { try { return "littleapi-" + crypto.randomUUID(); } catch (_) { return "littleapi-" + Date.now() + "-" + Math.random().toString(36).slice(2); } };
+      document.querySelectorAll("[data-airtm-plan]").forEach(button => button.addEventListener("click", () => { plan.value = button.dataset.airtmPlan; document.querySelector("#airtm-payment").scrollIntoView({ behavior: "smooth", block: "center" }); email.focus(); }));
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (!cfg.url || !endpoint.includes("supabase.co/functions")) return show("Airtm todavía no está configurado en el servidor. Escríbenos para activar tu renovación manual.", "error");
+        submit.disabled = true; show("Preparando el pago seguro…");
+        try {
+          const response = await fetch(endpoint + "/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: plan.value, email: email.value.trim() || null, client_reference: reference() }) });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.message || "No se pudo preparar el pago.");
+          localStorage.setItem("littleapi:airtm:last-code", data.code || "");
+          show("Redirigiendo a Airtm…", "success");
+          if (!data.checkout_url) throw new Error("Airtm no devolvió una URL de checkout.");
+          window.location.assign(data.checkout_url);
+        } catch (error) { show(error.message || "No se pudo preparar el pago.", "error"); submit.disabled = false; }
+      });
+      const params = new URLSearchParams(location.search), result = params.get("airtm"), returnedCode = params.get("code") || localStorage.getItem("littleapi:airtm:last-code");
+      if (result) {
+        document.querySelector("#airtm-payment").scrollIntoView({ behavior: "smooth", block: "center" });
+        if (result === "canceled") show("Pago cancelado. No se hizo ningún cobro.", "error");
+        else if (returnedCode) {
+          show("Verificando el pago en Airtm…");
+          let attempts = 0;
+          const check = async () => {
+            attempts += 1;
+            try { const response = await fetch(endpoint + "/status?code=" + encodeURIComponent(returnedCode)); const data = await response.json().catch(() => ({})); if (data.confirmed) return show("Pago confirmado. Te contactaremos para activar la renovación.", "success"); if (attempts < 6) return setTimeout(check, 4000); show("Airtm todavía muestra el pago como pendiente. Conserva este código: " + returnedCode); } catch (_) { if (attempts < 6) return setTimeout(check, 4000); show("No pudimos verificar todavía. Conserva este código: " + returnedCode, "error"); }
+          };
+          check();
+        } else show("Volviste de Airtm. No encontramos el código de pago para verificarlo.", "error");
+      }
+    })();
   </script>
 </body>
 </html>
