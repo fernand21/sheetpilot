@@ -1,6 +1,7 @@
 -- Registro de APIs públicas de LittleAPI.
 -- Ejecutar en Supabase SQL Editor después de supabase-schema.sql.
--- La clave completa nunca se guarda: solo se almacena su hash SHA-256.
+-- La clave se verifica con SHA-256 y, para poder mostrarla al propietario,
+-- se guarda además cifrada únicamente por la Edge Function.
 create table if not exists public.api_endpoints (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -13,6 +14,7 @@ create table if not exists public.api_endpoints (
   drive_file_id text,
   api_key_hash text not null unique,
   api_key_prefix text not null,
+  api_key_ciphertext text,
   public_read boolean not null default true,
   permissions jsonb not null default '{"read": true, "search": true, "create": true, "update": true, "delete": true}'::jsonb,
   enabled boolean not null default true,
@@ -35,6 +37,7 @@ create index if not exists api_endpoints_user_id_idx on public.api_endpoints(use
 create index if not exists api_endpoints_project_id_idx on public.api_endpoints(project_id);
 create index if not exists api_endpoints_api_id_idx on public.api_endpoints(api_id);
 alter table public.api_endpoints add column if not exists cache_ttl integer not null default 60;
+alter table public.api_endpoints add column if not exists api_key_ciphertext text;
 alter table public.api_endpoints drop constraint if exists api_endpoints_cache_ttl_check;
 alter table public.api_endpoints add constraint api_endpoints_cache_ttl_check check (cache_ttl between 0 and 3600);
 

@@ -12,7 +12,7 @@ const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
 const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
-let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [];
+let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], dialogApi = null, dialogProject = null;
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -189,15 +189,32 @@ async function publishSheetForApi(spreadsheetId) {
   const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
   return gf(url, { method: "POST", body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }) });
 }
-function showApiDialog(project, api, secret) {
+async function ownerApiRequest(path, options) {
+  const sessionResult = await sb.auth.getSession(), accessToken = sessionResult.data.session?.access_token;
+  if (!accessToken) throw new Error("Tu sesión ha caducado. Inicia sesión otra vez.");
+  const opts = Object.assign({}, options || {}), headers = new Headers(opts.headers || {});
+  headers.set("apikey", cfg.publishableKey); headers.set("Authorization", "Bearer " + accessToken); opts.headers = headers;
+  const response = await fetch(apiBase() + path, opts), type = response.headers.get("content-type") || "", data = type.includes("json") ? await response.json() : await response.text();
+  if (!response.ok) throw new Error(data?.message || data?.error || "No se pudo completar la operación segura.");
+  return data;
+}
+async function loadApiKey(api) { const data = await ownerApiRequest("/auth/api-key?api_id=" + encodeURIComponent(api.api_id)); return data.api_key; }
+async function saveApiKey(api, secret) { return ownerApiRequest("/auth/api-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_id: api.api_id, api_key: secret }) }); }
+async function showApiDialog(project, api, secret) {
   if (!apiDialog || !api) return;
+  dialogApi = api; dialogProject = project;
   $("#api-dialog-title").textContent = api.name || project.name;
   $("#api-endpoint").value = apiUrl(api);
-  $("#api-key-value").textContent = secret || "";
-  $("#api-key-value").classList.toggle("hidden", !secret);
-  $("#api-secret-note").textContent = secret ? "Guárdala ahora: no se vuelve a mostrar. La misma clave permite crear, actualizar y eliminar desde cualquier aplicación." : "Las lecturas públicas no necesitan clave. Para escribir usa X-API-Key. Si la perdiste, elimina esta API y crea otra.";
+  $("#api-key-value").textContent = secret || "Cargando clave…"; $("#api-key-value").classList.remove("hidden"); $("#copy-api-key").disabled = !secret; $("#regenerate-api-key").classList.add("hidden");
+  $("#api-secret-note").textContent = secret ? "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación." : "Cargando tu clave cifrada…";
   $("#api-example").textContent = "fetch(" + JSON.stringify(apiUrl(api)) + ")\n  .then(response => response.json())\n  .then(rows => console.log(rows));";
-  apiDialog.showModal();
+  if (!apiDialog.open) apiDialog.showModal();
+  if (secret) return;
+  try {
+    const recovered = await loadApiKey(api); $("#api-key-value").textContent = recovered; $("#copy-api-key").disabled = false; $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación.";
+  } catch (error) {
+    $("#api-key-value").textContent = ""; $("#api-key-value").classList.add("hidden"); $("#copy-api-key").disabled = true; $("#regenerate-api-key").classList.remove("hidden"); $("#api-secret-note").textContent = "No hay una clave recuperable para esta API. Genera una nueva; la clave anterior dejará de funcionar.";
+  }
 }
 async function createApi(project) {
   const existing = apiForProject(project);
@@ -210,6 +227,7 @@ async function createApi(project) {
     if (result.error) throw result.error;
     const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
+    try { await saveApiKey(result.data, secret); } catch (error) { await sb.from("api_public_catalog").delete().eq("api_id", apiId).eq("user_id", user.id); await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw new Error("No se pudo guardar la clave cifrada: " + (error.message || error)); }
     let published = false;
     try { await publishSheetForApi(project.spreadsheet_id); published = true; } catch (_) { /* El usuario puede compartirla manualmente desde Drive. */ }
     apisCache.push(result.data); renderProjects(projectsCache); showApiDialog(project, result.data, secret); notice(published ? "API creada y hoja publicada para lectura. Usa X-API-Key para escribir desde cualquier aplicación." : "API creada. Comparte la hoja como «cualquiera con el enlace puede ver» y usa X-API-Key para escribir.", "success");
@@ -226,6 +244,15 @@ async function copyApiUrl() {
   try { await navigator.clipboard.writeText(input.value); message("#api-message", "URL copiada.", "success"); }
   catch (_) { document.execCommand("copy"); message("#api-message", "URL copiada.", "success"); }
 }
+async function copyApiKey() {
+  const value = $("#api-key-value").textContent.trim(); if (!value) return message("#api-message", "La clave todavía no está disponible.", "error");
+  try { await navigator.clipboard.writeText(value); message("#api-message", "Clave copiada.", "success"); } catch (_) { const node = $("#api-key-value"), selection = window.getSelection(), range = document.createRange(); range.selectNodeContents(node); selection.removeAllRanges(); selection.addRange(range); document.execCommand("copy"); selection.removeAllRanges(); message("#api-message", "Clave copiada.", "success"); }
+}
+async function regenerateApiKey() {
+  if (!dialogApi || !confirm("La clave anterior dejará de funcionar. ¿Generar una clave nueva?")) return;
+  const secret = "sp_live_" + randomToken(24);
+  try { await saveApiKey(dialogApi, secret); await showApiDialog(dialogProject, dialogApi, secret); notice("Clave nueva generada y guardada cifrada.", "success"); } catch (error) { notice(friendlyError(error), "error"); }
+}
 function renderProjects(data) {
   projectsCache = data || [];
   $("#project-empty").classList.toggle("hidden", projectsCache.length > 0);
@@ -234,7 +261,8 @@ function renderProjects(data) {
 }
 async function projects() {
   if (!sb || !user) return;
-  const [projectResult, apiResult] = await Promise.all([sb.from("projects").select("*").order("created_at", { ascending: false }), sb.from("api_endpoints").select("*").order("created_at", { ascending: false })]);
+  const apiFields = "id,user_id,project_id,api_id,name,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_prefix,public_read,permissions,enabled,cache_ttl,created_at,updated_at";
+  const [projectResult, apiResult] = await Promise.all([sb.from("projects").select("*").order("created_at", { ascending: false }), sb.from("api_endpoints").select(apiFields).order("created_at", { ascending: false })]);
   if (projectResult.error) { notice(friendlyError(projectResult.error), "error"); return; }
   if (apiResult.error && !["42P01", "PGRST205"].includes(apiResult.error.code)) { notice(friendlyError(apiResult.error), "error"); return; }
   apisCache = apiResult.data || [];
@@ -413,7 +441,7 @@ async function driveQuota() {
 }
 function bindAuthButtons() { $$("[data-open-auth]").forEach(button => { button.onclick = startLogin; }); }
 function bindEvents() {
-  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; $("#authorize-google").onclick = listSheetsForProject;
+  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; $("#copy-api-key").onclick = copyApiKey; $("#regenerate-api-key").onclick = regenerateApiKey; $("#authorize-google").onclick = listSheetsForProject;
   $("#new-project").onclick = () => { $("#sheets-list").innerHTML = ""; $("#authorize-google").classList.remove("hidden"); $("#authorize-google").disabled = false; message("#sheet-message", ""); sheetDialog.showModal(); };
   $("#connect-sheet").onclick = () => $("#new-project").click(); $("#open-drive").onclick = () => { if (!driveDialog.open) driveDialog.showModal(); loadDrive(); }; $("#sign-out").onclick = signOut; $("#load-data").onclick = loadValues;
   $("#search-data").onclick = () => { const term = $("#search-value").value.toLowerCase(), index = $("#search-column").value; if (!term) return renderTable(loadedValues, "#data-table"); const result = [loadedValues[0] || []].concat(loadedValues.slice(1).filter(row => index === "" ? row.some(value => String(value || "").toLowerCase().includes(term)) : String(row[index] || "").toLowerCase().includes(term))); renderTable(result, "#data-table"); message("#workspace-message", Math.max(0, result.length - 1) + " coincidencias.", "success"); };

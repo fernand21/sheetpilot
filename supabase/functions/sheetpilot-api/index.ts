@@ -218,7 +218,32 @@ function fromBase64(value: string) { return Uint8Array.from(atob(value), (char) 
 async function encryptionKey() { const secret = Deno.env.get("GOOGLE_TOKEN_ENCRYPTION_KEY") || ""; if (!secret) throw new Error("Falta GOOGLE_TOKEN_ENCRYPTION_KEY en los secretos de la función."); const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret)); return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]); }
 async function encryptToken(value: string) { const iv = crypto.getRandomValues(new Uint8Array(12)), encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await encryptionKey(), new TextEncoder().encode(value)); const joined = new Uint8Array(iv.length + encrypted.byteLength); joined.set(iv); joined.set(new Uint8Array(encrypted), iv.length); return base64(joined); }
 async function decryptToken(value: string) { const joined = fromBase64(value), iv = joined.slice(0, 12), encrypted = joined.slice(12), plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await encryptionKey(), encrypted); return new TextDecoder().decode(plain); }
+async function apiKeyEncryptionKey() {
+  const secret = Deno.env.get("LITTLEAPI_KEY_ENCRYPTION_KEY") || Deno.env.get("GOOGLE_TOKEN_ENCRYPTION_KEY") || serviceKey;
+  if (!secret) throw new Error("Falta una clave de cifrado del servidor para guardar la clave de API.");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+async function encryptApiKey(value: string) { const iv = crypto.getRandomValues(new Uint8Array(12)), encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await apiKeyEncryptionKey(), new TextEncoder().encode(value)); const joined = new Uint8Array(iv.length + encrypted.byteLength); joined.set(iv); joined.set(new Uint8Array(encrypted), iv.length); return base64(joined); }
+async function decryptApiKey(value: string) { const joined = fromBase64(value), iv = joined.slice(0, 12), encrypted = joined.slice(12), plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await apiKeyEncryptionKey(), encrypted); return new TextDecoder().decode(plain); }
 async function currentUser(request: Request) { const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, ""); const authKey = publicKey || serviceKey; if (!token || !supabaseUrl || !authKey) return null; const result = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: authKey, Authorization: `Bearer ${token}` } }); return result.ok ? await result.json() : null; }
+async function apiKeyConnection(request: Request) {
+  const user = await currentUser(request); if (!user?.id) return failure(401, "login_required", "Inicia sesión para consultar la clave de API.");
+  const url = new URL(request.url), body = request.method === "POST" ? await request.json().catch(() => ({})) : {}, apiId = String(body.api_id || url.searchParams.get("api_id") || "").trim();
+  if (!apiId) return failure(400, "api_id_required", "Indica el API_ID.");
+  const filter = `api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`;
+  const rows = await dbFetch(`api_endpoints?select=id,api_id,name,api_key_ciphertext&${filter}`);
+  if (!rows?.[0]) return failure(404, "api_not_found", "No existe una API propia con ese identificador.");
+  if (request.method === "GET") {
+    if (!rows[0].api_key_ciphertext) return failure(404, "api_key_not_stored", "Esta API se creó antes de activar la recuperación segura de claves.");
+    return response({ api_id: apiId, name: rows[0].name, api_key: await decryptApiKey(rows[0].api_key_ciphertext) });
+  }
+  if (request.method !== "POST") return failure(405, "method_not_allowed", "Usa GET o POST para la clave de API.");
+  const apiKey = String(body.api_key || "").trim(); if (!/^sp_live_[A-Za-z0-9_-]{20,}$/.test(apiKey)) return failure(400, "invalid_api_key", "La clave de API no tiene un formato válido.");
+  const ciphertext = await encryptApiKey(apiKey);
+  await dbFetch(`api_endpoints?id=eq.${encodeURIComponent(rows[0].id)}`, { method: "PATCH", body: JSON.stringify({ api_key_hash: await sha256(apiKey), api_key_prefix: apiKey.slice(0, 16), api_key_ciphertext: ciphertext, updated_at: new Date().toISOString() }) });
+  return response({ success: true, api_id: apiId, stored: true });
+}
 async function googleConnection(request: Request) {
   const user = await currentUser(request); if (!user?.id) return failure(401, "login_required", "Inicia sesión para conectar Google.");
   if (request.method === "GET") { const rows = await dbFetch(`google_connections?select=user_id,scopes,updated_at&user_id=eq.${encodeURIComponent(user.id)}&limit=1`); return response({ connected: Boolean(rows?.[0]), scopes: rows?.[0]?.scopes || [], updated_at: rows?.[0]?.updated_at || null }); }
@@ -229,6 +254,7 @@ async function statsOperation(api: ApiRecord, request: Request) { const denied =
 async function handler(request: Request) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders }); const url = new URL(request.url), path = partsFor(url);
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
+  if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
   if (!path[0]) return response({ name: "LittleAPI", version: "1", usage: "/sheetpilot-api/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Las APIs publicadas se consumen sin login; usa X-API-Key para escrituras." });
   const api = await getApi(path[0]); if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada."); if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request); if (request.method === "GET") return readOperation(api, request, path.slice(1)); return mutationOperation(api, request, path.slice(1));
 }
