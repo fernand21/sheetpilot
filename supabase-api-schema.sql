@@ -117,6 +117,11 @@ create table if not exists public.api_usage_monthly (
 alter table public.api_usage_monthly enable row level security;
 revoke all on table public.api_usage_monthly from anon, authenticated, public;
 grant select, insert, update, delete on table public.api_usage_monthly to service_role;
+drop policy if exists "No direct client access to usage" on public.api_usage_monthly;
+create policy "No direct client access to usage"
+on public.api_usage_monthly for all to anon, authenticated
+using (false)
+with check (false);
 
 create or replace function public.consume_api_quota(p_api_id text, p_limit integer)
 returns table(allowed boolean, used bigint, limit_value integer, reset_at timestamptz)
