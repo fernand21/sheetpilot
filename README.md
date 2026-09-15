@@ -46,7 +46,7 @@ Las funciones están inspiradas en los métodos públicos de Gsheetsplus de F:\b
 ## Configuración de Supabase
 
 1. Abre el SQL Editor del proyecto dnwaapropjmoyqxquzvs.
-2. Ejecuta el contenido de supabase-schema.sql.
+2. Ejecuta el contenido de supabase-schema.sql y después supabase-api-schema.sql.
 3. En Authentication → URL Configuration agrega:
    - https://fernand21.github.io/sheetpilot/
 4. En Authentication → Providers → Google confirma que el proveedor esté activo.
@@ -84,11 +84,19 @@ Cada llamada usa el token OAuth temporal de la sesión. La tabla completa, ejemp
 
 ## API pública tipo SheetDB
 
-GitHub Pages solo sirve archivos estáticos. Por seguridad, esta versión todavía no publica una URL anónima que pueda leer una hoja privada sin el token del propietario. La siguiente etapa será una Edge Function de Supabase con API keys por proyecto, sincronización segura y un endpoint documentado por ejemplo:
+La Edge Function ya está desplegada en:
 
-https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api
+`https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api`
 
-Esa URL se publicará únicamente cuando el almacenamiento de credenciales y las políticas de acceso estén listos.
+Al pulsar **Crear API** en un proyecto se genera una URL como:
+
+`https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api/{API_ID}`
+
+La primera versión pública ofrece `GET /{API_ID}`, `GET /search`, `GET /search_or`, `GET /keys`, `GET /name`, `GET /count` y `GET /cells/A1,B2`, con `limit`, `offset`, `sort_by`, `sort_order`, `cast_numbers`, `single_object` y `sheet`. La primera fila de la hoja se convierte en las propiedades de cada objeto JSON, igual que en SheetDB.
+
+Para que una lectura funcione, la hoja debe estar publicada o compartida como “cualquiera con el enlace puede ver”. La pantalla de creación muestra la URL y genera una clave de administración; la clave se almacena únicamente como hash.
+
+`POST`, `PATCH` y `DELETE` están reservados en la ruta y el panel del propietario ya permite CRUD usando OAuth de Google. Para habilitar escritura anónima de forma segura falta completar OAuth de servidor con refresh tokens cifrados. El mismo registro de APIs contempla `resource_type=drive`; las APIs públicas de Drive se añadirán cuando ese flujo de credenciales y permisos por carpeta esté listo.
 
 ## Publicar en GitHub Pages
 
@@ -115,6 +123,8 @@ Cuando compres el dominio:
 - styles.css: interfaz.
 - config.js: configuración pública del proyecto.
 - supabase-schema.sql: tabla projects, grants y políticas RLS.
+- supabase-api-schema.sql: registro privado de APIs, catálogo público mínimo, grants y políticas RLS.
+- supabase/functions/sheetpilot-api/index.ts: Edge Function REST compatible con el modelo SheetDB.
 - privacy.html: política de privacidad.
 - terms.html: términos de uso.
 - docs/index.html: documentación pública.

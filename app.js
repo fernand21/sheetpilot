@@ -5,11 +5,13 @@ const authDialog = $("#auth-dialog");
 const sheetDialog = $("#sheet-dialog");
 const workspaceDialog = $("#workspace-dialog");
 const driveDialog = $("#drive-dialog");
+const apiDialog = $("#api-dialog");
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
-let sb = null, user = null, token = null, tokenExpiresAt = 0, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [];
+const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
+let sb = null, user = null, token = null, tokenExpiresAt = 0, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [];
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -163,17 +165,64 @@ async function openProject(project, tab) {
   activeProject = project; $("#workspace-title").textContent = project.name; if (!workspaceDialog.open) workspaceDialog.showModal();
   try { await loadProjectSheets(); switchTab(tab || "data"); await loadValues(); } catch (error) { message("#workspace-message", friendlyError(error), "error"); }
 }
+function randomToken(bytes) {
+  const data = new Uint8Array(bytes); crypto.getRandomValues(data);
+  return btoa(String.fromCharCode(...data)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+async function hashSecret(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+function apiForProject(project) { return apisCache.find(api => api.project_id === project.id && api.enabled !== false); }
+function apiUrl(api) { return apiBase() + "/" + encodeURIComponent(api.api_id); }
+function showApiDialog(project, api, secret) {
+  if (!apiDialog || !api) return;
+  $("#api-dialog-title").textContent = api.name || project.name;
+  $("#api-endpoint").value = apiUrl(api);
+  $("#api-key-value").textContent = secret || "";
+  $("#api-key-value").classList.toggle("hidden", !secret);
+  $("#api-secret-note").textContent = secret ? "Guárdala ahora: no se vuelve a mostrar. Se usará para operaciones protegidas cuando habilitemos escritura del servidor." : "Las lecturas públicas no necesitan clave. Si la perdiste, elimina esta API y crea otra.";
+  $("#api-example").textContent = "fetch(" + JSON.stringify(apiUrl(api)) + ")\n  .then(response => response.json())\n  .then(rows => console.log(rows));";
+  apiDialog.showModal();
+}
+async function createApi(project) {
+  const existing = apiForProject(project);
+  if (existing) return showApiDialog(project, existing);
+  const name = prompt("Nombre de la API:", project.name);
+  if (name === null) return;
+  const apiId = randomToken(15), secret = "sp_live_" + randomToken(24), keyHash = await hashSecret(secret);
+  try {
+    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, permissions: { read: true, search: true, create: false, update: false, delete: false } }).select().single();
+    if (result.error) throw result.error;
+    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, permissions: { read: true, search: true }, enabled: true });
+    if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
+    apisCache.push(result.data); renderProjects(projectsCache); showApiDialog(project, result.data, secret); notice("API creada. Comparte la URL con tu aplicación.", "success");
+  } catch (error) { notice(friendlyError(error), "error"); }
+}
+async function removeApi(project) {
+  const api = apiForProject(project); if (!api || !confirm("¿Eliminar la API de " + project.name + "? La hoja no se eliminará.")) return;
+  const result = await sb.from("api_endpoints").delete().eq("id", api.id).eq("user_id", user.id);
+  if (result.error) return notice(friendlyError(result.error), "error");
+  apisCache = apisCache.filter(item => item.id !== api.id); renderProjects(projectsCache); notice("API eliminada. La hoja original sigue en tu Drive.", "success");
+}
+async function copyApiUrl() {
+  const input = $("#api-endpoint"); input.select();
+  try { await navigator.clipboard.writeText(input.value); message("#api-message", "URL copiada.", "success"); }
+  catch (_) { document.execCommand("copy"); message("#api-message", "URL copiada.", "success"); }
+}
 function renderProjects(data) {
   projectsCache = data || [];
   $("#project-empty").classList.toggle("hidden", projectsCache.length > 0);
   const grid = $("#projects-grid"); grid.classList.toggle("hidden", projectsCache.length === 0);
-  grid.innerHTML = projectsCache.map(project => '<article class="project-card"><p>GOOGLE SHEETS</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || "Sin pestaña seleccionada") + '</p><div class="project-actions"><button class="action-button" data-open-project="' + project.id + '">Abrir espacio</button><button class="action-button" data-format-project="' + project.id + '">Formatear</button><button class="text-button" data-remove-project="' + project.id + '">Quitar</button></div></article>').join("");
+  grid.innerHTML = projectsCache.map(project => { const api = apiForProject(project); return '<article class="project-card"><p>GOOGLE SHEETS</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || "Sin pestaña seleccionada") + '</p><div class="project-api">' + (api ? '<span class="api-status">● API activa</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">○ Sin API publicada</span>') + '</div><div class="project-actions"><button class="action-button" data-open-project="' + project.id + '">Abrir espacio</button><button class="action-button" data-api-project="' + project.id + '">' + (api ? "Ver endpoint" : "Crear API") + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">Eliminar API</button>' : '') + '<button class="action-button" data-format-project="' + project.id + '">Formatear</button><button class="text-button" data-remove-project="' + project.id + '">Quitar</button></div></article>'; }).join("");
 }
 async function projects() {
   if (!sb || !user) return;
-  const result = await sb.from("projects").select("*").order("created_at", { ascending: false });
-  if (result.error) { notice(friendlyError(result.error), "error"); return; }
-  renderProjects(result.data || []);
+  const [projectResult, apiResult] = await Promise.all([sb.from("projects").select("*").order("created_at", { ascending: false }), sb.from("api_endpoints").select("*").order("created_at", { ascending: false })]);
+  if (projectResult.error) { notice(friendlyError(projectResult.error), "error"); return; }
+  if (apiResult.error && !["42P01", "PGRST205"].includes(apiResult.error.code)) { notice(friendlyError(apiResult.error), "error"); return; }
+  apisCache = apiResult.data || [];
+  renderProjects(projectResult.data || []);
 }
 async function startLogin() {
   if (!ready() || !sb) { notice("La conexión todavía no está lista.", "error"); return; }
@@ -338,7 +387,7 @@ async function driveQuota() {
 }
 function bindAuthButtons() { $$("[data-open-auth]").forEach(button => { button.onclick = startLogin; }); }
 function bindEvents() {
-  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#authorize-google").onclick = listSheetsForProject;
+  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; $("#authorize-google").onclick = listSheetsForProject;
   $("#new-project").onclick = () => { $("#sheets-list").innerHTML = ""; $("#authorize-google").classList.remove("hidden"); $("#authorize-google").disabled = false; message("#sheet-message", ""); sheetDialog.showModal(); };
   $("#connect-sheet").onclick = () => $("#new-project").click(); $("#open-drive").onclick = () => { if (!driveDialog.open) driveDialog.showModal(); loadDrive(); }; $("#sign-out").onclick = signOut; $("#load-data").onclick = loadValues;
   $("#search-data").onclick = () => { const term = $("#search-value").value.toLowerCase(), index = $("#search-column").value; if (!term) return renderTable(loadedValues, "#data-table"); const result = [loadedValues[0] || []].concat(loadedValues.slice(1).filter(row => index === "" ? row.some(value => String(value || "").toLowerCase().includes(term)) : String(row[index] || "").toLowerCase().includes(term))); renderTable(result, "#data-table"); message("#workspace-message", Math.max(0, result.length - 1) + " coincidencias.", "success"); };
@@ -346,7 +395,7 @@ function bindEvents() {
   $("#sheet-select").onchange = async event => { activeSheet = event.target.value; $("#rename-sheet-name").value = activeSheet; try { await saveActiveSheet(); await loadProjectSheets(); await loadValues(); } catch (error) { message("#workspace-message", friendlyError(error), "error"); } };
   $$(".tab-button").forEach(button => button.onclick = () => switchTab(button.dataset.tab)); $("#save-range").onclick = saveRange; $("#insert-row").onclick = insertRow; $("#save-cell").onclick = saveCell; $("#delete-rows").onclick = deleteRows; $("#clear-values").onclick = clearValues; $("#add-sheet").onclick = addSheet; $("#rename-sheet").onclick = renameSheet; $("#delete-sheet").onclick = deleteSheet; $("#clear-filters").onclick = clearFilters; $("#copy-sheet").onclick = copySheet; $("#check-capacity").onclick = checkCapacity; $("#apply-format").onclick = applyFormat; $("#format-header").onclick = formatHeader; $("#resize-columns").onclick = resizeColumns; $("#run-query").onclick = runQuery; $("#run-advanced").onclick = runAdvanced; $("#calculate-stats").onclick = calculateStats; $("#download-csv").onclick = downloadCsv; $("#download-excel").onclick = downloadExcel; $("#load-drive").onclick = loadDrive; $("#create-folder").onclick = createFolder; $("#drive-quota").onclick = driveQuota; $("#upload-file").onchange = event => uploadDrive(event.target.files[0]);
   $("#drive-list").onclick = event => { const button = event.target.closest("button"); if (!button) return; if (button.dataset.driveOpen) { driveParent = button.dataset.driveOpen; driveParentName = button.dataset.driveName; loadDrive(); } if (button.dataset.driveDownload) downloadDrive(button.dataset.driveDownload, button.dataset.driveName); if (button.dataset.driveRename) renameDrive(button.dataset.driveRename, button.dataset.driveName); if (button.dataset.driveDelete) deleteDrive(button.dataset.driveDelete); };
-  $("#projects-grid").onclick = event => { const button = event.target.closest("button"); if (!button) return; const project = projectsCache.find(item => item.id === (button.dataset.openProject || button.dataset.formatProject || button.dataset.removeProject)); if (!project) return; if (button.dataset.openProject) openProject(project, "data"); if (button.dataset.formatProject) openProject(project, "format"); if (button.dataset.removeProject) removeProject(project); };
+  $("#projects-grid").onclick = event => { const button = event.target.closest("button"); if (!button) return; const project = projectsCache.find(item => item.id === (button.dataset.openProject || button.dataset.formatProject || button.dataset.removeProject || button.dataset.apiProject || button.dataset.removeApi)); if (!project) return; if (button.dataset.openProject) openProject(project, "data"); if (button.dataset.formatProject) openProject(project, "format"); if (button.dataset.removeProject) removeProject(project); if (button.dataset.apiProject) { const api = apiForProject(project); api ? showApiDialog(project, api) : createApi(project); } if (button.dataset.removeApi) removeApi(project); };
 }
 async function removeProject(project) { if (!confirm("¿Quitar " + project.name + " de SheetPilot? La hoja de Google no se eliminará.")) return; const result = await sb.from("projects").delete().eq("id", project.id).eq("user_id", user.id); if (result.error) return notice(friendlyError(result.error), "error"); notice("Proyecto quitado. La hoja original sigue en tu Drive.", "success"); projects(); }
 bindEvents();

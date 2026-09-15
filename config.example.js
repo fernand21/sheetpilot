@@ -3,5 +3,6 @@
 window.SUPABASE_CONFIG = {
   url: "https://TU-PROYECTO.supabase.co",
   publishableKey: "TU_CLAVE_PUBLICA_O_ANON",
-  googleClientId: "TU_CLIENTE_DE_GOOGLE.apps.googleusercontent.com"
+  googleClientId: "TU_CLIENTE_DE_GOOGLE.apps.googleusercontent.com",
+  apiBase: "https://TU-PROYECTO.supabase.co/functions/v1/sheetpilot-api"
 };

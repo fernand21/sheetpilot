@@ -57,7 +57,7 @@
 
       <section class="api-section" id="api">
         <div><p class="eyebrow">SIMPLE DE INTEGRAR</p><h2>Una URL para cada tabla.</h2><p>La estructura de tus columnas se convierte en datos JSON fáciles de consumir.</p></div>
-        <div class="request"><code>GET</code><span>https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{hoja}!A:ZZ</span></div>
+        <div class="request"><code>GET</code><span>https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api/{API_ID}</span></div>
       </section>
 
       <section class="dashboard hidden" id="dashboard" aria-live="polite">
@@ -113,10 +113,19 @@
       <button class="dialog-close" id="close-drive" aria-label="Cerrar">×</button><div class="workspace-head"><div><p class="eyebrow">GOOGLE DRIVE</p><h2 id="drive-title">Mis archivos</h2></div><button class="action-button" id="drive-quota">Ver cuota</button></div>
       <div class="tool-row"><label>Buscar<input id="drive-search" placeholder="Nombre del archivo o carpeta" /></label><button class="action-button" id="load-drive">Actualizar</button><button class="button" id="create-folder">+ Nueva carpeta</button><label class="upload-button">Subir archivo<input id="upload-file" type="file" /></label></div><p id="drive-breadcrumb" class="muted"></p><div id="drive-list" class="drive-list"></div><p class="form-message" id="drive-message"></p>
     </dialog>
+    <dialog id="api-dialog" class="api-dialog" aria-labelledby="api-dialog-title">
+      <button class="dialog-close" id="close-api" aria-label="Cerrar">×</button>
+      <p class="eyebrow">API PÚBLICA</p><h2 id="api-dialog-title">Tu API</h2>
+      <p class="form-intro">Esta URL convierte la pestaña de tu hoja en una respuesta JSON reutilizable.</p>
+      <label>Endpoint REST<input id="api-endpoint" readonly /></label><button class="button full" id="copy-api-url">Copiar URL</button>
+      <p class="api-key-label">Clave de administración</p><code id="api-key-value" class="api-secret"></code><p id="api-secret-note" class="form-message"></p>
+      <h3>Ejemplo JavaScript</h3><pre id="api-example" class="api-example"></pre><p class="form-message" id="api-message"></p>
+      <div class="callout warning"><strong>Lectura pública:</strong> la hoja debe estar publicada o compartida como “cualquiera con el enlace puede ver”. Las escrituras del endpoint se habilitarán cuando terminemos el OAuth de servidor; desde el panel del propietario ya funcionan.</div>
+    </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="config.js"></script>
-    <script src="app.js?v=20260914-3"></script>
+    <script src="app.js?v=20260914-4"></script>
   </body>
 </html>
