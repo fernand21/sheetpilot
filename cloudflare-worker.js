@@ -14,7 +14,10 @@ export default {
   async fetch(request) {
     const incoming = new URL(request.url);
     if (!incoming.pathname.startsWith(PREFIX)) {
-      return fetch(request);
+      return new Response("LittleAPI API proxy: usa /api/v1/{API_ID}", {
+        status: 404,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
     }
 
     const suffix = incoming.pathname.slice(PREFIX.length) || "/";
