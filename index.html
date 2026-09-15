@@ -129,7 +129,7 @@
       <label>Endpoint REST<input id="api-endpoint" readonly /></label><button class="button full" id="copy-api-url">Copiar URL</button>
       <p class="api-key-label">Clave de administración</p><code id="api-key-value" class="api-secret"></code><p id="api-secret-note" class="form-message"></p>
       <h3>Ejemplo JavaScript</h3><pre id="api-example" class="api-example"></pre><p class="form-message" id="api-message"></p>
-      <div class="callout warning"><strong>Lectura pública:</strong> la hoja debe estar publicada o compartida como “cualquiera con el enlace puede ver”. Las escrituras del endpoint se habilitarán cuando terminemos el OAuth de servidor; desde el panel del propietario ya funcionan.</div>
+      <div class="callout warning"><strong>Lectura pública:</strong> al crear una API intentamos compartir la hoja automáticamente como “cualquiera con el enlace puede ver”. Las escrituras del endpoint requieren X-API-Key y autorización segura del propietario.</div>
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

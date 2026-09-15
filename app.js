@@ -185,6 +185,10 @@ async function hashSecret(value) {
 }
 function apiForProject(project) { return apisCache.find(api => api.project_id === project.id && api.enabled !== false); }
 function apiUrl(api) { return apiBase() + "/" + encodeURIComponent(api.api_id); }
+async function publishSheetForApi(spreadsheetId) {
+  const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
+  return gf(url, { method: "POST", body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }) });
+}
 function showApiDialog(project, api, secret) {
   if (!apiDialog || !api) return;
   $("#api-dialog-title").textContent = api.name || project.name;
@@ -206,7 +210,9 @@ async function createApi(project) {
     if (result.error) throw result.error;
     const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
-    apisCache.push(result.data); renderProjects(projectsCache); showApiDialog(project, result.data, secret); notice("API creada. Comparte la hoja como «cualquiera con el enlace puede ver» y usa X-API-Key para escribir desde cualquier aplicación.", "success");
+    let published = false;
+    try { await publishSheetForApi(project.spreadsheet_id); published = true; } catch (_) { /* El usuario puede compartirla manualmente desde Drive. */ }
+    apisCache.push(result.data); renderProjects(projectsCache); showApiDialog(project, result.data, secret); notice(published ? "API creada y hoja publicada para lectura. Usa X-API-Key para escribir desde cualquier aplicación." : "API creada. Comparte la hoja como «cualquiera con el enlace puede ver» y usa X-API-Key para escribir.", "success");
   } catch (error) { notice(friendlyError(error), "error"); }
 }
 async function removeApi(project) {
