@@ -28,6 +28,8 @@ create table if not exists public.api_endpoints (
 alter table public.api_endpoints enable row level security;
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on table public.api_endpoints to authenticated;
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.api_endpoints to service_role;
 
 create index if not exists api_endpoints_user_id_idx on public.api_endpoints(user_id);
 create index if not exists api_endpoints_project_id_idx on public.api_endpoints(project_id);
@@ -64,6 +66,7 @@ alter table public.api_public_catalog drop constraint if exists api_public_catal
 alter table public.api_public_catalog add constraint api_public_catalog_cache_ttl_check check (cache_ttl between 0 and 3600);
 grant select on table public.api_public_catalog to anon, authenticated;
 grant insert, update, delete on table public.api_public_catalog to authenticated;
+grant select, insert, update, delete on table public.api_public_catalog to service_role;
 
 drop policy if exists "Public APIs can be read" on public.api_public_catalog;
 create policy "Public APIs can be read"
@@ -119,6 +122,7 @@ create table if not exists public.google_connections (
 alter table public.google_connections enable row level security;
 revoke all on table public.google_connections from anon, authenticated;
 revoke all on table public.google_connections from public;
+grant select, insert, update, delete on table public.google_connections to service_role;
 drop policy if exists "No client access to Google connections" on public.google_connections;
 create policy "No client access to Google connections"
 on public.google_connections for all to anon, authenticated
