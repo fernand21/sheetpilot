@@ -53,6 +53,12 @@ Las funciones están inspiradas en los métodos públicos de `Gsheetsplus` de `F
 4. En Authentication → Providers → Google confirma que el proveedor esté activo.
 5. En la configuración de Google Cloud usa como callback:
    - https://dnwaapropjmoyqxquzvs.supabase.co/auth/v1/callback
+6. En Google Cloud → APIs y servicios → Credenciales → cliente OAuth web, registra como **Orígenes autorizados de JavaScript** exactamente:
+   - https://littleapi.online
+   - https://www.littleapi.online
+   - https://fernand21.github.io
+
+No agregues /sheetpilot/ ni / al campo de origen. Google compara sólo el origen (protocolo, dominio y puerto), por eso un dominio sin registrar produce Error 400: origin_mismatch.
 
 El archivo `config.js` contiene solamente la URL pública, la clave publishable y el client ID web de Google. Nunca agregues una clave `service_role` ni un client secret al repositorio.
 
@@ -61,9 +67,11 @@ El archivo `config.js` contiene solamente la URL pública, la clave publishable 
 La primera versión solicita:
 
 - https://www.googleapis.com/auth/spreadsheets
-- https://www.googleapis.com/auth/drive
+- https://www.googleapis.com/auth/drive.file
 
-El segundo scope es amplio porque Drive necesita crear carpetas, subir, descargar, renombrar y eliminar archivos. En modo de pruebas funciona únicamente para las cuentas autorizadas. En producción Google puede solicitar verificación de marca y de acceso a datos.
+El alcance de Drive es `drive.file`: sólo permite trabajar con archivos que el usuario crea o selecciona con esta aplicación, no con todo su Drive. Esto reduce el acceso solicitado y mantiene las operaciones dentro del Drive del propio usuario. En modo de pruebas funciona únicamente para las cuentas autorizadas; Google aún puede solicitar verificación para los alcances de Sheets si se publica la aplicación.
+
+Con `drive.file`, Google no permite enumerar indiscriminadamente todo el Drive. Si una hoja existente no aparece en el selector, ábrela o selecciónala mediante un selector de archivos de Google para conceder acceso a LittleAPI. Para administrar absolutamente todos los archivos del Drive habría que volver al alcance `drive`, que requiere una justificación y revisión más amplia.
 
 ## API pública
 

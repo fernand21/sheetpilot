@@ -7,12 +7,12 @@ const workspaceDialog = $("#workspace-dialog");
 const driveDialog = $("#drive-dialog");
 const apiDialog = $("#api-dialog");
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
 const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
-let sb = null, user = null, token = null, tokenExpiresAt = 0, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [];
+let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [];
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -42,9 +42,10 @@ function friendlyError(error) {
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function google() {
+  if (providerToken && Date.now() < tokenExpiresAt - 60000) return providerToken;
   if (token && Date.now() < tokenExpiresAt - 60000) return token;
   for (let i = 0; i < 50 && !window.google?.accounts?.oauth2; i++) await wait(100);
-  if (!window.google?.accounts?.oauth2) throw new Error("Google está cargando; vuelve a intentarlo.");
+  if (!window.google?.accounts?.oauth2) throw new Error("Google está cargando; vuelve a intentarlo. Si aparece origin_mismatch, registra el origen " + location.origin + " en Google Cloud → OAuth → Orígenes autorizados de JavaScript.");
   return new Promise((resolve, reject) => {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: cfg.googleClientId, scope: GOOGLE_SCOPES,
@@ -239,6 +240,7 @@ async function startLogin() {
   if (result.error) notice(friendlyError(result.error), "error");
 }
 async function syncProviderRefreshToken(session) {
+  if (session?.provider_token) { providerToken = session.provider_token; token = session.provider_token; tokenExpiresAt = Date.now() + 3300000; }
   const providerRefreshToken = session?.provider_refresh_token;
   if (!providerRefreshToken || !session?.access_token) return;
   try {
@@ -248,7 +250,7 @@ async function syncProviderRefreshToken(session) {
   } catch (error) { notice("Google inició sesión, pero falta guardar el permiso de servidor: " + friendlyError(error), "error"); }
 }
 async function signOut() {
-  token = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
+  token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
   user = null; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
   $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google">Continuar con Google</button>'; bindAuthButtons();
 }
@@ -264,7 +266,7 @@ async function listSheetsForProject() {
     const data = await gf("https://www.googleapis.com/drive/v3/files?" + params.toString()), list = $("#sheets-list");
     list.innerHTML = (data.files || []).map(file => '<button class="sheet-option" data-sheet-id="' + file.id + '" data-sheet-name="' + esc(file.name) + '">▦ ' + esc(file.name) + "</button>").join("");
     $$(".sheet-option", list).forEach(option => option.onclick = () => createProjectFromSheet(option.dataset.sheetId, option.dataset.sheetName));
-    button.classList.add("hidden"); message("#sheet-message", data.files?.length ? "Elige una hoja para conectarla." : "No encontramos hojas en tu Drive.", "success");
+    button.classList.add("hidden"); message("#sheet-message", data.files?.length ? "Elige una hoja creada o autorizada para esta aplicación." : "No encontramos hojas autorizadas en tu Drive.", "success");
   } catch (error) { message("#sheet-message", friendlyError(error), "error"); button.disabled = false; }
 }
 async function createProjectFromSheet(spreadsheetId, name) {
@@ -419,6 +421,6 @@ async function removeProject(project) { if (!confirm("¿Quitar " + project.name 
 bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
-  sb.auth.getSession().then(result => { if (result.data.session?.user) { dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { dashboard(session.user); void syncProviderRefreshToken(session); } });
+  sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
+  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; providerToken = null; token = null; tokenExpiresAt = 0; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
 }
