@@ -1,35 +1,124 @@
 # SheetPilot
 
-Primera versión de una aplicación web para convertir hojas de Google Sheets en APIs. Está hecha para publicarse gratis en GitHub Pages y usa Supabase Auth para el registro e inicio de sesión de usuarios.
+SheetPilot convierte libros de Google Sheets en datos y operaciones reutilizables desde una aplicación web estática. La primera versión funciona en GitHub Pages, autentica con Google y usa Supabase para guardar los proyectos de cada usuario.
 
-## Qué incluye
+## URLs reales
 
-- Página pública orientada al producto.
-- Registro e inicio de sesión con correo y contraseña.
-- Sesión persistente y panel privado del usuario.
-- Esquema SQL con RLS: cada usuario solo puede acceder a sus propios proyectos.
-- Base visual para el siguiente paso: conectar Google Sheets y crear una API.
+- Aplicación: https://fernand21.github.io/sheetpilot/
+- Documentación: https://fernand21.github.io/sheetpilot/docs/
+- Repositorio: https://github.com/fernand21/sheetpilot
+- Proyecto Supabase: https://dnwaapropjmoyqxquzvs.supabase.co
+- Callback OAuth de Supabase: https://dnwaapropjmoyqxquzvs.supabase.co/auth/v1/callback
 
-## Conectar Supabase
+## Estado
 
-1. Crea un proyecto en [Supabase](https://supabase.com/dashboard).
-2. En **Authentication > URL Configuration**, agrega la URL de GitHub Pages cuando la tengas. Para probar localmente, agrega `http://localhost:5500`.
-3. Copia `config.example.js` como `config.js`.
-4. En **Project Settings > API**, copia el Project URL y la clave **Publishable** (o `anon` heredada) a `config.js`.
-5. En **SQL Editor**, ejecuta el contenido de `supabase-schema.sql`.
-6. En **Authentication > Providers > Email**, deja habilitado Email. Puedes dejar activa la confirmación de correo.
+La aplicación está en modo de pruebas de Google. Los usuarios deben estar incluidos en Google Cloud → Google Auth Platform → Audience → Test users. La verificación pública de marca se completará cuando el proyecto tenga un dominio propio verificado por DNS.
 
-La clave publishable/anon es pública por diseño. Nunca agregues una clave `service_role` o secreta al repositorio.
+## Qué incluye la versión web
+
+- Inicio de sesión únicamente con Google.
+- Selección de libros de Sheets del Drive del usuario.
+- Panel privado con proyectos y RLS por usuario.
+- Lectura de rangos y búsqueda por columna.
+- Actualización de celdas y rangos con valores USER_ENTERED.
+- Inserción y eliminación de filas.
+- Vaciar rangos.
+- Crear, renombrar y eliminar pestañas.
+- Copiar pestañas a otro libro conectado.
+- Formatear rangos y encabezados, cambiar colores y ajustar columnas.
+- Consultas Google Visualization y filtros avanzados.
+- Suma, conteo y COUNTIF por columna.
+- Descarga CSV y Excel.
+- Listado, búsqueda, creación de carpetas, subida, descarga, renombrado y eliminación de archivos de Drive.
+- Consulta de cuota de almacenamiento de Drive.
+- Páginas públicas de privacidad, términos y documentación.
+
+Las funciones están inspiradas en los métodos públicos de Gsheetsplus de F:\bibliotecas cf\Gsheetsplus.
+
+## Inicio rápido
+
+1. Abre https://fernand21.github.io/sheetpilot/.
+2. Entra con la cuenta de Google incluida como usuario de prueba.
+3. Acepta los permisos de Google Sheets y Google Drive.
+4. Pulsa Nuevo proyecto y elige un libro.
+5. Abre el proyecto y usa sus pestañas de Datos, Editar, Pestañas, Formato, Consultas y Estadísticas.
+
+## Configuración de Supabase
+
+1. Abre el SQL Editor del proyecto dnwaapropjmoyqxquzvs.
+2. Ejecuta el contenido de supabase-schema.sql.
+3. En Authentication → URL Configuration agrega:
+   - https://fernand21.github.io/sheetpilot/
+4. En Authentication → Providers → Google confirma que el proveedor esté activo.
+5. En la configuración de Google Cloud usa como callback:
+   - https://dnwaapropjmoyqxquzvs.supabase.co/auth/v1/callback
+
+El archivo config.js contiene solamente la URL pública, la clave publishable y el client ID web de Google. Nunca agregues una clave service_role ni un client secret al repositorio.
+
+## Scopes de Google
+
+La primera versión solicita:
+
+- https://www.googleapis.com/auth/spreadsheets
+- https://www.googleapis.com/auth/drive
+
+El segundo scope es amplio porque Drive necesita crear carpetas, subir, descargar, renombrar y eliminar archivos. En modo de pruebas funciona únicamente para las cuentas autorizadas. En producción Google puede solicitar verificación de marca y de acceso a datos.
+
+## Endpoints reales usados
+
+Las operaciones del navegador llaman directamente a las APIs oficiales:
+
+- GET https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{rango}
+- PUT https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{rango}
+- POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values:batchUpdate
+- POST https://sheets.googleapis.com/v4/spreadsheets/{id}:batchUpdate
+- GET https://www.googleapis.com/drive/v3/files
+- POST https://www.googleapis.com/drive/v3/files
+- PATCH https://www.googleapis.com/drive/v3/files/{id}
+- DELETE https://www.googleapis.com/drive/v3/files/{id}
+- POST https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart
+- GET https://www.googleapis.com/drive/v3/about
+- GET https://docs.google.com/spreadsheets/d/{id}/gviz/tq
+
+Cada llamada usa el token OAuth temporal de la sesión. La tabla completa, ejemplos y limitaciones están en la documentación pública: https://fernand21.github.io/sheetpilot/docs/
+
+## API pública tipo SheetDB
+
+GitHub Pages solo sirve archivos estáticos. Por seguridad, esta versión todavía no publica una URL anónima que pueda leer una hoja privada sin el token del propietario. La siguiente etapa será una Edge Function de Supabase con API keys por proyecto, sincronización segura y un endpoint documentado por ejemplo:
+
+https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api
+
+Esa URL se publicará únicamente cuando el almacenamiento de credenciales y las políticas de acceso estén listos.
 
 ## Publicar en GitHub Pages
 
-1. Sube este proyecto a GitHub.
-2. En el repositorio abre **Settings > Pages**.
-3. Elige **Deploy from a branch**, selecciona `main` y carpeta `/(root)`.
-4. Añade esa URL publicada también en las Redirect URLs de Supabase.
+1. En el repositorio abre Settings → Pages.
+2. Selecciona Deploy from a branch.
+3. Usa la rama main y la carpeta /(root).
+4. Espera a que termine el despliegue.
+5. Comprueba la aplicación y /docs/.
 
-Antes de publicar, crea el archivo `config.js`. Está excluido de Git para que puedas configurarlo sin compartir valores innecesarios; puedes publicar una copia con la URL y clave publishable si prefieres que funcione directamente desde GitHub Pages.
+## Dominio propio
 
-## Próximo paso
+Cuando compres el dominio:
 
-Añadir la conexión OAuth con Google, guardar el ID de cada hoja en `projects` y desplegar una Edge Function de Supabase que entregue la API JSON.
+1. Configúralo como Custom domain en GitHub Pages.
+2. Verifica la propiedad como Domain property en Search Console mediante DNS.
+3. Usa el mismo dominio en la página principal, privacidad y términos de Google Cloud.
+4. Añade el dominio como origen autorizado en el cliente OAuth.
+5. Solicita la verificación y publica la marca.
+
+## Estructura
+
+- index.html: aplicación y panel de usuario.
+- app.js: autenticación, Google Sheets, Google Drive y operaciones.
+- styles.css: interfaz.
+- config.js: configuración pública del proyecto.
+- supabase-schema.sql: tabla projects, grants y políticas RLS.
+- privacy.html: política de privacidad.
+- terms.html: términos de uso.
+- docs/index.html: documentación pública.
+
+## Licencia y responsabilidad
+
+SheetPilot es un proyecto independiente. El usuario conserva la responsabilidad sobre sus hojas, permisos y datos. Los nombres Google Sheets, Google Drive y Supabase pertenecen a sus respectivos propietarios.
