@@ -195,7 +195,7 @@ async function ownerApiRequest(path, options) {
   const opts = Object.assign({}, options || {}), headers = new Headers(opts.headers || {});
   headers.set("apikey", cfg.publishableKey); headers.set("Authorization", "Bearer " + accessToken); opts.headers = headers;
   const response = await fetch(apiBase() + path, opts), type = response.headers.get("content-type") || "", data = type.includes("json") ? await response.json() : await response.text();
-  if (!response.ok) throw new Error(data?.message || data?.error || "No se pudo completar la operación segura.");
+  if (!response.ok) { const error = new Error(data?.message || data?.error || "No se pudo completar la operación segura."); error.code = data?.error || "request_failed"; throw error; }
   return data;
 }
 async function loadApiKey(api) { const data = await ownerApiRequest("/auth/api-key?api_id=" + encodeURIComponent(api.api_id)); return data.api_key; }
@@ -214,9 +214,14 @@ async function showApiDialog(project, api, secret) {
   if (!apiDialog.open) apiDialog.showModal();
   if (secret) return;
   try {
-    const recovered = await loadApiKey(api); if (keyNode) keyNode.textContent = recovered; if (copyButton) copyButton.disabled = false; $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación.";
+    const recovered = await loadApiKey(api); if (keyNode) keyNode.textContent = recovered; if (copyButton) copyButton.disabled = false; message("#api-key-message", ""); $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación.";
   } catch (error) {
-    if (keyNode) { keyNode.textContent = ""; keyNode.classList.add("hidden"); } if (copyButton) copyButton.disabled = true; if (regenerateButton) regenerateButton.classList.remove("hidden"); $("#api-secret-note").textContent = "No hay una clave recuperable para esta API. Genera una nueva; la clave anterior dejará de funcionar.";
+    if (error.code === "api_key_not_stored") {
+      try {
+        const replacement = "sp_live_" + randomToken(24); await saveApiKey(api, replacement); if (keyNode) { keyNode.textContent = replacement; keyNode.classList.remove("hidden"); } if (copyButton) copyButton.disabled = false; if (regenerateButton) regenerateButton.classList.add("hidden"); message("#api-key-message", "Se generó y guardó una clave nueva porque esta API era anterior al sistema de recuperación.", "success"); $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación."; return;
+      } catch (rotationError) { error = rotationError; }
+    }
+    if (keyNode) { keyNode.textContent = ""; keyNode.classList.add("hidden"); } if (copyButton) copyButton.disabled = true; if (regenerateButton) regenerateButton.classList.remove("hidden"); message("#api-key-message", "No se pudo recuperar la clave: " + (error.message || error), "error"); $("#api-secret-note").textContent = "Puedes intentar generar una clave nueva.";
   }
 }
 async function createApi(project) {
@@ -252,7 +257,7 @@ async function copyApiKey() {
   let copied = false;
   try { if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(value); copied = true; } } catch (_) { /* Usa el método de selección de abajo. */ }
   if (!copied && node) { const selection = window.getSelection(), range = document.createRange(); range.selectNodeContents(node); selection.removeAllRanges(); selection.addRange(range); try { copied = document.execCommand("copy"); } catch (_) { copied = false; } selection.removeAllRanges(); }
-  message("#api-message", copied ? "Clave copiada." : "No se pudo copiar automáticamente. Selecciona la clave y cópiala con Ctrl+C.", copied ? "success" : "error");
+  const status = copied ? "Clave copiada." : "No se pudo copiar automáticamente. Selecciona la clave y cópiala con Ctrl+C."; message("#api-key-message", status, copied ? "success" : "error"); message("#api-message", status, copied ? "success" : "error"); if (copied) { const button = $("#copy-api-key"); if (button) { const original = button.textContent; button.textContent = "¡Clave copiada!"; setTimeout(() => { button.textContent = original; }, 1800); } }
 }
 async function regenerateApiKey() {
   if (!dialogApi || !confirm("La clave anterior dejará de funcionar. ¿Generar una clave nueva?")) return;
