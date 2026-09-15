@@ -159,9 +159,38 @@ function searchRows(rows: Record<string, unknown>[], url: URL, orMode = false) {
   return transform(filtered, url);
 }
 function requirePermission(api: ApiRecord, action: string) { return allowed(api, action) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`); }
+function csvCell(value: unknown) { const text = String(value ?? ""); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+function csvResponse(api: ApiRecord, table: { headers: string[]; rows: unknown[][] }, sheet: string) {
+  const csv = [table.headers, ...table.rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
+  return new Response(csv, { status: 200, headers: { ...corsHeaders, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${api.name.replace(/[^A-Za-z0-9_-]+/g, "-")}-${sheet.replace(/[^A-Za-z0-9_-]+/g, "-")}.csv"` } });
+}
+async function exportOperation(api: ApiRecord, request: Request, format: "csv" | "xlsx") {
+  const url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1";
+  if (format === "csv") {
+    if (api.resource_type !== "sheet") return failure(400, "not_a_sheet_api", "CSV sólo está disponible para APIs de Sheets.");
+    const table = api.public_read ? await readPublicSheet(api, sheet) : (await hasApiKey(api, request) ? await readAuthorized(api, await googleTokenForUser(api.user_id), sheet) : null);
+    if (!table) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key.");
+    return csvResponse(api, table, sheet);
+  }
+  if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "La exportación Excel requiere la cabecera X-API-Key.");
+  if (api.resource_type !== "sheet" || !api.spreadsheet_id) return failure(400, "not_a_sheet_api", "Excel sólo está disponible para APIs de Sheets.");
+  const token = await googleTokenForUser(api.user_id), result = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(api.spreadsheet_id)}/export?mimeType=${encodeURIComponent("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!result.ok) throw new Error(`Google Drive respondió ${result.status}: ${((await result.text()) || "").slice(0, 500)}`);
+  return new Response(await result.arrayBuffer(), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="${api.name.replace(/[^A-Za-z0-9_-]+/g, "-")}.xlsx"` } });
+}
+async function listSheetsOperation(api: ApiRecord, request: Request) {
+  if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Listar pestañas requiere la cabecera X-API-Key.");
+  if (api.resource_type !== "sheet" || !api.spreadsheet_id) return failure(400, "not_a_sheet_api", "Esta API no está vinculada a un libro de Sheets.");
+  const metadata = await spreadsheetMetadata(api, await googleTokenForUser(api.user_id));
+  const sheets = (metadata.sheets || []).map((item: any) => ({ sheet_id: item.properties?.sheetId, title: item.properties?.title, index: item.properties?.index, row_count: item.properties?.gridProperties?.rowCount, column_count: item.properties?.gridProperties?.columnCount }));
+  return response({ data: sheets, total: sheets.length });
+}
 async function readOperation(api: ApiRecord, request: Request, path: string[]) {
   const url = new URL(request.url); if (api.public_read !== true && !(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API requiere la cabecera X-API-Key.");
   if (path[0] === "name") return response({ name: api.name, api_id: api.api_id }); if (path[0] === "metadata" || path[0] === "openapi.json") return metadataResponse(api, path[0] === "openapi.json", request);
+  if (path[0] === "sheets") return listSheetsOperation(api, request);
+  if (path[0] === "export.csv") return exportOperation(api, request, "csv");
+  if (path[0] === "export.xlsx") return exportOperation(api, request, "xlsx");
   if (api.resource_type === "drive") return driveOperation(api, request, path);
   const sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1", denied = requirePermission(api, path[0] === "search" || path[0] === "search_or" ? "search" : "read"); if (denied) return denied;
   const cacheKey = `${api.api_id}:${url.search}`, cached = cache.get(cacheKey); if (cached && cached.expires > Date.now()) return response(cached.value, 200, { "X-LittleAPI-Cache": "HIT", "Cache-Control": `public, max-age=${Math.min(api.cache_ttl, 3600)}` });
@@ -180,6 +209,7 @@ async function updateValues(api: ApiRecord, token: string, range: string, values
 async function mutationOperation(api: ApiRecord, request: Request, path: string[]) {
   if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Las operaciones de escritura requieren la cabecera X-API-Key."); const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete", denied = requirePermission(api, action); if (denied) return denied; if (api.resource_type === "drive") return driveOperation(api, request, path);
   const body = request.method === "DELETE" || request.headers.get("content-length") === "0" ? {} : await request.json().catch(() => ({})), token = await googleTokenForUser(api.user_id), sheet = String(body.sheet || new URL(request.url).searchParams.get("sheet") || api.default_sheet || "Sheet1");
+  if (path[0] === "sheets" && path[1] === "copy") return copySheet(api, token, body);
   if (path[0] === "sheets") return sheetAdmin(api, token, request, path.slice(1), body); if (path[0] === "format" || path[0] === "clear" || path[0] === "batch") return sheetUtility(api, token, request, path[0], body, sheet);
   const table = await readAuthorized(api, token, sheet), headers = table.headers;
   if (request.method === "POST") { const incoming = Array.isArray(body) ? body : body.rows || body.data || body.row || body, rows = Array.isArray(incoming) ? incoming : [incoming], values = rows.map((row: unknown) => Array.isArray(row) ? row : headers.map((header) => (row as Record<string, unknown>)[header] ?? "")); const result = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A1"))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: "POST", body: JSON.stringify({ majorDimension: "ROWS", values }) }); cache.clear(); return response({ success: true, inserted: values.length, updates: result.updates || null }, 201); }
@@ -193,6 +223,16 @@ async function sheetAdmin(api: ApiRecord, token: string, request: Request, subpa
   const title = decodeURIComponent(subpath[0] || body.name || ""); if (request.method === "POST") { const result = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests: [{ addSheet: { properties: { title: body.name } } }] }) }); return response({ success: true, sheet: result.replies?.[0]?.addSheet?.properties || null }, 201); }
   const metadata = await spreadsheetMetadata(api, token), info = metadata.sheets?.find((item: any) => item.properties?.title === title); if (!info) return failure(404, "sheet_not_found", "No existe esa pestaña."); const requestBody = request.method === "PATCH" ? { updateSheetProperties: { properties: { sheetId: info.properties.sheetId, title: body.name }, fields: "title" } } : { deleteSheet: { sheetId: info.properties.sheetId } }; await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests: [requestBody] }) }); cache.clear(); return response({ success: true, sheet: request.method === "PATCH" ? body.name : title });
 }
+async function copySheet(api: ApiRecord, token: string, body: any) {
+  if (!api.spreadsheet_id) return failure(400, "spreadsheet_required", "Esta API no tiene un libro de Google Sheets.");
+  const destination = String(body.destination_spreadsheet_id || body.destinationSpreadsheetId || "").trim();
+  if (!destination) return failure(400, "destination_required", "Indica destination_spreadsheet_id.");
+  const metadata = await spreadsheetMetadata(api, token), requested = String(body.sheet_id ?? body.sheet ?? api.default_sheet ?? "");
+  const info = metadata.sheets?.find((item: any) => String(item.properties?.sheetId) === requested || item.properties?.title === requested);
+  if (!info?.properties?.sheetId && info?.properties?.sheetId !== 0) return failure(404, "sheet_not_found", "No existe la pestaña que quieres copiar.");
+  const copied = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id)}/sheets/${encodeURIComponent(info.properties.sheetId)}:copyTo`, { method: "POST", body: JSON.stringify({ destinationSpreadsheetId: destination }) });
+  return response({ success: true, source_spreadsheet_id: api.spreadsheet_id, destination_spreadsheet_id: destination, sheet: copied }, 201);
+}
 async function sheetUtility(api: ApiRecord, token: string, request: Request, operation: string, body: any, sheet: string) {
   if (operation === "batch") { if (!Array.isArray(body.requests) || body.requests.length > 50) return failure(400, "invalid_batch", "Envía entre 1 y 50 solicitudes de Google Sheets."); await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests: body.requests }) }); cache.clear(); return response({ success: true, applied: body.requests.length }); }
   const range = sheetRange(sheet, body.range || "A1:ZZ1000"); if (operation === "clear") { await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(range)}:clear`, { method: "POST", body: "{}" }); cache.clear(); return response({ success: true, range: body.range }); }
@@ -204,14 +244,57 @@ function color(value: string) { const hex = String(value).replace("#", ""); cons
 async function driveRequest(token: string, path: string, init: RequestInit = {}) { const headers = new Headers(init.headers || {}); headers.set("Authorization", `Bearer ${token}`); if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json"); const result = await fetch(`https://www.googleapis.com/drive/v3/${path}`, { ...init, headers }); const text = await result.text(); if (!result.ok) throw new Error(`Google Drive respondió ${result.status}: ${text.slice(0, 500)}`); return text ? JSON.parse(text) : {}; }
 async function driveOperation(api: ApiRecord, request: Request, path: string[]) {
   const token = await googleTokenForUser(api.user_id), mode = path[0] || "", id = mode === "children" || mode === "download" ? (path[1] || api.drive_file_id || "root") : (mode || api.drive_file_id || "root");
-  if (request.method === "GET") { if (mode === "download") { const result = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`, { headers: { Authorization: `Bearer ${token}` } }); return new Response(await result.arrayBuffer(), { status: result.status, headers: { ...corsHeaders, "Content-Type": result.headers.get("content-type") || "application/octet-stream", "Content-Disposition": `attachment; filename="${id}"` } }); } const q = mode === "children" ? `'${id}' in parents and trashed = false` : `id = '${id}'`, fields = "files(id,name,mimeType,size,modifiedTime,parents,webViewLink),id,name,mimeType,size,modifiedTime,parents,webViewLink"; return response(await driveRequest(token, `files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}&pageSize=100`)); }
+  if (request.method === "GET") {
+    if (mode === "download") { const result = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`, { headers: { Authorization: `Bearer ${token}` } }); return new Response(await result.arrayBuffer(), { status: result.status, headers: { ...corsHeaders, "Content-Type": result.headers.get("content-type") || "application/octet-stream", "Content-Disposition": `attachment; filename="${id}"` } }); }
+    const url = new URL(request.url), fields = "files(id,name,mimeType,size,modifiedTime,parents,webViewLink),nextPageToken";
+    if (mode === "quota") return response(await driveRequest(token, "about?fields=user,storageQuota"));
+    if (mode === "about") return response(await driveRequest(token, "about?fields=user,storageQuota,importFormats,exportFormats"));
+    if (mode === "search") { const term = url.searchParams.get("name") || url.searchParams.get("q") || "", parent = url.searchParams.get("parent_id") || ""; if (!term && !parent) return failure(400, "search_term_required", "Indica name, q o parent_id para buscar en Drive."); const quote = (value: string) => value.replace(/\\/g, "\\\\").replace(/'/g, "\\'"); const clauses = ["trashed = false"]; if (term) clauses.push(`name contains '${quote(term)}'`); if (parent) clauses.push(`'${quote(parent)}' in parents`); return response(await driveRequest(token, `files?q=${encodeURIComponent(clauses.join(" and "))}&fields=${encodeURIComponent(fields)}&pageSize=100`)); }
+    const q = mode === "children" ? `'${id}' in parents and trashed = false` : `id = '${id}'`; return response(await driveRequest(token, `files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}&pageSize=100`));
+  }
   if (request.method === "POST") { if (request.headers.get("content-type")?.includes("multipart/form-data")) return failure(415, "multipart_not_supported", "Para subir desde una API usa JSON con content_base64."); const body = await request.json().catch(() => ({})), metadata = { name: body.name, mimeType: body.mimeType || "application/octet-stream", parents: body.parents || (id !== "root" ? [id] : undefined) }; if (body.content_base64) { const boundary = `littleapi_${crypto.randomUUID()}`, bytes = Uint8Array.from(atob(body.content_base64), (char) => char.charCodeAt(0)), prefix = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${metadata.mimeType}\r\n\r\n`, suffix = `\r\n--${boundary}--`, encoded = new TextEncoder().encode(prefix), ending = new TextEncoder().encode(suffix), joined = new Uint8Array(encoded.length + bytes.length + ending.length); joined.set(encoded); joined.set(bytes, encoded.length); joined.set(ending, encoded.length + bytes.length); return response(await driveRequest(token, `files?uploadType=multipart&fields=id,name,mimeType,webViewLink`, { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body: joined }), 201); } return response(await driveRequest(token, `files?fields=id,name,mimeType,webViewLink`, { method: "POST", body: JSON.stringify(metadata) }), 201); }
   const body = await request.json().catch(() => ({})); if (request.method === "PATCH") return response(await driveRequest(token, `files/${encodeURIComponent(id)}?fields=id,name,mimeType,webViewLink`, { method: "PATCH", body: JSON.stringify({ name: body.name }) })); await driveRequest(token, `files/${encodeURIComponent(id)}`, { method: "DELETE" }); return response({ success: true, deleted: id });
 }
 function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
   if (!openapi) return response({ api_id: api.api_id, name: api.name, resource_type: api.resource_type, spreadsheet_id: api.spreadsheet_id, default_sheet: api.default_sheet, permissions: api.permissions, public_read: api.public_read });
   const publicBase = request.headers.get("x-littleapi-public-base") || `${supabaseUrl}/functions/v1/sheetpilot-api`;
-  return response({ openapi: "3.0.3", info: { title: api.name, version: "1.0.0" }, servers: [{ url: `${publicBase}/${api.api_id}` }], paths: { "/": { get: { summary: "Lista filas" }, post: { summary: "Inserta filas" }, patch: { summary: "Actualiza filas" }, delete: { summary: "Elimina filas" } }, "/search": { get: { summary: "Filtra filas" } }, "/sheets": { post: { summary: "Crea una pestaña" } }, "/format": { post: { summary: "Aplica formato" } }, "/batch": { post: { summary: "Ejecuta cambios atómicos" } } } });
+  const key = [{ ApiKeyAuth: [] }], jsonBody = { "application/json": { schema: { type: "object" } } };
+  return response({
+    openapi: "3.0.3",
+    info: { title: api.name, version: "1.1.0", description: "API REST pública de LittleAPI para Google Sheets y Drive." },
+    servers: [{ url: `${publicBase}/${api.api_id}` }],
+    components: { securitySchemes: { ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key", description: "Sólo para escrituras y APIs privadas." } } },
+    paths: {
+      "/": {
+        get: { operationId: "listRows", summary: "Lista filas", parameters: [{ name: "sheet", in: "query", schema: { type: "string" } }, { name: "limit", in: "query", schema: { type: "integer", maximum: 1000 } }, { name: "offset", in: "query", schema: { type: "integer", minimum: 0 } }, { name: "sort", in: "query", schema: { type: "string" } }, { name: "order", in: "query", schema: { type: "string", enum: ["asc", "desc"] } }] },
+        post: { operationId: "insertRows", summary: "Inserta una o varias filas", security: key, requestBody: { required: true, content: jsonBody } },
+        patch: { operationId: "updateRows", summary: "Actualiza filas o un rango", security: key, requestBody: { required: true, content: jsonBody } },
+        delete: { operationId: "deleteRows", summary: "Elimina filas", security: key, requestBody: { content: jsonBody } },
+      },
+      "/search": { get: { operationId: "searchRowsOrDrive", summary: "Filtra filas o busca archivos por nombre en Drive", parameters: [{ name: "search", in: "query", schema: { type: "string" } }, { name: "contains[campo]", in: "query", schema: { type: "string" } }, { name: "name", in: "query", schema: { type: "string" } }, { name: "parent_id", in: "query", schema: { type: "string" } }, { name: "limit", in: "query", schema: { type: "integer" } }] } },
+      "/search_or": { get: { operationId: "searchRowsOr", summary: "Filtra con cualquier condición" } },
+      "/keys": { get: { operationId: "listColumns", summary: "Devuelve los nombres de columnas" } },
+      "/name": { get: { operationId: "getApiName", summary: "Devuelve el nombre de la API" } },
+      "/count": { get: { operationId: "countRows", summary: "Cuenta filas" } },
+      "/cells/{coordinates}": { get: { operationId: "readCells", summary: "Lee celdas como A1,B2", parameters: [{ name: "coordinates", in: "path", required: true, schema: { type: "string" } }] } },
+      "/metadata": { get: { operationId: "getMetadata", summary: "Metadatos de la API" } },
+      "/openapi.json": { get: { operationId: "getOpenApi", summary: "Contrato OpenAPI" } },
+      "/stats": { get: { operationId: "getStats", summary: "Estadísticas de una columna", parameters: [{ name: "column", in: "query", schema: { type: "string" } }] } },
+      "/sheets": { get: { operationId: "listSheets", summary: "Lista pestañas (requiere clave)", security: key }, post: { operationId: "createSheet", summary: "Crea una pestaña", security: key, requestBody: { required: true, content: jsonBody } } },
+      "/sheets/{sheet}": { patch: { operationId: "renameSheet", summary: "Renombra una pestaña", security: key, parameters: [{ name: "sheet", in: "path", required: true, schema: { type: "string" } }], requestBody: { required: true, content: jsonBody } }, delete: { operationId: "deleteSheet", summary: "Elimina una pestaña", security: key, parameters: [{ name: "sheet", in: "path", required: true, schema: { type: "string" } }] } },
+      "/sheets/copy": { post: { operationId: "copySheet", summary: "Copia una pestaña a otro libro", security: key, requestBody: { required: true, content: jsonBody } } },
+      "/format": { post: { operationId: "formatRange", summary: "Aplica formato a un rango", security: key, requestBody: { required: true, content: jsonBody } } },
+      "/clear": { post: { operationId: "clearRange", summary: "Limpia un rango", security: key, requestBody: { required: true, content: jsonBody } } },
+      "/batch": { post: { operationId: "batchUpdate", summary: "Ejecuta hasta 50 cambios de Google Sheets", security: key, requestBody: { required: true, content: jsonBody } } },
+      "/export.csv": { get: { operationId: "exportCsv", summary: "Exporta la pestaña como CSV" } },
+      "/export.xlsx": { get: { operationId: "exportXlsx", summary: "Exporta el libro como Excel", security: key } },
+      "/children/{folder_id}": { get: { operationId: "listDriveChildren", summary: "Lista archivos de una carpeta", parameters: [{ name: "folder_id", in: "path", required: true, schema: { type: "string" } }] } },
+      "/quota": { get: { operationId: "driveQuota", summary: "Consulta la cuota de Drive" } },
+      "/about": { get: { operationId: "driveAbout", summary: "Consulta la cuenta y formatos de Drive" } },
+      "/download/{file_id}": { get: { operationId: "downloadDriveFile", summary: "Descarga un archivo", parameters: [{ name: "file_id", in: "path", required: true, schema: { type: "string" } }] } },
+      "/{file_id}": { patch: { operationId: "renameDriveFile", summary: "Renombra un archivo", security: key }, delete: { operationId: "deleteDriveFile", summary: "Elimina un archivo", security: key }, post: { operationId: "uploadDriveFile", summary: "Crea o sube un archivo", security: key } },
+    },
+  });
 }
 function base64(bytes: Uint8Array) { let result = ""; for (const byte of bytes) result += String.fromCharCode(byte); return btoa(result); }
 function fromBase64(value: string) { return Uint8Array.from(atob(value), (char) => char.charCodeAt(0)); }
@@ -250,7 +333,7 @@ async function googleConnection(request: Request) {
   if (request.method === "DELETE") { await dbFetch(`google_connections?user_id=eq.${encodeURIComponent(user.id)}`, { method: "DELETE" }); return response({ success: true, connected: false }); }
   const body = await request.json().catch(() => ({})); if (!body.provider_refresh_token) return failure(400, "refresh_token_required", "Google no entregó un refresh token. Vuelve a autorizar con access_type=offline y prompt=consent."); const encrypted = await encryptToken(String(body.provider_refresh_token)); await dbFetch("google_connections", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ user_id: user.id, refresh_token_ciphertext: encrypted, scopes: body.scopes || [], updated_at: new Date().toISOString() }) }); return response({ success: true, connected: true });
 }
-async function statsOperation(api: ApiRecord, request: Request) { const denied = requirePermission(api, "read"); if (denied) return denied; const token = await googleTokenForUser(api.user_id), url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1", table = await readAuthorized(api, token, sheet), column = url.searchParams.get("column") || ""; const rows = rowsAsObjects(table.headers, table.rows); if (!column) return response({ columns: table.headers, rows: rows.length }); const values = rows.map((row) => Number(valueOf(row, column))).filter((value) => !Number.isNaN(value)); return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null }); }
+async function statsOperation(api: ApiRecord, request: Request) { const denied = requirePermission(api, "read"); if (denied) return denied; const url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1"; let table: { headers: string[]; rows: unknown[][] }; if (api.public_read) table = await readPublicSheet(api, sheet); else { if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key."); table = await readAuthorized(api, await googleTokenForUser(api.user_id), sheet); } const column = url.searchParams.get("column") || "", rows = rowsAsObjects(table.headers, table.rows); if (!column) return response({ columns: table.headers, rows: rows.length }); const values = rows.map((row) => Number(valueOf(row, column))).filter((value) => !Number.isNaN(value)); return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null }); }
 async function handler(request: Request) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders }); const url = new URL(request.url), path = partsFor(url);
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
