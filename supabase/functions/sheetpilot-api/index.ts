@@ -161,7 +161,17 @@ function searchRows(rows: Record<string, unknown>[], url: URL, orMode = false) {
 }
 function requirePermission(api: ApiRecord, action: string) { return allowed(api, action) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`); }
 type QuotaState = { allowed: boolean; used: number; limit: number; reset_at: string };
+async function isUnlimitedOwner(userId: string) {
+  try {
+    const rows = await dbFetch(`littleapi_unlimited_users?select=user_id&user_id=eq.${encodeURIComponent(userId)}&enabled=eq.true&limit=1`);
+    return Boolean(rows?.[0]?.user_id);
+  } catch (_) {
+    // Si la lista privada no está disponible, se aplica la cuota normal (fail closed).
+    return false;
+  }
+}
 async function consumeQuota(api: ApiRecord) {
+  if (await isUnlimitedOwner(api.user_id)) return null;
   const limit = Math.max(1, Number(api.monthly_request_limit || 5000));
   const result = await dbFetch("rpc/consume_api_quota", { method: "POST", body: JSON.stringify({ p_api_id: api.api_id, p_limit: limit }) });
   const row = Array.isArray(result) ? result[0] : result;
@@ -172,8 +182,10 @@ async function consumeQuota(api: ApiRecord) {
   return response({ error: "quota_exceeded", message: "Esta API ya no tiene más consultas disponibles este mes.", quota: { used: state.used, limit: state.limit, remaining: 0, reset_at: state.reset_at } }, 429, { "Retry-After": String(retryAfter), "X-LittleAPI-Quota-Limit": String(state.limit), "X-LittleAPI-Quota-Used": String(state.used), "X-LittleAPI-Quota-Remaining": "0", "X-LittleAPI-Quota-Reset": state.reset_at });
 }
 async function quotaStatus(api: ApiRecord) {
-  const period = new Date(); period.setUTCDate(1); const start = period.toISOString().slice(0, 10), rows = await dbFetch(`api_usage_monthly?select=period_start,requests&api_id=eq.${encodeURIComponent(api.api_id)}&period_start=eq.${start}&limit=1`), used = Number(rows?.[0]?.requests || 0), limit = Math.max(1, Number(api.monthly_request_limit || 5000));
+  const period = new Date(); period.setUTCDate(1); const start = period.toISOString().slice(0, 10), rows = await dbFetch(`api_usage_monthly?select=period_start,requests&api_id=eq.${encodeURIComponent(api.api_id)}&period_start=eq.${start}&limit=1`), used = Number(rows?.[0]?.requests || 0);
   const reset = new Date(Date.UTC(period.getUTCFullYear(), period.getUTCMonth() + 1, 1)).toISOString();
+  if (await isUnlimitedOwner(api.user_id)) return { used, limit: null, remaining: null, reset_at: null, unlimited: true };
+  const limit = Math.max(1, Number(api.monthly_request_limit || 5000));
   return { used, limit, remaining: Math.max(0, limit - used), reset_at: reset };
 }
 function csvCell(value: unknown) { const text = String(value ?? ""); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }

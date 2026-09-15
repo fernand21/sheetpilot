@@ -91,8 +91,7 @@
         location.reload();
       });
       const sdk = document.createElement("script");
-      const locale = current === "en" ? "en_US" : "es_ES";
-      sdk.src = "https://www.paypal.com/sdk/js?client-id=" + paypalClient + "&components=hosted-buttons&disable-funding=venmo&currency=USD&locale.x=" + locale;
+      sdk.src = "https://www.paypal.com/sdk/js?client-id=" + paypalClient + "&components=hosted-buttons&disable-funding=venmo&currency=USD";
       sdk.async = true;
       sdk.onload = () => paypalButtons.forEach(hostedButtonId => {
         const container = document.querySelector("#paypal-container-" + hostedButtonId);
