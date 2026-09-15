@@ -218,10 +218,19 @@ async function readOperation(api: ApiRecord, request: Request, path: string[]) {
   return response(body, 200, { "X-LittleAPI-Cache": "MISS", ...(api.cache_ttl > 0 ? { "Cache-Control": `public, max-age=${Math.min(api.cache_ttl, 3600)}` } : {}) });
 }
 async function readAuthorized(api: ApiRecord, token: string, sheet: string) { const data = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A:ZZ"))}?majorDimension=ROWS`), values = Array.isArray(data.values) ? data.values : [], headers = (values[0] || []).map((value: unknown, index: number) => String(value || columnName(index + 1))); return { headers, rows: values.slice(1), values }; }
-async function googleTokenForUser(userId: string) {
-  if (!serviceKey) throw new Error("La función necesita SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SECRET_KEYS para leer la conexión privada."); const rows = await dbFetch(`google_connections?select=refresh_token_ciphertext&user_id=eq.${encodeURIComponent(userId)}&limit=1`), encrypted = rows?.[0]?.refresh_token_ciphertext; if (!encrypted) throw new Error("Conecta Google otra vez y acepta los permisos de Sheets y Drive."); const refreshToken = await decryptToken(encrypted), clientId = Deno.env.get("GOOGLE_CLIENT_ID") || "", clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET") || ""; if (!clientId || !clientSecret) throw new Error("Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en los secretos de la función.");
-  const form = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: "refresh_token" }), result = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form }), data = await result.json(); if (!result.ok || !data.access_token) throw new Error(data.error_description || "Google no pudo renovar la autorización."); return data.access_token as string;
+async function refreshGoogleTokenForUser(userId: string) {
+  if (!serviceKey) throw new Error("La función necesita SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SECRET_KEYS para leer la conexión privada.");
+  const rows = await dbFetch(`google_connections?select=refresh_token_ciphertext&user_id=eq.${encodeURIComponent(userId)}&limit=1`), encrypted = rows?.[0]?.refresh_token_ciphertext;
+  if (!encrypted) throw new Error("Conecta Google otra vez y acepta los permisos de Sheets y Drive.");
+  const refreshToken = await decryptToken(encrypted), clientId = Deno.env.get("GOOGLE_CLIENT_ID") || "", clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
+  if (!clientId || !clientSecret) throw new Error("Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en los secretos de la función.");
+  const form = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: "refresh_token" });
+  const result = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form });
+  const data = await result.json().catch(() => ({}));
+  if (!result.ok || !data.access_token) throw new Error(data.error_description || "Google no pudo renovar la autorización.");
+  return { access_token: data.access_token as string, expires_in: Number(data.expires_in || 3600) };
 }
+async function googleTokenForUser(userId: string) { return (await refreshGoogleTokenForUser(userId)).access_token; }
 async function updateValues(api: ApiRecord, token: string, range: string, values: unknown[][]) { return sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, { method: "PUT", body: JSON.stringify({ range, majorDimension: "ROWS", values }) }); }
 async function mutationOperation(api: ApiRecord, request: Request, path: string[]) {
   if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Las operaciones de escritura requieren la cabecera X-API-Key."); const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete", denied = requirePermission(api, action); if (denied) return denied; if (api.resource_type === "drive") return driveOperation(api, request, path);
@@ -347,6 +356,11 @@ async function apiKeyConnection(request: Request) {
 }
 async function googleConnection(request: Request) {
   const user = await currentUser(request); if (!user?.id) return failure(401, "login_required", "Inicia sesión para conectar Google.");
+  const url = new URL(request.url);
+  if (request.method === "GET" && url.pathname.endsWith("/access-token")) {
+    try { return response(await refreshGoogleTokenForUser(user.id)); }
+    catch (error) { return failure(401, "google_token_refresh_failed", error instanceof Error ? error.message : "Google no pudo renovar la autorización."); }
+  }
   if (request.method === "GET") { const rows = await dbFetch(`google_connections?select=user_id,scopes,updated_at&user_id=eq.${encodeURIComponent(user.id)}&limit=1`); return response({ connected: Boolean(rows?.[0]), scopes: rows?.[0]?.scopes || [], updated_at: rows?.[0]?.updated_at || null }); }
   if (request.method === "DELETE") { await dbFetch(`google_connections?user_id=eq.${encodeURIComponent(user.id)}`, { method: "DELETE" }); return response({ success: true, connected: false }); }
   const body = await request.json().catch(() => ({})); if (!body.provider_refresh_token) return failure(400, "refresh_token_required", "Google no entregó un refresh token. Vuelve a autorizar con access_type=offline y prompt=consent."); const encrypted = await encryptToken(String(body.provider_refresh_token)); await dbFetch("google_connections", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ user_id: user.id, refresh_token_ciphertext: encrypted, scopes: body.scopes || [], updated_at: new Date().toISOString() }) }); return response({ success: true, connected: true });

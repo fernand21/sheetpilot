@@ -12,7 +12,7 @@ const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
 const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
-let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], dialogApi = null, dialogProject = null;
+let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], dialogApi = null, dialogProject = null;
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -37,11 +37,27 @@ function friendlyError(error) {
   if (text.includes("permission denied for table projects") || text.includes("42501")) return "Supabase aún no permite acceder a proyectos. Ejecuta supabase-schema.sql en el SQL Editor y vuelve a cargar.";
   if (text.includes("insufficientPermissions") || text.includes("Insufficient Permission")) return "Google no concedió permisos suficientes. Cierra sesión, vuelve a entrar y acepta el acceso a Sheets y Drive.";
   if (text.includes("access_denied")) return "Google bloqueó el acceso. Comprueba que tu cuenta esté en Audience > Test users del proyecto " + BRAND_NAME + ".";
+  if (text.includes("origin_mismatch")) return "Google bloqueó este origen. En Google Cloud → OAuth → Cliente web, añade exactamente " + location.origin + " en Orígenes autorizados de JavaScript.";
+  if (text.includes("google_token_refresh_failed") || text.includes("refresh token")) return "La autorización de Google no pudo renovarse. Cierra sesión, vuelve a entrar y acepta de nuevo los permisos de Sheets y Drive.";
   return text;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function google() {
+async function refreshGoogleFromServer() {
+  if (!sb) throw new Error("La conexión de Supabase todavía no está lista.");
+  if (providerConnectionPromise) await providerConnectionPromise;
+  const sessionResult = await sb.auth.getSession(), session = sessionResult.data.session;
+  if (!session?.access_token) throw new Error("Tu sesión de LittleAPI expiró. Inicia sesión otra vez.");
+  const response = await fetch(apiBase() + "/auth/google/access-token", { headers: { "apikey": cfg.publishableKey, "Authorization": "Bearer " + session.access_token } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.access_token) throw new Error(data.message || "google_token_refresh_failed");
+  token = data.access_token;
+  providerToken = data.access_token;
+  tokenExpiresAt = Date.now() + Number(data.expires_in || 3600) * 1000;
+  return token;
+}
+
+async function browserGoogleToken() {
   if (providerToken && Date.now() < tokenExpiresAt - 60000) return providerToken;
   if (token && Date.now() < tokenExpiresAt - 60000) return token;
   for (let i = 0; i < 50 && !window.google?.accounts?.oauth2; i++) await wait(100);
@@ -58,6 +74,12 @@ async function google() {
     });
     client.requestAccessToken({ prompt: token ? "" : "consent" });
   });
+}
+async function google() {
+  if (providerToken && Date.now() < tokenExpiresAt - 60000) return providerToken;
+  if (token && Date.now() < tokenExpiresAt - 60000) return token;
+  if (sb && user) return refreshGoogleFromServer();
+  return browserGoogleToken();
 }
 async function gf(url, options, retry) {
   const opts = Object.assign({}, options || {});
@@ -288,11 +310,16 @@ async function syncProviderRefreshToken(session) {
   if (session?.provider_token) { providerToken = session.provider_token; token = session.provider_token; tokenExpiresAt = Date.now() + 3300000; }
   const providerRefreshToken = session?.provider_refresh_token;
   if (!providerRefreshToken || !session?.access_token) return;
-  try {
+  const task = (async () => {
     const response = await fetch(apiBase() + "/auth/google/connect", { method: "POST", headers: { "Content-Type": "application/json", "apikey": cfg.publishableKey, "Authorization": "Bearer " + session.access_token }, body: JSON.stringify({ provider_refresh_token: providerRefreshToken, scopes: GOOGLE_SCOPES.split(" ") }) });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "No se pudo guardar la conexión segura de Google.");
     notice("Google conectado de forma segura. Tus APIs ya pueden escribir en Sheets y Drive.", "success");
+  })();
+  providerConnectionPromise = task;
+  try {
+    await task;
   } catch (error) { notice("Google inició sesión, pero falta guardar el permiso de servidor: " + friendlyError(error), "error"); }
+  finally { if (providerConnectionPromise === task) providerConnectionPromise = null; }
 }
 async function signOut() {
   token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
