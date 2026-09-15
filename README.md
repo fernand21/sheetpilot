@@ -6,14 +6,14 @@ LittleAPI convierte libros de Google Sheets en datos y operaciones reutilizables
 
 - Aplicación actual: https://fernand21.github.io/sheetpilot/
 - Documentación: https://fernand21.github.io/sheetpilot/docs/
-- Dominio de marca previsto: https://littleapi.online
+- Dominio de marca activo: https://littleapi.online
 - Repositorio: https://github.com/fernand21/sheetpilot
 - Proyecto Supabase: https://dnwaapropjmoyqxquzvs.supabase.co
 - Callback OAuth de Supabase: https://dnwaapropjmoyqxquzvs.supabase.co/auth/v1/callback
 
 ## Estado
 
-La aplicación está en modo de pruebas de Google. Los usuarios deben estar incluidos en Google Cloud → Google Auth Platform → Audience → Test users. La verificación pública de marca se completará cuando el proyecto tenga un dominio propio verificado por DNS.
+La aplicación está en modo de pruebas de Google. Los usuarios deben estar incluidos en Google Cloud → Google Auth Platform → Audience → Test users. El dominio propio está conectado por GitHub Pages; la verificación pública de marca sigue dependiendo de completar el proceso de OAuth y de publicar la pantalla de consentimiento.
 
 ## Qué incluye la versión web
 
@@ -75,11 +75,42 @@ Al pulsar **Crear API** en un proyecto se genera una URL como:
 
 `https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/sheetpilot-api/{API_ID}`
 
-La primera versión pública ofrece `GET /{API_ID}`, `GET /search`, `GET /search_or`, `GET /keys`, `GET /name`, `GET /count` y `GET /cells/A1,B2`, con `limit`, `offset`, `sort_by`, `sort_order`, `cast_numbers`, `single_object` y `sheet`. La primera fila de la hoja se convierte en las propiedades de cada objeto JSON.
+La API pública ofrece `GET /{API_ID}`, `GET /search`, `GET /search_or`, `GET /keys`, `GET /name`, `GET /count`, `GET /cells/A1,B2`, `GET /metadata`, `GET /openapi.json` y `GET /stats`. La primera fila de la hoja se convierte en las propiedades de cada objeto JSON y las respuestas de filas usan `{data,total,limit,offset,meta}`. Usa `legacy=true` si necesitas la matriz de objetos de la primera versión.
 
 Para que una lectura funcione, la hoja debe estar publicada o compartida como “cualquiera con el enlace puede ver”. La pantalla de creación muestra la URL y genera una clave de administración; la clave se almacena únicamente como hash.
 
-`POST`, `PATCH` y `DELETE` están reservados en la ruta y el panel del propietario ya permite CRUD usando OAuth de Google. Para habilitar escritura anónima de forma segura falta completar OAuth de servidor con refresh tokens cifrados. Las APIs públicas de Drive se añadirán cuando ese flujo de credenciales y permisos por carpeta esté listo.
+`POST`, `PATCH` y `DELETE` funcionan desde cualquier aplicación sin login, siempre que envíes `X-API-Key`. El servidor usa el refresh token cifrado del propietario para llamar a Google. También están disponibles `POST/PATCH/DELETE /{API_ID}/sheets`, `POST /format`, `POST /clear`, `POST /batch` y operaciones de Drive en APIs registradas como `resource_type=drive`.
+
+### CRUD desde cualquier lenguaje
+
+```bash
+# Insertar una o varias filas
+curl -X POST "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"nombre":"Ana","estado":"ACTIVO"}}'
+
+# Actualizar filas que cumplan la condición
+curl -X PATCH "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"id":"42"},"data":{"estado":"CERRADO"}}'
+
+# Eliminar filas que cumplan la condición
+curl -X DELETE "$API" -H "X-API-Key: $LITTLEAPI_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"id":"42"}}'
+```
+
+La API acepta filtros exactos (`?estado=ACTIVO`), `contains[campo]=texto`, texto completo (`?search=texto`), orden (`sort`/`order`), paginación (`limit`/`offset`), conversión numérica (`cast_numbers`) y agregados (`group_by`, `count`, `sum`, `avg`). La caché de lectura se controla con `cache_ttl` entre 0 y 3600 segundos.
+
+### Secretos necesarios para escrituras
+
+En Supabase → Edge Functions → Secrets configura, sin subirlos a GitHub:
+
+- `GOOGLE_CLIENT_ID`: client ID web del proyecto de Google Cloud.
+- `GOOGLE_CLIENT_SECRET`: client secret del mismo cliente OAuth.
+- `GOOGLE_TOKEN_ENCRYPTION_KEY`: secreto aleatorio largo para cifrar refresh tokens.
+
+Después cierra sesión y vuelve a entrar con Google aceptando Sheets y Drive. El navegador envía el `provider_refresh_token` al endpoint interno `/auth/google/connect`; nunca se muestra ni se guarda en el cliente. Sin esos tres secretos el API mantiene las lecturas, pero responde con un error claro para las escrituras.
 
 ## Publicar en GitHub Pages
 
@@ -91,14 +122,14 @@ Para que una lectura funcione, la hoja debe estar publicada o compartida como �
 
 ## Dominio propio
 
-Cuando compres `littleapi.online`:
+Configuración actual de `littleapi.online`:
 
 1. Configúralo como Custom domain en GitHub Pages.
 2. Verifica la propiedad como Domain property en Search Console mediante DNS.
 3. Usa el mismo dominio en la página principal, privacidad y términos de Google Cloud.
-4. Añade el dominio como origen autorizado en el cliente OAuth.
-5. Configura un proxy para que `/api/v1/{API_ID}` apunte a la Edge Function.
-6. Solicita la verificación y publica la marca.
+4. Añade `https://littleapi.online` y `https://www.littleapi.online` como orígenes autorizados en el cliente OAuth.
+5. Configura un proxy (Cloudflare Worker, por ejemplo) para que `/api/v1/{API_ID}` apunte a la Edge Function; GitHub Pages por sí solo no ejecuta rutas dinámicas.
+6. Solicita la verificación y publica la marca cuando la pantalla de consentimiento esté completa.
 
 ## Estructura
 

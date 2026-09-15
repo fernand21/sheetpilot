@@ -190,7 +190,7 @@ function showApiDialog(project, api, secret) {
   $("#api-endpoint").value = apiUrl(api);
   $("#api-key-value").textContent = secret || "";
   $("#api-key-value").classList.toggle("hidden", !secret);
-  $("#api-secret-note").textContent = secret ? "Guárdala ahora: no se vuelve a mostrar. Se usará para operaciones protegidas cuando habilitemos escritura del servidor." : "Las lecturas públicas no necesitan clave. Si la perdiste, elimina esta API y crea otra.";
+  $("#api-secret-note").textContent = secret ? "Guárdala ahora: no se vuelve a mostrar. La misma clave permite crear, actualizar y eliminar desde cualquier aplicación." : "Las lecturas públicas no necesitan clave. Para escribir usa X-API-Key. Si la perdiste, elimina esta API y crea otra.";
   $("#api-example").textContent = "fetch(" + JSON.stringify(apiUrl(api)) + ")\n  .then(response => response.json())\n  .then(rows => console.log(rows));";
   apiDialog.showModal();
 }
@@ -201,9 +201,9 @@ async function createApi(project) {
   if (name === null) return;
   const apiId = randomToken(15), secret = "sp_live_" + randomToken(24), keyHash = await hashSecret(secret);
   try {
-    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, permissions: { read: true, search: true, create: false, update: false, delete: false } }).select().single();
+    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
     if (result.error) throw result.error;
-    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, permissions: { read: true, search: true }, enabled: true });
+    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
     apisCache.push(result.data); renderProjects(projectsCache); showApiDialog(project, result.data, secret); notice("API creada. Comparte la URL con tu aplicación.", "success");
   } catch (error) { notice(friendlyError(error), "error"); }
@@ -237,6 +237,15 @@ async function startLogin() {
   if (!ready() || !sb) { notice("La conexión todavía no está lista.", "error"); return; }
   const result = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname, scopes: GOOGLE_SCOPES, queryParams: { access_type: "offline", prompt: "consent" } } });
   if (result.error) notice(friendlyError(result.error), "error");
+}
+async function syncProviderRefreshToken(session) {
+  const providerRefreshToken = session?.provider_refresh_token;
+  if (!providerRefreshToken || !session?.access_token) return;
+  try {
+    const response = await fetch(apiBase() + "/auth/google/connect", { method: "POST", headers: { "Content-Type": "application/json", "apikey": cfg.publishableKey, "Authorization": "Bearer " + session.access_token }, body: JSON.stringify({ provider_refresh_token: providerRefreshToken, scopes: GOOGLE_SCOPES.split(" ") }) });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "No se pudo guardar la conexión segura de Google.");
+    notice("Google conectado de forma segura. Tus APIs ya pueden escribir en Sheets y Drive.", "success");
+  } catch (error) { notice("Google inició sesión, pero falta guardar el permiso de servidor: " + friendlyError(error), "error"); }
 }
 async function signOut() {
   token = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
@@ -410,6 +419,6 @@ async function removeProject(project) { if (!confirm("¿Quitar " + project.name 
 bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
-  sb.auth.getSession().then(result => { if (result.data.session?.user) dashboard(result.data.session.user); });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) dashboard(session.user); });
+  sb.auth.getSession().then(result => { if (result.data.session?.user) { dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
+  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { dashboard(session.user); void syncProviderRefreshToken(session); } });
 }

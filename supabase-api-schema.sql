@@ -14,8 +14,9 @@ create table if not exists public.api_endpoints (
   api_key_hash text not null unique,
   api_key_prefix text not null,
   public_read boolean not null default true,
-  permissions jsonb not null default '{"read": true, "search": true, "create": false, "update": false, "delete": false}'::jsonb,
+  permissions jsonb not null default '{"read": true, "search": true, "create": true, "update": true, "delete": true}'::jsonb,
   enabled boolean not null default true,
+  cache_ttl integer not null default 60 check (cache_ttl between 0 and 3600),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint api_source_check check (
@@ -31,6 +32,9 @@ grant select, insert, update, delete on table public.api_endpoints to authentica
 create index if not exists api_endpoints_user_id_idx on public.api_endpoints(user_id);
 create index if not exists api_endpoints_project_id_idx on public.api_endpoints(project_id);
 create index if not exists api_endpoints_api_id_idx on public.api_endpoints(api_id);
+alter table public.api_endpoints add column if not exists cache_ttl integer not null default 60;
+alter table public.api_endpoints drop constraint if exists api_endpoints_cache_ttl_check;
+alter table public.api_endpoints add constraint api_endpoints_cache_ttl_check check (cache_ttl between 0 and 3600);
 
 -- Catálogo mínimo que puede consultar la Edge Function con la clave pública.
 -- Nunca contiene la clave de API ni tokens de Google.
@@ -43,8 +47,9 @@ create table if not exists public.api_public_catalog (
   default_sheet text,
   drive_file_id text,
   public_read boolean not null default true,
-  permissions jsonb not null default '{"read": true, "search": true}'::jsonb,
+  permissions jsonb not null default '{"read": true, "search": true, "create": true, "update": true, "delete": true}'::jsonb,
   enabled boolean not null default true,
+  cache_ttl integer not null default 60 check (cache_ttl between 0 and 3600),
   created_at timestamptz not null default now(),
   constraint public_catalog_source_check check (
     (resource_type = 'sheet' and spreadsheet_id is not null and drive_file_id is null)
@@ -54,6 +59,9 @@ create table if not exists public.api_public_catalog (
 
 alter table public.api_public_catalog enable row level security;
 create index if not exists api_public_catalog_user_id_idx on public.api_public_catalog(user_id);
+alter table public.api_public_catalog add column if not exists cache_ttl integer not null default 60;
+alter table public.api_public_catalog drop constraint if exists api_public_catalog_cache_ttl_check;
+alter table public.api_public_catalog add constraint api_public_catalog_cache_ttl_check check (cache_ttl between 0 and 3600);
 grant select on table public.api_public_catalog to anon, authenticated;
 grant insert, update, delete on table public.api_public_catalog to authenticated;
 
@@ -98,3 +106,21 @@ drop policy if exists "Users can delete their own APIs" on public.api_endpoints;
 create policy "Users can delete their own APIs"
 on public.api_endpoints for delete to authenticated
 using ((select auth.uid()) = user_id);
+
+-- Refresh tokens de Google cifrados por la Edge Function con AES-GCM.
+-- No se concede acceso a anon ni authenticated; sólo la función con service key.
+create table if not exists public.google_connections (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  refresh_token_ciphertext text not null,
+  scopes jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.google_connections enable row level security;
+revoke all on table public.google_connections from anon, authenticated;
+revoke all on table public.google_connections from public;
+drop policy if exists "No client access to Google connections" on public.google_connections;
+create policy "No client access to Google connections"
+on public.google_connections for all to anon, authenticated
+using (false)
+with check (false);
