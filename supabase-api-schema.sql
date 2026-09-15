@@ -19,6 +19,7 @@ create table if not exists public.api_endpoints (
   permissions jsonb not null default '{"read": true, "search": true, "create": true, "update": true, "delete": true}'::jsonb,
   enabled boolean not null default true,
   cache_ttl integer not null default 60 check (cache_ttl between 0 and 3600),
+  monthly_request_limit integer not null default 5000 check (monthly_request_limit between 1 and 10000000),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint api_source_check check (
@@ -38,8 +39,11 @@ create index if not exists api_endpoints_project_id_idx on public.api_endpoints(
 create index if not exists api_endpoints_api_id_idx on public.api_endpoints(api_id);
 alter table public.api_endpoints add column if not exists cache_ttl integer not null default 60;
 alter table public.api_endpoints add column if not exists api_key_ciphertext text;
+alter table public.api_endpoints add column if not exists monthly_request_limit integer not null default 5000;
 alter table public.api_endpoints drop constraint if exists api_endpoints_cache_ttl_check;
 alter table public.api_endpoints add constraint api_endpoints_cache_ttl_check check (cache_ttl between 0 and 3600);
+alter table public.api_endpoints drop constraint if exists api_endpoints_monthly_request_limit_check;
+alter table public.api_endpoints add constraint api_endpoints_monthly_request_limit_check check (monthly_request_limit between 1 and 10000000);
 
 -- Catálogo mínimo que puede consultar la Edge Function con la clave pública.
 -- Nunca contiene la clave de API ni tokens de Google.
@@ -55,6 +59,7 @@ create table if not exists public.api_public_catalog (
   permissions jsonb not null default '{"read": true, "search": true, "create": true, "update": true, "delete": true}'::jsonb,
   enabled boolean not null default true,
   cache_ttl integer not null default 60 check (cache_ttl between 0 and 3600),
+  monthly_request_limit integer not null default 5000 check (monthly_request_limit between 1 and 10000000),
   created_at timestamptz not null default now(),
   constraint public_catalog_source_check check (
     (resource_type = 'sheet' and spreadsheet_id is not null and drive_file_id is null)
@@ -65,8 +70,11 @@ create table if not exists public.api_public_catalog (
 alter table public.api_public_catalog enable row level security;
 create index if not exists api_public_catalog_user_id_idx on public.api_public_catalog(user_id);
 alter table public.api_public_catalog add column if not exists cache_ttl integer not null default 60;
+alter table public.api_public_catalog add column if not exists monthly_request_limit integer not null default 5000;
 alter table public.api_public_catalog drop constraint if exists api_public_catalog_cache_ttl_check;
 alter table public.api_public_catalog add constraint api_public_catalog_cache_ttl_check check (cache_ttl between 0 and 3600);
+alter table public.api_public_catalog drop constraint if exists api_public_catalog_monthly_request_limit_check;
+alter table public.api_public_catalog add constraint api_public_catalog_monthly_request_limit_check check (monthly_request_limit between 1 and 10000000);
 grant select on table public.api_public_catalog to anon, authenticated;
 grant insert, update, delete on table public.api_public_catalog to authenticated;
 grant select, insert, update, delete on table public.api_public_catalog to service_role;
@@ -96,6 +104,55 @@ drop policy if exists "Users can see their own APIs" on public.api_endpoints;
 create policy "Users can see their own APIs"
 on public.api_endpoints for select to authenticated
 using ((select auth.uid()) = user_id);
+
+-- Contador mensual. Sólo la Edge Function usa esta tabla para que el límite
+-- no dependa de la memoria efímera de una instancia.
+create table if not exists public.api_usage_monthly (
+  api_id text not null references public.api_endpoints(api_id) on delete cascade,
+  period_start date not null,
+  requests bigint not null default 0 check (requests >= 0),
+  updated_at timestamptz not null default now(),
+  primary key (api_id, period_start)
+);
+alter table public.api_usage_monthly enable row level security;
+revoke all on table public.api_usage_monthly from anon, authenticated, public;
+grant select, insert, update, delete on table public.api_usage_monthly to service_role;
+
+create or replace function public.consume_api_quota(p_api_id text, p_limit integer)
+returns table(allowed boolean, used bigint, limit_value integer, reset_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_period date := (now() at time zone 'utc')::date;
+  v_reset timestamptz := (date_trunc('month', now() at time zone 'utc') + interval '1 month') at time zone 'utc';
+  v_used bigint;
+  v_allowed boolean := false;
+begin
+  v_period := date_trunc('month', v_period)::date;
+  insert into public.api_usage_monthly(api_id, period_start, requests)
+  values (p_api_id, v_period, 0)
+  on conflict (api_id, period_start) do nothing;
+
+  select requests into v_used
+  from public.api_usage_monthly
+  where api_id = p_api_id and period_start = v_period
+  for update;
+
+  if v_used < greatest(1, p_limit) then
+    update public.api_usage_monthly
+    set requests = requests + 1, updated_at = now()
+    where api_id = p_api_id and period_start = v_period
+    returning requests into v_used;
+    v_allowed := true;
+  end if;
+
+  return query select v_allowed, v_used, greatest(1, p_limit), v_reset;
+end;
+$$;
+revoke all on function public.consume_api_quota(text, integer) from public;
+grant execute on function public.consume_api_quota(text, integer) to service_role;
 
 drop policy if exists "Users can create their own APIs" on public.api_endpoints;
 create policy "Users can create their own APIs"

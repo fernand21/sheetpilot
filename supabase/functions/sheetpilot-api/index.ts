@@ -19,6 +19,7 @@ type ApiRecord = {
   permissions: Record<string, boolean>;
   enabled: boolean;
   cache_ttl: number;
+  monthly_request_limit: number;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -78,12 +79,12 @@ function sameSecret(left: string, right: string) {
   return result === 0;
 }
 async function getApi(apiId: string): Promise<ApiRecord | null> {
-  const fields = "api_id,name,user_id,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_hash,public_read,permissions,enabled,cache_ttl";
+  const fields = "api_id,name,user_id,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_hash,public_read,permissions,enabled,cache_ttl,monthly_request_limit";
   const rows = await dbFetch(`api_endpoints?select=${fields}&api_id=eq.${encodeURIComponent(apiId)}&enabled=eq.true&limit=1`);
-  if (rows?.[0]) return { cache_ttl: 60, ...rows[0] };
-  const publicFields = "api_id,name,user_id,resource_type,spreadsheet_id,default_sheet,drive_file_id,public_read,permissions,enabled";
+  if (rows?.[0]) return { cache_ttl: 60, monthly_request_limit: 5000, ...rows[0] };
+  const publicFields = "api_id,name,user_id,resource_type,spreadsheet_id,default_sheet,drive_file_id,public_read,permissions,enabled,monthly_request_limit";
   const catalog = await dbFetch(`api_public_catalog?select=${publicFields}&api_id=eq.${encodeURIComponent(apiId)}&enabled=eq.true&limit=1`);
-  return catalog?.[0] ? { ...catalog[0], api_key_hash: "", cache_ttl: 60 } : null;
+  return catalog?.[0] ? { ...catalog[0], api_key_hash: "", cache_ttl: 60, monthly_request_limit: catalog[0].monthly_request_limit || 5000 } : null;
 }
 async function hasApiKey(api: ApiRecord, request: Request) {
   const url = new URL(request.url);
@@ -159,6 +160,22 @@ function searchRows(rows: Record<string, unknown>[], url: URL, orMode = false) {
   return transform(filtered, url);
 }
 function requirePermission(api: ApiRecord, action: string) { return allowed(api, action) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`); }
+type QuotaState = { allowed: boolean; used: number; limit: number; reset_at: string };
+async function consumeQuota(api: ApiRecord) {
+  const limit = Math.max(1, Number(api.monthly_request_limit || 5000));
+  const result = await dbFetch("rpc/consume_api_quota", { method: "POST", body: JSON.stringify({ p_api_id: api.api_id, p_limit: limit }) });
+  const row = Array.isArray(result) ? result[0] : result;
+  if (!row) throw new Error("El servicio de cuotas no devolvió un estado válido.");
+  const state: QuotaState = { allowed: Boolean(row.allowed), used: Number(row.used || 0), limit: Number(row.limit_value || limit), reset_at: String(row.reset_at || "") };
+  if (state.allowed) return null;
+  const reset = Date.parse(state.reset_at), retryAfter = Number.isNaN(reset) ? 3600 : Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+  return response({ error: "quota_exceeded", message: "Esta API ya no tiene más consultas disponibles este mes.", quota: { used: state.used, limit: state.limit, remaining: 0, reset_at: state.reset_at } }, 429, { "Retry-After": String(retryAfter), "X-LittleAPI-Quota-Limit": String(state.limit), "X-LittleAPI-Quota-Used": String(state.used), "X-LittleAPI-Quota-Remaining": "0", "X-LittleAPI-Quota-Reset": state.reset_at });
+}
+async function quotaStatus(api: ApiRecord) {
+  const period = new Date(); period.setUTCDate(1); const start = period.toISOString().slice(0, 10), rows = await dbFetch(`api_usage_monthly?select=period_start,requests&api_id=eq.${encodeURIComponent(api.api_id)}&period_start=eq.${start}&limit=1`), used = Number(rows?.[0]?.requests || 0), limit = Math.max(1, Number(api.monthly_request_limit || 5000));
+  const reset = new Date(Date.UTC(period.getUTCFullYear(), period.getUTCMonth() + 1, 1)).toISOString();
+  return { used, limit, remaining: Math.max(0, limit - used), reset_at: reset };
+}
 function csvCell(value: unknown) { const text = String(value ?? ""); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
 function csvResponse(api: ApiRecord, table: { headers: string[]; rows: unknown[][] }, sheet: string) {
   const csv = [table.headers, ...table.rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
@@ -280,6 +297,7 @@ function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
       "/metadata": { get: { operationId: "getMetadata", summary: "Metadatos de la API" } },
       "/openapi.json": { get: { operationId: "getOpenApi", summary: "Contrato OpenAPI" } },
       "/stats": { get: { operationId: "getStats", summary: "Estadísticas de una columna", parameters: [{ name: "column", in: "query", schema: { type: "string" } }] } },
+      "/usage": { get: { operationId: "getUsage", summary: "Consulta el consumo mensual (requiere clave)", security: key } },
       "/sheets": { get: { operationId: "listSheets", summary: "Lista pestañas (requiere clave)", security: key }, post: { operationId: "createSheet", summary: "Crea una pestaña", security: key, requestBody: { required: true, content: jsonBody } } },
       "/sheets/{sheet}": { patch: { operationId: "renameSheet", summary: "Renombra una pestaña", security: key, parameters: [{ name: "sheet", in: "path", required: true, schema: { type: "string" } }], requestBody: { required: true, content: jsonBody } }, delete: { operationId: "deleteSheet", summary: "Elimina una pestaña", security: key, parameters: [{ name: "sheet", in: "path", required: true, schema: { type: "string" } }] } },
       "/sheets/copy": { post: { operationId: "copySheet", summary: "Copia una pestaña a otro libro", security: key, requestBody: { required: true, content: jsonBody } } },
@@ -339,6 +357,6 @@ async function handler(request: Request) {
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
   if (!path[0]) return response({ name: "LittleAPI", version: "1", usage: "/sheetpilot-api/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Las APIs publicadas se consumen sin login; usa X-API-Key para escrituras." });
-  const api = await getApi(path[0]); if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada."); if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request); if (request.method === "GET") return readOperation(api, request, path.slice(1)); return mutationOperation(api, request, path.slice(1));
+  const api = await getApi(path[0]); if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada."); const quotaError = path[1] === "usage" ? null : await consumeQuota(api); if (quotaError) return quotaError; if (path[1] === "usage" && request.method === "GET") { if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Consultar el consumo requiere la cabecera X-API-Key."); return response({ api_id: api.api_id, quota: await quotaStatus(api) }); } if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request); if (request.method === "GET") return readOperation(api, request, path.slice(1)); return mutationOperation(api, request, path.slice(1));
 }
 Deno.serve(async (request) => { try { return await handler(request); } catch (error) { return failure(502, "upstream_error", error instanceof Error ? error.message : "No se pudo completar la solicitud."); } });

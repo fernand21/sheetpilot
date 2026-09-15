@@ -6,6 +6,7 @@ LittleAPI convierte un libro de Google Sheets o un recurso de Google Drive en un
 
 - Aplicación: <https://littleapi.online/>
 - Documentación: <https://littleapi.online/docs/>
+- Precios: <https://littleapi.online/pricing.html>
 - API de ejemplo: <https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_>
 - OpenAPI de ejemplo: <https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_/openapi.json>
 - Código: <https://github.com/fernand21/sheetpilot>
@@ -34,6 +35,7 @@ La clave completa sólo aparece al propietario autenticado. Se usa en la cabecer
 - `GET /{API_ID}/search` y `/search_or`: filtros por columna, texto completo, comodines y comparadores.
 - `GET /{API_ID}/keys`, `/name`, `/count`, `/cells/A1,B2`, `/metadata`.
 - `GET /{API_ID}/stats`: conteo, suma, promedio, mínimo y máximo.
+- `GET /{API_ID}/usage`: consumo mensual de la API (requiere `X-API-Key`).
 - `GET /{API_ID}/export.csv`: descarga CSV, incluso sin clave si la lectura es pública.
 - `GET /{API_ID}/openapi.json`: contrato OpenAPI listo para importar.
 
@@ -53,6 +55,8 @@ Todas las siguientes rutas funcionan desde cualquier lenguaje, sin login del con
 - `GET /{API_ID}/export.xlsx`: descarga el libro como Excel.
 
 Las APIs de tipo Drive añaden listar carpetas, buscar por nombre, crear, subir contenido base64, descargar, renombrar, borrar, consultar cuota y consultar información de la cuenta.
+
+Cada API empieza con 5.000 consultas mensuales. Al agotarlas, LittleAPI responde HTTP `429` con `error: "quota_exceeded"`, el uso actual y `reset_at`. El contador se reinicia cada mes UTC; consulta `/usage` para mostrarlo en tu panel.
 
 ## Ejemplos rápidos
 
