@@ -59,7 +59,7 @@
       const renderPayPalButton = hostedButtonId => {
         const container = document.querySelector("#paypal-container-" + hostedButtonId);
         if (!container || !window.paypal?.HostedButtons) return;
-        window.paypal.HostedButtons({ hostedButtonId }).render(container);
+        window.paypal.HostedButtons({ hostedButtonId }).render("#paypal-container-" + hostedButtonId);
       };
       renderPayPalButton("T7VT2GJLSAAQ");
       renderPayPalButton("74J9AVSMN8W2S");
