@@ -160,6 +160,14 @@ async function saveActiveSheet() {
   const result = await sb.from("projects").update({ sheet_name: activeSheet, updated_at: new Date().toISOString() }).eq("id", activeProject.id).eq("user_id", user.id);
   if (result.error) throw result.error;
   activeProject.sheet_name = activeSheet;
+  const api = apiForProject(activeProject);
+  if (api) {
+    const endpoint = await sb.from("api_endpoints").update({ default_sheet: activeSheet, updated_at: new Date().toISOString() }).eq("id", api.id).eq("user_id", user.id);
+    if (endpoint.error) throw endpoint.error;
+    const catalog = await sb.from("api_public_catalog").update({ default_sheet: activeSheet }).eq("api_id", api.api_id).eq("user_id", user.id);
+    if (catalog.error) throw catalog.error;
+    api.default_sheet = activeSheet;
+  }
 }
 async function openProject(project, tab) {
   activeProject = project; $("#workspace-title").textContent = project.name; if (!workspaceDialog.open) workspaceDialog.showModal();
