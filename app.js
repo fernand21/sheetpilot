@@ -202,18 +202,21 @@ async function loadApiKey(api) { const data = await ownerApiRequest("/auth/api-k
 async function saveApiKey(api, secret) { return ownerApiRequest("/auth/api-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_id: api.api_id, api_key: secret }) }); }
 async function showApiDialog(project, api, secret) {
   if (!apiDialog || !api) return;
+  const keyNode = $("#api-key-value"), copyButton = $("#copy-api-key"), regenerateButton = $("#regenerate-api-key");
   dialogApi = api; dialogProject = project;
   $("#api-dialog-title").textContent = api.name || project.name;
   $("#api-endpoint").value = apiUrl(api);
-  $("#api-key-value").textContent = secret || "Cargando clave…"; $("#api-key-value").classList.remove("hidden"); $("#copy-api-key").disabled = !secret; $("#regenerate-api-key").classList.add("hidden");
+  if (keyNode) { keyNode.textContent = secret || "Cargando clave…"; keyNode.classList.remove("hidden"); }
+  if (copyButton) copyButton.disabled = !secret;
+  if (regenerateButton) regenerateButton.classList.add("hidden");
   $("#api-secret-note").textContent = secret ? "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación." : "Cargando tu clave cifrada…";
   $("#api-example").textContent = "fetch(" + JSON.stringify(apiUrl(api)) + ")\n  .then(response => response.json())\n  .then(rows => console.log(rows));";
   if (!apiDialog.open) apiDialog.showModal();
   if (secret) return;
   try {
-    const recovered = await loadApiKey(api); $("#api-key-value").textContent = recovered; $("#copy-api-key").disabled = false; $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación.";
+    const recovered = await loadApiKey(api); if (keyNode) keyNode.textContent = recovered; if (copyButton) copyButton.disabled = false; $("#api-secret-note").textContent = "Esta clave se guarda cifrada y sólo se muestra a ti después de iniciar sesión. Úsala como X-API-Key para escribir desde cualquier aplicación.";
   } catch (error) {
-    $("#api-key-value").textContent = ""; $("#api-key-value").classList.add("hidden"); $("#copy-api-key").disabled = true; $("#regenerate-api-key").classList.remove("hidden"); $("#api-secret-note").textContent = "No hay una clave recuperable para esta API. Genera una nueva; la clave anterior dejará de funcionar.";
+    if (keyNode) { keyNode.textContent = ""; keyNode.classList.add("hidden"); } if (copyButton) copyButton.disabled = true; if (regenerateButton) regenerateButton.classList.remove("hidden"); $("#api-secret-note").textContent = "No hay una clave recuperable para esta API. Genera una nueva; la clave anterior dejará de funcionar.";
   }
 }
 async function createApi(project) {
@@ -245,8 +248,11 @@ async function copyApiUrl() {
   catch (_) { document.execCommand("copy"); message("#api-message", "URL copiada.", "success"); }
 }
 async function copyApiKey() {
-  const value = $("#api-key-value").textContent.trim(); if (!value) return message("#api-message", "La clave todavía no está disponible.", "error");
-  try { await navigator.clipboard.writeText(value); message("#api-message", "Clave copiada.", "success"); } catch (_) { const node = $("#api-key-value"), selection = window.getSelection(), range = document.createRange(); range.selectNodeContents(node); selection.removeAllRanges(); selection.addRange(range); document.execCommand("copy"); selection.removeAllRanges(); message("#api-message", "Clave copiada.", "success"); }
+  const node = $("#api-key-value"), value = node?.textContent.trim(); if (!value || value === "Cargando clave…") return message("#api-message", "La clave todavía no está disponible.", "error");
+  let copied = false;
+  try { if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(value); copied = true; } } catch (_) { /* Usa el método de selección de abajo. */ }
+  if (!copied && node) { const selection = window.getSelection(), range = document.createRange(); range.selectNodeContents(node); selection.removeAllRanges(); selection.addRange(range); try { copied = document.execCommand("copy"); } catch (_) { copied = false; } selection.removeAllRanges(); }
+  message("#api-message", copied ? "Clave copiada." : "No se pudo copiar automáticamente. Selecciona la clave y cópiala con Ctrl+C.", copied ? "success" : "error");
 }
 async function regenerateApiKey() {
   if (!dialogApi || !confirm("La clave anterior dejará de funcionar. ¿Generar una clave nueva?")) return;
@@ -441,7 +447,7 @@ async function driveQuota() {
 }
 function bindAuthButtons() { $$("[data-open-auth]").forEach(button => { button.onclick = startLogin; }); }
 function bindEvents() {
-  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; $("#copy-api-key").onclick = copyApiKey; $("#regenerate-api-key").onclick = regenerateApiKey; $("#authorize-google").onclick = listSheetsForProject;
+  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; if ($("#copy-api-key")) $("#copy-api-key").onclick = copyApiKey; if ($("#regenerate-api-key")) $("#regenerate-api-key").onclick = regenerateApiKey; $("#authorize-google").onclick = listSheetsForProject;
   $("#new-project").onclick = () => { $("#sheets-list").innerHTML = ""; $("#authorize-google").classList.remove("hidden"); $("#authorize-google").disabled = false; message("#sheet-message", ""); sheetDialog.showModal(); };
   $("#connect-sheet").onclick = () => $("#new-project").click(); $("#open-drive").onclick = () => { if (!driveDialog.open) driveDialog.showModal(); loadDrive(); }; $("#sign-out").onclick = signOut; $("#load-data").onclick = loadValues;
   $("#search-data").onclick = () => { const term = $("#search-value").value.toLowerCase(), index = $("#search-column").value; if (!term) return renderTable(loadedValues, "#data-table"); const result = [loadedValues[0] || []].concat(loadedValues.slice(1).filter(row => index === "" ? row.some(value => String(value || "").toLowerCase().includes(term)) : String(row[index] || "").toLowerCase().includes(term))); renderTable(result, "#data-table"); message("#workspace-message", Math.max(0, result.length - 1) + " coincidencias.", "success"); };
