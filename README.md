@@ -138,6 +138,17 @@ Configuración actual de `littleapi.online`:
 5. Configura un proxy (Cloudflare Worker, por ejemplo) para que `/api/v1/{API_ID}` apunte a la Edge Function; GitHub Pages por sí solo no ejecuta rutas dinámicas.
 6. Solicita la verificación y publica la marca cuando la pantalla de consentimiento esté completa.
 
+### Proxy de Cloudflare para la URL de marca
+
+El archivo `cloudflare-worker.js` contiene un Worker sin secretos que conserva la web en GitHub Pages y sólo reenvía las rutas `/api/v1/*` a Supabase. Para activarlo:
+
+1. Añade `littleapi.online` en Cloudflare y cambia en Namecheap los nameservers por los dos que Cloudflare indique. No se migra el alojamiento: conserva los cuatro registros A de GitHub Pages y el CNAME `www`.
+2. En Cloudflare → Workers & Pages crea un Worker llamado `littleapi-api-proxy`, abre **Edit code**, pega el contenido de `cloudflare-worker.js` y pulsa **Deploy**.
+3. En el Worker abre **Settings → Triggers → Routes → Add route** y registra `littleapi.online/api/v1/*`, seleccionando `littleapi-api-proxy`.
+4. Espera la propagación DNS y prueba `https://littleapi.online/api/v1/{API_ID}`. Las peticiones que no empiezan por `/api/v1/` continúan llegando a GitHub Pages.
+
+Mientras el Worker no esté activo, usa la URL de Supabase indicada arriba. Cuando la ruta de Cloudflare responda correctamente se puede cambiar `apiBase` en `config.js` a `https://littleapi.online/api/v1`.
+
 ## Estructura
 
 - `index.html`: aplicación y panel de usuario.
