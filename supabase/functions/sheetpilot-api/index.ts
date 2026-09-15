@@ -30,7 +30,7 @@ const serviceKey = (() => {
 })();
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-api-key, authorization, x-littleapi-key",
+  "Access-Control-Allow-Headers": "content-type, apikey, x-api-key, authorization, x-littleapi-key",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Cache-Control": "no-store",
 };
