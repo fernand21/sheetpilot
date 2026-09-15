@@ -66,10 +66,10 @@ El archivo `config.js` contiene solamente la URL pública, la clave publishable 
 
 La primera versión solicita:
 
-- https://www.googleapis.com/auth/spreadsheets
+- https://www.googleapis.com/auth/drive.file
 - https://www.googleapis.com/auth/drive.file
 
-El alcance de Drive es `drive.file`: sólo permite trabajar con archivos que el usuario crea o selecciona con esta aplicación, no con todo su Drive. Esto reduce el acceso solicitado y mantiene las operaciones dentro del Drive del propio usuario. En modo de pruebas funciona únicamente para las cuentas autorizadas; Google aún puede solicitar verificación para los alcances de Sheets si se publica la aplicación.
+LittleAPI usa el alcance recomendado `drive.file` para Sheets y Drive: sólo permite ver, editar, crear y eliminar los archivos concretos que el usuario crea o selecciona con esta aplicación, no todo su Drive. Google documenta que este alcance también autoriza las operaciones de Sheets y es no sensible; así reducimos la revisión necesaria. En modo de pruebas sólo acceden las cuentas autorizadas.
 
 Con `drive.file`, Google no permite enumerar indiscriminadamente todo el Drive. Si una hoja existente no aparece en el selector, ábrela o selecciónala mediante un selector de archivos de Google para conceder acceso a LittleAPI. Para administrar absolutamente todos los archivos del Drive habría que volver al alcance `drive`, que requiere una justificación y revisión más amplia.
 
