@@ -12,6 +12,10 @@ create table if not exists public.projects (
 
 alter table public.projects enable row level security;
 
+-- La tabla se consulta desde la Data API con el rol autenticado.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on table public.projects to authenticated;
+
 create policy "Users can see their own projects"
 on public.projects for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -28,4 +32,3 @@ with check ((select auth.uid()) = user_id);
 create policy "Users can delete their own projects"
 on public.projects for delete to authenticated
 using ((select auth.uid()) = user_id);
-
