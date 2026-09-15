@@ -25,6 +25,9 @@ export default {
     target.search = incoming.search;
 
     // Se conservan método, cuerpo y encabezados (incluido X-API-Key).
-    return fetch(new Request(target, request));
+    // El encabezado permite que OpenAPI muestre la URL pública de LittleAPI.
+    const forwarded = new Request(target, request);
+    forwarded.headers.set("x-littleapi-public-base", incoming.origin + PREFIX);
+    return fetch(forwarded);
   },
 };
