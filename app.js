@@ -444,7 +444,7 @@ async function syncProviderRefreshToken(session) {
 async function signOut() {
   token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
   user = null; usageByApi = Object.create(null); togglePublicContent(true); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
-  $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google">Continuar con Google</button>'; bindAuthButtons();
+  $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google" data-i18n="authGoogle">' + esc(tx("authGoogle", "Continuar con Google")) + '</button>'; bindAuthButtons();
 }
 function togglePublicContent(show) {
   $("main").querySelectorAll(":scope > section:not(#dashboard)").forEach(section => section.classList.toggle("hidden", !show));
@@ -452,7 +452,7 @@ function togglePublicContent(show) {
 function dashboard(account) {
   if (!account) return; user = account; togglePublicContent(false); $("#public-home").classList.add("hidden"); $("#dashboard").classList.remove("hidden");
   const display = account.user_metadata?.full_name || account.user_metadata?.name || account.email?.split("@")[0] || "usuario";
-  $("#user-name").textContent = display; $("#header-actions").innerHTML = '<span class="account-chip">' + esc(account.email || "") + '</span><button class="text-button" id="header-sign-out">Salir</button>'; $("#header-sign-out").onclick = signOut; projects();
+  $("#user-name").textContent = display; $("#header-actions").innerHTML = '<span class="account-chip">' + esc(account.email || "") + '</span><button class="text-button" id="header-sign-out" data-i18n="signOut">' + esc(tx("signOut", "Salir")) + '</button>'; $("#header-sign-out").onclick = signOut; projects();
 }
 async function listSheetsForProject() {
   const button = $("#authorize-google"); button.disabled = true; message("#sheet-message", "Buscando tus hojas…");
