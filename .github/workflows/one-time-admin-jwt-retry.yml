@@ -1,0 +1,30 @@
+name: LittleAPI Admin JWT Retry
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-admin-jwt-retry.yml"
+      - "scripts/patch_admin_jwt_retry.py"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply admin JWT retry patch
+        run: python scripts/patch_admin_jwt_retry.py
+      - name: Verify JavaScript
+        run: |
+          node --check admin/admin.js
+          grep -q 'retryAuth = true' admin/admin.js
+          grep -q 'sb.auth.refreshSession' admin/admin.js
+      - name: Commit patch
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add admin/admin.js
+          git commit -m "Retry admin authorization after transient JWT skew"
+          git push
