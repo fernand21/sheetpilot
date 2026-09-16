@@ -678,7 +678,9 @@ function bindEvents() {
 async function removeProject(project) { if (!confirm("¿Quitar " + project.name + " de " + BRAND_NAME + "? La hoja de Google no se eliminará.")) return; const result = await sb.from("projects").delete().eq("id", project.id).eq("user_id", user.id); if (result.error) return notice(friendlyError(result.error), "error"); notice("Proyecto quitado. La hoja original sigue en tu Drive.", "success"); projects(); }
 bindEvents();
 if (ready()) {
-  sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
+  const projectRef = (() => { try { return new URL(cfg.url).hostname.split(".")[0]; } catch (_) { return "littleapi"; } })();
+  const authStorageKey = `sb-${projectRef}-auth-token`;
+  sb = window.supabase.createClient(cfg.url, cfg.publishableKey, { auth: { storageKey: authStorageKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
   sb.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_OUT") {

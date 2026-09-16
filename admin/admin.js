@@ -2,7 +2,9 @@
   const cfg = window.SUPABASE_CONFIG || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const sb = window.supabase?.createClient(cfg.url, cfg.publishableKey, { auth: { persistSession: true, detectSessionInUrl: true } });
+  const projectRef = (() => { try { return new URL(cfg.url).hostname.split(".")[0]; } catch (_) { return "littleapi"; } })();
+  const authStorageKey = `sb-${projectRef}-auth-token`;
+  const sb = window.supabase?.createClient(cfg.url, cfg.publishableKey, { auth: { storageKey: authStorageKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   const base = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/littleapi-admin";
   const priceByPlan = { inicial: 3, pro: 7, business: 25 };
   const state = { me: null, summary: null, users: [], sales: [], apis: [], logs: [], audit: [], webhooks: [], deliveries: [], view: "overview" };
