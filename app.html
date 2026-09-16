@@ -41,7 +41,7 @@
       (async () => {
         const content = document.querySelector("#app-content");
         try {
-          const response = await fetch("index.html", { cache: "no-store" });
+          const response = await fetch("index.html");
           if (!response.ok) throw new Error("No se pudo cargar el espacio de trabajo.");
           const source = new DOMParser().parseFromString(await response.text(), "text/html");
           const dashboard = source.querySelector("#dashboard");
@@ -54,6 +54,7 @@
             translationScript.textContent = translationSource.textContent;
             document.body.append(translationScript);
           }
+
           const loadScript = src => new Promise((resolve, reject) => {
             const script = document.createElement("script");
             script.src = src;
@@ -62,23 +63,31 @@
             document.body.append(script);
           });
 
-          // Core dependencies must preserve order.
           await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           const googleScript = document.createElement("script");
           googleScript.src = "https://accounts.google.com/gsi/client";
           googleScript.async = true;
           document.head.append(googleScript);
           await loadScript("config.js");
-          await loadScript("app.js");
+          await loadScript("app.js?v=20260916-stable1");
 
-          // The dashboard can render now. Secondary enhancements no longer block it.
+          // Core UI is ready: show it immediately.
           document.querySelector(".app-loading")?.remove();
-          void Promise.allSettled([
-            loadScript("app-enhancements.js"),
-            loadScript("google-file-grant.js"),
-            loadScript("project-sheet-picker.js")
-          ]);
+
+          // Admin / security enhancements are loaded first and no longer race
+          // with the experimental Google click interceptors.
+          try {
+            await loadScript("app-enhancements.js?v=20260916-stable1");
+          } catch (enhancementError) {
+            console.error("LittleAPI enhancements failed", enhancementError);
+          }
+
+          // Safe picker only changes the button inside the sheet dialog.
+          // It never captures or cancels the main dashboard buttons.
+          void loadScript("project-sheet-picker-safe.js?v=20260916-stable1")
+            .catch(error => console.error("LittleAPI sheet picker failed", error));
         } catch (error) {
+          console.error("LittleAPI startup failed", error);
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
         }
       })();
