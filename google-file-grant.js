@@ -270,8 +270,12 @@
     void handleCreateApiClick(event, button, card);
   }, true);
 
-  const observer = new MutationObserver(() => injectRecoveryButtons());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  // Only project-card changes matter here. Observing the whole document caused
+  // unnecessary rescans whenever logs, counters, dialogs or other UI changed.
+  const projectsGrid = document.querySelector('#projects-grid');
+  if (projectsGrid) {
+    new MutationObserver(injectRecoveryButtons).observe(projectsGrid, { childList: true, subtree: true });
+  }
   injectRecoveryButtons();
   setTimeout(() => void completePendingGrant(), 800);
   window.addEventListener('littleapi:language-change', injectRecoveryButtons);
