@@ -13,7 +13,7 @@ LittleAPI convierte un libro de Google Sheets o un recurso de Google Drive en un
 
 ## Cómo publicar una API
 
-1. Entra en [LittleAPI](https://littleapi.online/) con Google.
+1. Entra en [LittleAPI](https://littleapi.online/app.html) con Google.
 2. Acepta los permisos de Google Sheets y Google Drive.
 3. Crea un proyecto y selecciona un libro o recurso.
 4. Pulsa **Crear API** y copia la URL y la clave de administración.
