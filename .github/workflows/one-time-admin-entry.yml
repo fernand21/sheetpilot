@@ -1,0 +1,38 @@
+name: LittleAPI Admin Entry Patch
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-admin-entry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add admin-only entry point to normal dashboard
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('app-enhancements.js')
+          s=p.read_text(encoding='utf-8')
+          needle='''  function bindLanguageRefresh() {\n    const select = $("#language-select");\n    if (!select || select.dataset.enhancementBound === "true") return;\n    select.dataset.enhancementBound = "true";\n    select.addEventListener("change", () => setTimeout(() => { refreshEnhancementLanguage(); refreshApiSelector(); }, 0));\n  }\n\n  function apply() { enhanceUsageList(); enhanceQueryPanel(); enhancePlatformPanel(); bindLanguageRefresh(); refreshApiSelector(); }'''
+          replacement='''  function bindLanguageRefresh() {\n    const select = $("#language-select");\n    if (!select || select.dataset.enhancementBound === "true") return;\n    select.dataset.enhancementBound = "true";\n    select.addEventListener("change", () => setTimeout(() => { refreshEnhancementLanguage(); refreshApiSelector(); refreshAdminEntryLanguage(); }, 0));\n  }\n\n  let adminEntryChecking = false;\n  let adminEntryChecked = false;\n\n  function refreshAdminEntryLanguage() {\n    const link = $("#admin-console-link");\n    if (!link) return;\n    link.textContent = text("Administración", "Admin");\n    link.title = text("Abrir la consola privada de LittleAPI", "Open the private LittleAPI console");\n  }\n\n  async function enhanceAdminEntry() {\n    const actions = $("#dashboard .dashboard-actions");\n    if (!actions || $("#admin-console-link", actions) || adminEntryChecking || adminEntryChecked) return;\n    if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }\n    adminEntryChecking = true;\n    try {\n      const sessionResult = await sb.auth.getSession();\n      const session = sessionResult?.data?.session;\n      if (!session?.access_token) return;\n      const adminBase = String(cfg.url || "").replace(/\\/$/, "") + "/functions/v1/littleapi-admin/me";\n      const response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + session.access_token } });\n      if (!response.ok) {\n        if (response.status === 401 || response.status === 403) adminEntryChecked = true;\n        return;\n      }\n      const info = await response.json().catch(() => ({}));\n      if (!info?.user || !info?.role) return;\n      const link = document.createElement("a");\n      link.id = "admin-console-link";\n      link.className = "action-button";\n      link.href = "admin/";\n      link.dataset.adminRole = info.role;\n      const signOut = $("#sign-out", actions);\n      if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);\n      refreshAdminEntryLanguage();\n      adminEntryChecked = true;\n    } catch (_) {\n      // Keep the normal dashboard unchanged if the admin check is unavailable.\n    } finally {\n      adminEntryChecking = false;\n    }\n  }\n\n  function apply() { enhanceUsageList(); enhanceQueryPanel(); enhancePlatformPanel(); bindLanguageRefresh(); refreshApiSelector(); enhanceAdminEntry(); }'''
+          if needle not in s:
+              raise SystemExit('Patch target not found')
+          s=s.replace(needle,replacement)
+          p.write_text(s,encoding='utf-8')
+      - name: Verify JavaScript
+        run: |
+          node --check app-enhancements.js
+          grep -q 'admin-console-link' app-enhancements.js
+      - name: Commit patch
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add app-enhancements.js
+          git commit -m "Show admin console entry only to authorized admins"
+          git push
