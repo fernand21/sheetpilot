@@ -6,9 +6,11 @@ const sheetDialog = $("#sheet-dialog");
 const workspaceDialog = $("#workspace-dialog");
 const driveDialog = $("#drive-dialog");
 const apiDialog = $("#api-dialog");
-const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
-const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
+// Alcance mínimo: sólo archivos de Drive que el usuario seleccione, cree o
+// comparta explícitamente con LittleAPI. No solicitar scopes amplios como
+// `spreadsheets` o `drive`, que activan verificación adicional de OAuth.
+const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const GOOGLE_SCOPES = DRIVE_FILE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
 const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
