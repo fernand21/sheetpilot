@@ -1,4 +1,3 @@
-# Smoke tests for LittleAPI platform integrations
 name: LittleAPI Platform Smoke Test
 
 on:
@@ -11,8 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check dashboard JavaScript
-        run: node --check app-enhancements.js
+      - name: Check dashboard and admin JavaScript
+        run: |
+          node --check app-enhancements.js
+          node --check admin/admin.js
       - name: Test JavaScript SDK
         run: |
           cp sdk/javascript/littleapi.js /tmp/littleapi.mjs
@@ -99,4 +100,16 @@ jobs:
           d=json.load(open('write.json'))
           assert d['error']['code'] == -32001, d
           print('PASS MCP write protection')
+          PY
+      - name: Admin backend rejects anonymous access
+        run: |
+          code=$(curl --silent --show-error -o admin.json -w '%{http_code}' \
+            -H 'Origin: https://littleapi.online' \
+            'https://dnwaapropjmoyqxquzvs.supabase.co/functions/v1/littleapi-admin/me')
+          test "$code" = '403'
+          python - <<'PY'
+          import json
+          d=json.load(open('admin.json'))
+          assert d.get('error') == 'admin_required', d
+          print('PASS admin access control')
           PY
