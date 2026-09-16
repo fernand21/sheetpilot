@@ -1,5 +1,5 @@
 /*
- * LittleAPI API v1.2
+ * LittleAPI API v1.3
  * Public REST API for Google Sheets and Google Drive.
  *
  * Published APIs do not require a Supabase login. Public GETs can be anonymous;
@@ -36,7 +36,7 @@ type PageResult = {
 };
 type QuotaState = { allowed: boolean; used: number; limit: number; reset_at: string };
 
-const API_VERSION = "1.2.0";
+const API_VERSION = "1.3.0";
 const MAX_PAGE_SIZE = 1000;
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "";
@@ -161,6 +161,112 @@ async function readAuthorized(api: ApiRecord, token: string, sheet: string): Pro
   const headers = (values[0] || []).map((value: unknown, index: number) => String(value || columnName(index + 1)));
   return { headers, rows: values.slice(1), values };
 }
+
+const QUERY_RESERVED_WORDS = new Set([
+  "select", "where", "group", "by", "pivot", "order", "limit", "offset", "label", "format", "options",
+  "and", "or", "not", "contains", "starts", "with", "ends", "matches", "like", "is", "null",
+  "date", "datetime", "timeofday", "true", "false", "sum", "avg", "count", "min", "max",
+  "year", "month", "day", "hour", "minute", "second", "quarter", "dayofweek", "upper", "lower", "now", "todate",
+]);
+function escapeQueryRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function mapQueryHeaders(query: string, headers: string[]) {
+  const mappings = headers
+    .map((header, index) => ({ name: String(header || "").trim(), column: columnName(index + 1) }))
+    .filter((item) => item.name && !QUERY_RESERVED_WORDS.has(item.name.toLowerCase()))
+    .sort((a, b) => b.name.length - a.name.length);
+  const quoted = /('(?:''|[^'])*'|"(?:""|[^"])*")/g;
+  return String(query || "").split(quoted).map((segment, index) => {
+    if (index % 2 === 1) return segment;
+    let result = segment;
+    for (const mapping of mappings) {
+      const pattern = new RegExp(`(^|[^\\p{L}\\p{N}_])${escapeQueryRegex(mapping.name)}(?=$|[^\\p{L}\\p{N}_])`, "giu");
+      result = result.replace(pattern, (_match, prefix) => `${prefix}${mapping.column}`);
+    }
+    return result;
+  }).join("");
+}
+async function queryHeaders(api: ApiRecord, sheet: string, token: string, headerRows: number) {
+  try {
+    const params = new URLSearchParams({ tqx: "out:json", headers: String(headerRows), sheet, tq: "limit 0" });
+    const headers = new Headers();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const result = await fetch(`https://docs.google.com/spreadsheets/d/${encodeURIComponent(api.spreadsheet_id || "")}/gviz/tq?${params.toString()}`, { headers });
+    const text = await result.text();
+    if (result.ok) {
+      const table = parseVisualization(text);
+      if (table.headers.length) return table.headers;
+    }
+  } catch (_) { /* Fallback below. */ }
+  return token ? (await readAuthorized(api, token, sheet)).headers : (await readPublicSheet(api, sheet)).headers;
+}
+async function queryOperation(api: ApiRecord, request: Request) {
+  if (api.resource_type !== "sheet" || !api.spreadsheet_id) return failure(400, "not_a_sheet_api", "Las consultas avanzadas sólo están disponibles para APIs de Google Sheets.");
+  const denied = requirePermission(api, "read");
+  if (denied) return denied;
+  if (api.public_read !== true && !(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key.");
+
+  const url = new URL(request.url);
+  const body = request.method === "POST" ? await request.json().catch(() => ({})) : {};
+  const query = String(body.query || body.q || url.searchParams.get("q") || url.searchParams.get("query") || "").trim();
+  const sheet = String(body.sheet || url.searchParams.get("sheet") || api.default_sheet || "Sheet1").trim();
+  const raw = body.raw === true || url.searchParams.get("raw") === "true";
+  const columnsMode = String(body.columns || url.searchParams.get("columns") || "names").toLowerCase();
+  const requestedHeaders = Number(body.headers ?? url.searchParams.get("headers") ?? 1);
+  const headerRows = Number.isFinite(requestedHeaders) ? Math.max(0, Math.min(10, Math.floor(requestedHeaders))) : 1;
+
+  if (!query) return failure(400, "query_required", "Indica la consulta en q/query.", {
+    example: "SELECT Nombre, Total WHERE Total > 100 ORDER BY Total DESC LIMIT 20",
+    url: `https://littleapi.online/api/v1/${api.api_id}/query?sheet=${encodeURIComponent(sheet)}&q=SELECT%20*%20LIMIT%2010`,
+  });
+  if (query.length > 4000) return failure(413, "query_too_long", "La consulta no puede superar 4000 caracteres.");
+
+  const token = api.public_read ? "" : await googleTokenForUser(api.user_id);
+  const sheetHeaders = columnsMode === "letters" ? [] : await queryHeaders(api, sheet, token, headerRows);
+  const translatedQuery = columnsMode === "letters" ? query : mapQueryHeaders(query, sheetHeaders);
+  const cacheKey = `${api.api_id}:query:${sheet}:${headerRows}:${columnsMode}:${raw}:${translatedQuery}`;
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return response(cached.value, 200, {
+    "X-LittleAPI-Cache": "HIT",
+    "Cache-Control": api.public_read ? `public, max-age=${Math.min(api.cache_ttl, 3600)}` : "no-store",
+  });
+
+  const params = new URLSearchParams({ tqx: "out:json", headers: String(headerRows), sheet, tq: translatedQuery });
+  const googleHeaders = new Headers();
+  if (token) googleHeaders.set("Authorization", `Bearer ${token}`);
+  const result = await fetch(`https://docs.google.com/spreadsheets/d/${encodeURIComponent(api.spreadsheet_id)}/gviz/tq?${params.toString()}`, { headers: googleHeaders });
+  const text = await result.text();
+  if (!result.ok) return failure(502, "google_query_failed", `Google no pudo ejecutar la consulta (HTTP ${result.status}).`);
+
+  try {
+    const table = parseVisualization(text);
+    const data = rowsAsObjects(table.headers, table.rows);
+    const payload = raw ? data : {
+      data,
+      total: data.length,
+      columns: table.headers,
+      meta: {
+        api_id: api.api_id,
+        name: api.name,
+        sheet,
+        query,
+        translated_query: translatedQuery,
+        header_rows: headerRows,
+      },
+    };
+    if (api.cache_ttl > 0) cache.set(cacheKey, { expires: Date.now() + Math.min(api.cache_ttl, 3600) * 1000, value: payload });
+    return response(payload, 200, {
+      "X-LittleAPI-Cache": "MISS",
+      "Cache-Control": api.public_read && api.cache_ttl > 0 ? `public, max-age=${Math.min(api.cache_ttl, 3600)}` : "no-store",
+    });
+  } catch (error) {
+    return failure(400, "invalid_query", error instanceof Error ? error.message : "La consulta no es válida.", {
+      query,
+      translated_query: translatedQuery,
+      sheet,
+    });
+  }
+}
+
 function rowsAsObjects(headers: string[], rows: unknown[][]) {
   return rows.map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
 }
@@ -728,6 +834,10 @@ function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
     },
     "/search": { get: { operationId: "searchRows", summary: "Busca y filtra filas con condiciones AND", security: api.public_read ? [] : key, parameters: [...commonRead, openApiParameter("search", "Texto libre en cualquier columna."), openApiParameter("casesensitive", "Hace sensibles a mayúsculas los filtros."), openApiParameter("contains[campo]", "La columna debe contener el texto."), openApiParameter("campo[]", "Repite el parámetro para aceptar varios valores en la misma columna.")] } },
     "/search_or": { get: { operationId: "searchRowsOr", summary: "Filtra filas cuando coincide cualquiera de las condiciones", security: api.public_read ? [] : key, parameters: commonRead } },
+    "/query": {
+    get: { operationId: "advancedQuery", summary: "Consulta avanzada con Google Visualization Query Language y nombres de encabezado", security: api.public_read ? [] : key, parameters: [openApiParameter("sheet", "Pestaña a consultar."), openApiParameter("q", "Consulta, por ejemplo SELECT Nombre, SUM(Total) GROUP BY Nombre."), openApiParameter("query", "Alias de q."), openApiParameter("headers", "Número de filas de encabezado, de 0 a 10.", { type: "integer", minimum: 0, maximum: 10 }, 1), openApiParameter("columns", "Usa names para nombres de encabezado o letters para escribir A,B,C directamente.", { type: "string", enum: ["names", "letters"] }, "names"), openApiParameter("raw", "Devuelve sólo el array de resultados.", { type: "boolean" }, false)] },
+    post: { operationId: "advancedQueryPost", summary: "Consulta avanzada por JSON para consultas largas", security: api.public_read ? [] : key, requestBody: { required: true, content: jsonBody } },
+  },
     "/keys": { get: { operationId: "listColumns", summary: "Nombres de columnas", security: api.public_read ? [] : key } },
     "/count": { get: { operationId: "countRows", summary: "Cantidad total de filas", security: api.public_read ? [] : key } },
     "/cells/{coordinates}": { get: { operationId: "readCells", summary: "Lee celdas A1,B2,...", security: api.public_read ? [] : key, parameters: [{ name: "coordinates", in: "path", required: true, schema: { type: "string" }, example: "A1,B2,C5" }] } },
@@ -773,6 +883,7 @@ async function statsOperation(api: ApiRecord, request: Request) {
   return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, numeric_count: values.length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null });
 }
 function operationNeedsApiKey(api: ApiRecord, path: string[], method: string) {
+  if (path[1] === "query" && (method === "GET" || method === "POST")) return api.public_read !== true;
   if (method !== "GET") return true;
   if (api.resource_type === "drive") return true;
   if (api.public_read !== true) return true;
@@ -799,6 +910,7 @@ async function handler(request: Request) {
   if (!quotaExempt(path, request.method)) {
     const quotaError = await consumeQuota(api); if (quotaError) return quotaError;
   }
+  if (path[1] === "query" && (request.method === "GET" || request.method === "POST")) return queryOperation(api, request);
   if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request);
   if (request.method === "GET") return readOperation(api, request, path.slice(1));
   return mutationOperation(api, request, path.slice(1));
