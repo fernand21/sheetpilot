@@ -318,7 +318,7 @@
   }
 
   let adminEntryChecking = false;
-  let adminEntryChecked = false;
+  let adminEntryDenied = false;
 
   function refreshAdminEntryLanguage() {
     const link = $("#admin-console-link");
@@ -329,7 +329,7 @@
 
   async function enhanceAdminEntry() {
     const actions = $("#dashboard .dashboard-actions");
-    if (!actions || $("#admin-console-link", actions) || adminEntryChecking || adminEntryChecked) return;
+    if (!actions || $("#admin-console-link", actions) || adminEntryChecking || adminEntryDenied) return;
     if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }
     adminEntryChecking = true;
     try {
@@ -339,7 +339,7 @@
       const adminBase = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/littleapi-admin/me";
       const response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + session.access_token } });
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) adminEntryChecked = true;
+        if (response.status === 401 || response.status === 403) adminEntryDenied = true;
         return;
       }
       const info = await response.json().catch(() => ({}));
@@ -352,7 +352,6 @@
       const signOut = $("#sign-out", actions);
       if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);
       refreshAdminEntryLanguage();
-      adminEntryChecked = true;
     } catch (_) {
       // Keep the normal dashboard unchanged if the admin check is unavailable.
     } finally {
