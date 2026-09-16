@@ -77,6 +77,12 @@
             console.error("LittleAPI project/API authorization flow failed", permissionError);
           }
 
+          try {
+            await loadScript("project-actions-stable.js?v=20260916-actions1");
+          } catch (projectActionError) {
+            console.error("LittleAPI project card actions failed", projectActionError);
+          }
+
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
