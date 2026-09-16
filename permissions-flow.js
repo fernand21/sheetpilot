@@ -1,7 +1,7 @@
 (() => {
   const METADATA_SCOPE = 'https://www.googleapis.com/auth/drive.metadata.readonly';
   const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-  const DISCOVERY_SCOPES = `${METADATA_SCOPE} ${DRIVE_FILE_SCOPE}`;
+  const DISCOVERY_SCOPES = METADATA_SCOPE;
   const SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
   const PENDING_API_KEY = 'littleapi:pending-api-sheet-grant';
   const PENDING_LIST_KEY = 'littleapi:pending-sheet-list';
@@ -82,12 +82,49 @@
     }
   }
 
-  function isInsufficientScope(response, data) {
-    if (response.status === 401 || response.status === 403) {
-      const value = JSON.stringify(data || {}).toLowerCase();
-      return value.includes('insufficient') || value.includes('scope') || value.includes('permission');
+  async function providerScopes(accessToken) {
+    if (!accessToken) return [];
+    try {
+      const response = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(accessToken), {
+        cache: 'no-store'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return [];
+      return String(data.scope || '').split(/\s+/).filter(Boolean);
+    } catch (_) {
+      return [];
     }
-    return false;
+  }
+
+  async function ensureMetadataScope(session, options = {}) {
+    const accessToken = currentProviderToken(session);
+    if (!accessToken) {
+      if (options.afterOAuth) throw new Error('provider_token_missing');
+      setSheetMessage(text(
+        'LittleAPI necesita permiso para ver únicamente los nombres de tus hojas.',
+        'LittleAPI needs permission only to see your spreadsheet names.'
+      ));
+      await requestMetadataPermission();
+      return null;
+    }
+
+    const scopes = await providerScopes(accessToken);
+    if (!scopes.includes(METADATA_SCOPE)) {
+      if (options.afterOAuth) {
+        throw new Error(text(
+          'Google no devolvió el permiso de metadatos solicitado.',
+          'Google did not return the requested metadata permission.'
+        ));
+      }
+      setSheetMessage(text(
+        'Autoriza únicamente la lectura de nombres e IDs de tus hojas. LittleAPI no leerá sus celdas.',
+        'Authorize only spreadsheet names and IDs. LittleAPI will not read their cells.'
+      ));
+      await requestMetadataPermission();
+      return null;
+    }
+
+    return accessToken;
   }
 
   async function listAllSheets(options = {}) {
@@ -100,36 +137,23 @@
 
     try {
       const session = await currentSession();
-      const accessToken = currentProviderToken(session);
-      if (!accessToken) {
-        if (options.afterOAuth) throw new Error('provider_token_missing');
-        setSheetMessage(text('Conectando el listado de Google Drive…', 'Connecting your Google Drive list…'));
-        await requestMetadataPermission();
-        return;
-      }
+      const accessToken = await ensureMetadataScope(session, options);
+      if (!accessToken) return;
 
       const params = new URLSearchParams({
         q: `mimeType = '${SHEET_MIME}' and trashed = false`,
-        fields: 'files(id,name,modifiedTime,webViewLink)',
+        fields: 'files(id,name,modifiedTime,webViewLink),nextPageToken',
         orderBy: 'modifiedTime desc',
         pageSize: '100',
         spaces: 'drive'
       });
 
       const response = await fetch('https://www.googleapis.com/drive/v3/files?' + params.toString(), {
-        headers: { Authorization: 'Bearer ' + accessToken }
+        headers: { Authorization: 'Bearer ' + accessToken },
+        cache: 'no-store'
       });
       const data = await response.json().catch(() => ({}));
-
       if (!response.ok) {
-        if (!options.afterOAuth && isInsufficientScope(response, data)) {
-          setSheetMessage(text(
-            'LittleAPI necesita permiso sólo para ver los nombres de tus hojas. No leerá ni editará su contenido.',
-            'LittleAPI needs permission only to see your spreadsheet names. It will not read or edit their contents.'
-          ));
-          await requestMetadataPermission();
-          return;
-        }
         throw new Error(data?.error?.message || data?.message || `HTTP ${response.status}`);
       }
 
@@ -429,30 +453,23 @@
     if (authorize) authorize.onclick = () => void listAllSheets();
   }
 
-  async function resumePendingList() {
+  async function resumePendingSheetList() {
     const pending = readPendingList();
     if (!pending) return;
     localStorage.removeItem(PENDING_LIST_KEY);
-
     for (let i = 0; i < 60; i += 1) {
       if (user && sb) break;
       await wait(250);
     }
     if (!user || !sb) return;
-
+    installProjectPicker();
     if (sheetDialog && !sheetDialog.open) sheetDialog.showModal();
     await listAllSheets({ afterOAuth: true });
   }
 
   installProjectPicker();
-  setTimeout(() => {
-    void resumePendingList();
-    void resumePendingApiCreation();
-  }, 900);
+  setTimeout(() => void resumePendingSheetList(), 700);
+  setTimeout(() => void resumePendingApiCreation(), 1100);
   window.addEventListener('littleapi:language-change', installProjectPicker);
-  window.LittleAPIPermissionsFlow = {
-    listAllSheets,
-    resumePendingList,
-    resumePendingApiCreation
-  };
+  window.LittleAPIPermissionsFlow = { listAllSheets, resumePendingApiCreation, resumePendingSheetList };
 })();
