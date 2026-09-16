@@ -192,7 +192,7 @@ async function insertRequestLog(input: TelemetryInput) {
   });
 }
 
-function mutationEvent(request: Request) {
+async function mutationEvent(request: Request, apiId: string) {
   const url = new URL(request.url), parts = url.pathname.split("/").filter(Boolean);
   const marker = parts.indexOf("v1"), route = marker >= 0 ? parts.slice(marker + 2) : parts.slice(parts.indexOf("sheetpilot-api") + 2);
   const first = route[0] || "";
@@ -206,6 +206,16 @@ function mutationEvent(request: Request) {
     if (request.method === "POST") return "sheet.created";
     if (request.method === "PATCH") return "sheet.renamed";
     if (request.method === "DELETE") return "sheet.deleted";
+  }
+  let resourceType = "sheet";
+  try {
+    const rows = await dbFetch(`api_endpoints?select=resource_type&api_id=eq.${encodeURIComponent(apiId)}&limit=1`);
+    resourceType = rows?.[0]?.resource_type || "sheet";
+  } catch (_) {}
+  if (resourceType === "drive") {
+    if (request.method === "POST") return "drive.created";
+    if (request.method === "PATCH") return "drive.updated";
+    if (request.method === "DELETE") return "drive.deleted";
   }
   if (request.method === "POST") return "row.created";
   if (request.method === "PATCH") return "row.updated";
@@ -316,7 +326,7 @@ async function fireWebhooks(input: TelemetryInput, event: string) {
 }
 
 export async function scheduleTelemetry(input: TelemetryInput) {
-  const event = mutationEvent(input.request);
+  const event = await mutationEvent(input.request, input.apiId);
   try {
     await insertRequestLog(input);
   } catch (error) {
