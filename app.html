@@ -61,6 +61,8 @@
             script.onerror = () => reject(new Error("No se pudo cargar " + src));
             document.body.append(script);
           });
+
+          // Core dependencies must preserve order.
           await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           const googleScript = document.createElement("script");
           googleScript.src = "https://accounts.google.com/gsi/client";
@@ -68,10 +70,14 @@
           document.head.append(googleScript);
           await loadScript("config.js");
           await loadScript("app.js");
-          await loadScript("app-enhancements.js");
-          await loadScript("google-file-grant.js");
-          await loadScript("project-sheet-picker.js");
+
+          // The dashboard can render now. Secondary enhancements no longer block it.
           document.querySelector(".app-loading")?.remove();
+          void Promise.allSettled([
+            loadScript("app-enhancements.js"),
+            loadScript("google-file-grant.js"),
+            loadScript("project-sheet-picker.js")
+          ]);
         } catch (error) {
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
         }
