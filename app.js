@@ -20,7 +20,7 @@ const PLAN_LIMITS = {
   unlimited: { name: "Ilimitado", price: "Autorizado", apiLimit: Infinity, requestsPerApi: Infinity, databaseLimit: 10000000, unlimited: true, features: ["APIs ilimitadas", "Consultas ilimitadas", "Todas las funciones desbloqueadas", "Acceso prioritario"] }
 };
 const UNLIMITED_EMAILS = new Set(["farevalo210@gmail.com"]);
-let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], usageByApi = Object.create(null), dialogApi = null, dialogProject = null;
+let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], usageByApi = Object.create(null), creatingSpreadsheetIds = new Set(), dialogApi = null, dialogProject = null;
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -263,17 +263,17 @@ function renderUsageList() {
   }
   let firstReset = "";
   list.innerHTML = apisCache.map(api => {
-    const state = usageForApi(api), configuredLimit = Number(api.monthly_request_limit || PLAN_LIMITS[currentPlanKey(user)].requestsPerApi);
+    const state = usageForApi(api), ownerUnlimited = PLAN_LIMITS[currentPlanKey(user)].unlimited === true, configuredLimit = Number(api.monthly_request_limit || PLAN_LIMITS[currentPlanKey(user)].requestsPerApi), isUnlimited = ownerUnlimited || state?.unlimited === true;
     const limit = state?.limit == null ? configuredLimit : Number(state.limit);
     const used = state && Number.isFinite(Number(state.used)) ? Number(state.used) : null;
-    const remaining = state?.unlimited ? null : state && Number.isFinite(Number(state.remaining)) ? Math.max(0, Number(state.remaining)) : null;
+    const remaining = isUnlimited ? null : state && Number.isFinite(Number(state.remaining)) ? Math.max(0, Number(state.remaining)) : null;
     const ratio = used == null || !limit ? 0 : Math.min(100, Math.round(used / limit * 100));
     if (!firstReset && state?.reset_at) firstReset = state.reset_at;
     let status = tx("loadingUsage", "Cargando consumo…"), statusClass = "loading", meter = "";
     if (state?.error) { status = state.error; statusClass = "error"; }
-    else if (state?.unlimited) { status = formatCount(used) + " " + (window.LittleAPI?.language === "en" ? "used · " : "usadas · ") + tx("unlimited", "sin límite"); statusClass = "unlimited"; meter = '<div class="usage-meter"><span style="width:0%"></span></div>'; }
+    else if (isUnlimited) { status = (used == null ? "" : formatCount(used) + " ") + (window.LittleAPI?.language === "en" ? "used · " : "usadas · ") + tx("unlimited", "sin límite"); statusClass = "unlimited"; meter = '<div class="usage-meter"><span style="width:0%"></span></div>'; }
     else if (remaining != null) { status = formatCount(remaining) + (window.LittleAPI?.language === "en" ? " remaining of " : " restantes de ") + formatCount(limit); statusClass = remaining === 0 ? "exhausted" : remaining / limit < .1 ? "warning" : "ok"; meter = '<div class="usage-meter ' + statusClass + '"><span style="width:' + ratio + '%"></span></div>'; }
-    return '<article class="api-usage-card"><div class="api-usage-main"><div class="api-usage-title"><span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><h4>' + esc(api.name || api.api_id) + '</h4></div><code>' + esc(apiUrl(api)) + '</code><p class="api-usage-status ' + statusClass + '">' + esc(status) + '</p>' + meter + '</div><div class="api-usage-number"><strong>' + (remaining == null ? (state?.unlimited ? "∞" : "—") : formatCount(remaining)) + '</strong><span>' + esc(tx("available", "consultas disponibles")).replace(" ", "<br>") + '</span></div></article>';
+    return '<article class="api-usage-card"><div class="api-usage-main"><div class="api-usage-title"><span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><h4>' + esc(api.name || api.api_id) + '</h4></div><code>' + esc(apiUrl(api)) + '</code><p class="api-usage-status ' + statusClass + '">' + esc(status) + '</p>' + meter + '</div><div class="api-usage-number"><strong>' + (remaining == null ? (isUnlimited ? "∞" : "—") : formatCount(remaining)) + '</strong><span>' + esc(tx("available", "consultas disponibles")).replace(" ", "<br>") + '</span></div></article>';
   }).join("");
   if (period) period.textContent = formatReset(firstReset) || "Se reinicia el primer día de cada mes UTC";
 }
@@ -363,6 +363,11 @@ async function showApiDialog(project, api, secret) {
 async function createApi(project) {
   const existing = apiForProject(project);
   if (existing) return showApiDialog(project, existing);
+  const existingForSheet = apisCache.find(api => api.enabled !== false && api.resource_type === "sheet" && api.spreadsheet_id === project.spreadsheet_id);
+  if (existingForSheet) {
+    renderProjects(projectsCache);
+    return notice(window.LittleAPI?.language === "en" ? "This sheet already has an active API. One API per sheet is allowed." : "Esta hoja ya tiene una API activa. Sólo se permite una API por hoja.", "error");
+  }
   const plan = PLAN_LIMITS[currentPlanKey(user)], activeCount = apisCache.filter(api => api.enabled !== false).length;
   if (activeCount >= plan.apiLimit) return notice("Tu plan " + plan.name + " permite hasta " + formatCount(plan.apiLimit) + " APIs activas. Renueva o cambia de nivel para publicar otra.", "error");
   const name = prompt("Nombre de la API:", project.name);
@@ -370,7 +375,13 @@ async function createApi(project) {
   const apiId = randomToken(15), secret = "sp_live_" + randomToken(24), keyHash = await hashSecret(secret);
   try {
     const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, monthly_request_limit: plan.unlimited ? plan.databaseLimit : plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
-    if (result.error) throw result.error;
+    if (result.error) {
+      if (result.error.code === "23505" && String(result.error.message || "").includes("api_endpoints_user_spreadsheet_active_unique")) {
+        await projects();
+        return notice(window.LittleAPI?.language === "en" ? "This sheet already has an active API. One API per sheet is allowed." : "Esta hoja ya tiene una API activa. Sólo se permite una API por hoja.", "error");
+      }
+      throw result.error;
+    }
     const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, monthly_request_limit: plan.unlimited ? plan.databaseLimit : plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
     try { await saveApiKey(result.data, secret); } catch (error) { await sb.from("api_public_catalog").delete().eq("api_id", apiId).eq("user_id", user.id); await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw new Error("No se pudo guardar la clave cifrada: " + (error.message || error)); }
@@ -409,7 +420,7 @@ function renderProjects(data) {
   grid.innerHTML = projectsCache.map(project => {
     const api = apiForProject(project);
     const sheetUrl = project.spreadsheet_id ? "https://docs.google.com/spreadsheets/d/" + encodeURIComponent(project.spreadsheet_id) + "/edit" : "";
-    return '<article class="project-card"><p>' + esc(tx("appLabel", "LITTLEAPI · GOOGLE SHEETS")) + '</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || tx("noSheetSelected", "Sin pestaña seleccionada")) + '</p><div class="project-api">' + (api ? '<span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">' + esc(tx("noApiPublished", "○ Sin API publicada")) + '</span>') + '</div><div class="project-actions">' + (sheetUrl ? '<a class="action-button" href="' + esc(sheetUrl) + '" target="_blank" rel="noreferrer">' + esc(tx("openOriginalSheet", "Abrir hoja original")) + ' ↗</a>' : '') + '<button class="action-button" data-api-project="' + project.id + '">' + esc(api ? tx("viewEndpoint", "Ver endpoint") : tx("createApi", "Crear API")) + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">' + esc(tx("deleteApi", "Eliminar API")) + '</button>' : '') + '<button class="text-button" data-remove-project="' + project.id + '">' + esc(tx("remove", "Quitar")) + '</button></div></article>';
+    return '<article class="project-card"><p>' + esc(tx("appLabel", "LITTLEAPI · GOOGLE SHEETS")) + '</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || tx("noSheetSelected", "Sin pestaña seleccionada")) + '</p><div class="project-api">' + (api ? '<span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">' + esc(tx("noApiPublished", "○ Sin API publicada")) + '</span>') + '</div><div class="project-actions">' + (sheetUrl ? '<a class="action-button" href="' + esc(sheetUrl) + '" target="_blank" rel="noreferrer">' + esc(tx("openOriginalSheet", "Abrir hoja original")) + ' ↗</a>' : '') + '<button class="action-button" data-api-project="' + project.id + '">' + esc(api ? tx("viewEndpoint", "Ver endpoint") : tx("createApi", "Crear API")) + '</button>' + (api ? '<button class="danger-button" data-remove-api="' + project.id + '">' + esc(tx("deleteApi", "Eliminar API")) + '</button>' : '') + '<button class="danger-button" data-remove-project="' + project.id + '">' + esc(tx("remove", "Quitar")) + '</button></div></article>';
   }).join("");
 }
 async function projects() {
@@ -465,13 +476,39 @@ async function listSheetsForProject() {
   } catch (error) { message("#sheet-message", friendlyError(error), "error"); button.disabled = false; }
 }
 async function createProjectFromSheet(spreadsheetId, name) {
+  if (!spreadsheetId || !user) return;
+  const existingLocal = projectsCache.find(project => project.spreadsheet_id === spreadsheetId);
+  if (existingLocal) {
+    sheetDialog.close();
+    notice(window.LittleAPI?.language === "en" ? "This sheet is already connected. Open its existing project below." : "Esta hoja ya está conectada. Abre su proyecto existente abajo.", "success");
+    return;
+  }
+  if (creatingSpreadsheetIds.has(spreadsheetId)) return;
+  creatingSpreadsheetIds.add(spreadsheetId);
   try {
+    const existing = await sb.from("projects").select("id,name,spreadsheet_id,sheet_name").eq("user_id", user.id).eq("spreadsheet_id", spreadsheetId).limit(1);
+    if (existing.error) throw existing.error;
+    if (existing.data?.[0]) {
+      sheetDialog.close();
+      notice(window.LittleAPI?.language === "en" ? "This sheet is already connected. Open its existing project below." : "Esta hoja ya está conectada. Abre su proyecto existente abajo.", "success");
+      await projects();
+      return;
+    }
     const data = await gf("https://sheets.googleapis.com/v4/spreadsheets/" + encodeURIComponent(spreadsheetId) + "?includeGridData=false&fields=sheets.properties");
     const firstSheet = data.sheets?.[0]?.properties?.title || "Hoja 1";
     const result = await sb.from("projects").insert({ user_id: user.id, name: name, spreadsheet_id: spreadsheetId, sheet_name: firstSheet }).select().single();
-    if (result.error) throw result.error;
+    if (result.error) {
+      if (result.error.code === "23505") {
+        sheetDialog.close();
+        notice(window.LittleAPI?.language === "en" ? "This sheet is already connected. Open its existing project below." : "Esta hoja ya está conectada. Abre su proyecto existente abajo.", "success");
+        await projects();
+        return;
+      }
+      throw result.error;
+    }
     sheetDialog.close(); notice("Proyecto conectado. Ya puedes consultar, editar, formatear y exportar.", "success"); await projects();
   } catch (error) { message("#sheet-message", friendlyError(error), "error"); }
+  finally { creatingSpreadsheetIds.delete(spreadsheetId); }
 }
 async function saveRange() {
   try { const values = parseRows($("#edit-values").value), range = sheetRef($("#edit-range").value); await gf(valuesUrl(activeProject.spreadsheet_id, range) + "?valueInputOption=USER_ENTERED", { method: "PUT", body: JSON.stringify({ range: range, majorDimension: "ROWS", values: values }) }); message("#workspace-message", "Rango actualizado.", "success"); await loadValues(); }

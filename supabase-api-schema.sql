@@ -37,6 +37,10 @@ grant select, insert, update, delete on table public.api_endpoints to service_ro
 create index if not exists api_endpoints_user_id_idx on public.api_endpoints(user_id);
 create index if not exists api_endpoints_project_id_idx on public.api_endpoints(project_id);
 create index if not exists api_endpoints_api_id_idx on public.api_endpoints(api_id);
+-- Una hoja sólo puede tener una API activa por propietario.
+create unique index if not exists api_endpoints_user_spreadsheet_active_unique
+on public.api_endpoints(user_id, spreadsheet_id)
+where resource_type = 'sheet' and spreadsheet_id is not null and enabled = true;
 alter table public.api_endpoints add column if not exists cache_ttl integer not null default 60;
 alter table public.api_endpoints add column if not exists api_key_ciphertext text;
 alter table public.api_endpoints add column if not exists monthly_request_limit integer not null default 5000;

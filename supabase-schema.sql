@@ -12,6 +12,11 @@ create table if not exists public.projects (
 
 alter table public.projects enable row level security;
 
+-- Una hoja sólo puede estar conectada una vez por propietario.
+create unique index if not exists projects_user_spreadsheet_unique
+on public.projects(user_id, spreadsheet_id)
+where spreadsheet_id is not null;
+
 -- La tabla se consulta desde la Data API con el rol autenticado.
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on table public.projects to authenticated;
