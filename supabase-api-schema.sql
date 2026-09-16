@@ -33,6 +33,10 @@ grant usage on schema public to authenticated;
 grant select, insert, update, delete on table public.api_endpoints to authenticated;
 grant usage on schema public to service_role;
 grant select, insert, update, delete on table public.api_endpoints to service_role;
+-- El cliente sólo puede cambiar la pestaña predeterminada. Los límites,
+-- permisos, propietario y visibilidad se administran en el servidor.
+revoke update on table public.api_endpoints from authenticated;
+grant update (default_sheet, updated_at) on table public.api_endpoints to authenticated;
 
 create index if not exists api_endpoints_user_id_idx on public.api_endpoints(user_id);
 create index if not exists api_endpoints_project_id_idx on public.api_endpoints(project_id);
@@ -82,6 +86,9 @@ alter table public.api_public_catalog add constraint api_public_catalog_monthly_
 grant select on table public.api_public_catalog to anon, authenticated;
 grant insert, update, delete on table public.api_public_catalog to authenticated;
 grant select, insert, update, delete on table public.api_public_catalog to service_role;
+-- El catálogo refleja el endpoint; el cliente sólo sincroniza la pestaña.
+revoke update on table public.api_public_catalog from authenticated;
+grant update (default_sheet) on table public.api_public_catalog to authenticated;
 
 drop policy if exists "Public APIs can be read" on public.api_public_catalog;
 create policy "Public APIs can be read"
