@@ -56,35 +56,33 @@
           }
 
           const loadScript = src => new Promise((resolve, reject) => {
-            const script = document.createElement("script");
+            const existing = [...document.scripts].find(script => script.src === new URL(src, location.href).href);
+            if (existing?.dataset.loaded === "true") return resolve();
+            const script = existing || document.createElement("script");
             script.src = src;
-            script.onload = resolve;
+            script.onload = () => { script.dataset.loaded = "true"; resolve(); };
             script.onerror = () => reject(new Error("No se pudo cargar " + src));
-            document.body.append(script);
+            if (!existing) document.body.append(script);
           });
 
-          await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-          const googleScript = document.createElement("script");
-          googleScript.src = "https://accounts.google.com/gsi/client";
-          googleScript.async = true;
-          document.head.append(googleScript);
-          await loadScript("config.js");
-          await loadScript("app.js?v=20260916-stable2");
+          // Supabase and Google Identity can download in parallel, but LittleAPI
+          // must not initialize until BOTH libraries have fired their load event.
+          await Promise.all([
+            loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"),
+            loadScript("https://accounts.google.com/gsi/client")
+          ]);
 
-          // The core dashboard is interactive before optional enhancements load.
+          await loadScript("config.js");
+          await loadScript("app.js?v=20260916-stable3");
+
           document.querySelector(".app-loading")?.remove();
 
-          // Project discovery and API authorization are deliberately separate:
-          // metadata-only listing for New project, drive.file only on Create API.
           try {
-            await loadScript("permissions-flow.js?v=20260916-permissions1");
+            await loadScript("permissions-flow.js?v=20260916-permissions2");
           } catch (permissionError) {
             console.error("LittleAPI permission flow failed", permissionError);
           }
 
-          // app-enhancements.js historically installed a full-document observer.
-          // Suppress only that observer while keeping its targeted usage observer,
-          // Admin entry, Security, Activity and Webhooks functionality intact.
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
@@ -93,15 +91,13 @@
             }
           };
           try {
-            await loadScript("app-enhancements.js?v=20260916-stable2");
+            await loadScript("app-enhancements.js?v=20260916-stable3");
           } catch (enhancementError) {
             console.error("LittleAPI enhancements failed", enhancementError);
           } finally {
             window.MutationObserver = NativeMutationObserver;
           }
 
-          // One narrow observer is enough to refresh enhancement selectors after
-          // the project/API list changes, without scanning the whole document.
           const projectsGrid = document.querySelector("#projects-grid");
           if (projectsGrid) {
             let refreshQueued = false;
