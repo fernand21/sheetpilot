@@ -69,23 +69,53 @@
           googleScript.async = true;
           document.head.append(googleScript);
           await loadScript("config.js");
-          await loadScript("app.js?v=20260916-stable1");
+          await loadScript("app.js?v=20260916-stable2");
 
-          // Core UI is ready: show it immediately.
+          // The core dashboard is interactive before optional enhancements load.
           document.querySelector(".app-loading")?.remove();
 
-          // Admin / security enhancements are loaded first and no longer race
-          // with the experimental Google click interceptors.
+          // Project discovery and API authorization are deliberately separate:
+          // metadata-only listing for New project, drive.file only on Create API.
           try {
-            await loadScript("app-enhancements.js?v=20260916-stable1");
-          } catch (enhancementError) {
-            console.error("LittleAPI enhancements failed", enhancementError);
+            await loadScript("permissions-flow.js?v=20260916-permissions1");
+          } catch (permissionError) {
+            console.error("LittleAPI permission flow failed", permissionError);
           }
 
-          // Safe picker only changes the button inside the sheet dialog.
-          // It never captures or cancels the main dashboard buttons.
-          void loadScript("project-sheet-picker-safe.js?v=20260916-stable1")
-            .catch(error => console.error("LittleAPI sheet picker failed", error));
+          // app-enhancements.js historically installed a full-document observer.
+          // Suppress only that observer while keeping its targeted usage observer,
+          // Admin entry, Security, Activity and Webhooks functionality intact.
+          const NativeMutationObserver = window.MutationObserver;
+          window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
+            observe(target, options) {
+              if (target === document.documentElement && options?.childList && options?.subtree) return;
+              return super.observe(target, options);
+            }
+          };
+          try {
+            await loadScript("app-enhancements.js?v=20260916-stable2");
+          } catch (enhancementError) {
+            console.error("LittleAPI enhancements failed", enhancementError);
+          } finally {
+            window.MutationObserver = NativeMutationObserver;
+          }
+
+          // One narrow observer is enough to refresh enhancement selectors after
+          // the project/API list changes, without scanning the whole document.
+          const projectsGrid = document.querySelector("#projects-grid");
+          if (projectsGrid) {
+            let refreshQueued = false;
+            new NativeMutationObserver(() => {
+              if (refreshQueued) return;
+              refreshQueued = true;
+              requestAnimationFrame(() => {
+                refreshQueued = false;
+                window.dispatchEvent(new CustomEvent("littleapi:language-change", {
+                  detail: localStorage.getItem("littleapi:language") || "en"
+                }));
+              });
+            }).observe(projectsGrid, { childList: true });
+          }
         } catch (error) {
           console.error("LittleAPI startup failed", error);
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
