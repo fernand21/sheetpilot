@@ -162,8 +162,13 @@ export function withDynamicCors(response: Response, request: Request, settings: 
 
 function background(task: Promise<unknown>) {
   const safe = task.catch((error) => console.error("LittleAPI background task failed", error));
-  const runtime = (globalThis as any).EdgeRuntime;
-  if (runtime?.waitUntil) runtime.waitUntil(safe);
+  try {
+    // Supabase exposes EdgeRuntime as a runtime global; waitUntil keeps the isolate alive after the HTTP response.
+    // @ts-ignore Supabase Edge Runtime global
+    EdgeRuntime.waitUntil(safe);
+  } catch (_) {
+    safe.catch(() => {});
+  }
 }
 
 async function insertRequestLog(input: TelemetryInput) {
