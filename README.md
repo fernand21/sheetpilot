@@ -4,7 +4,7 @@ LittleAPI convierte un libro de Google Sheets o un recurso de Google Drive en un
 
 ## Enlaces
 
-- Aplicación: <https://littleapi.online/>
+- Aplicación: <https://littleapi.online/app.html>
 - Documentación: <https://littleapi.online/docs/>
 - Precios: <https://littleapi.online/pricing.html>
 - API de ejemplo: <https://littleapi.online/api/v1/9t2tde_YJNMzmdV691O_>

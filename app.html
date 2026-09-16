@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LittleAPI user workspace and API management dashboard." />
+    <title>LittleAPI — App</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b766e'/%3E%3Cpath d='M17 18h30v28H17z' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M17 29h30M28 18v28' stroke='white' stroke-width='4'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="app-page">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="LittleAPI, inicio"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
+      <nav aria-label="Navegación principal">
+        <a href="./#como-funciona" data-i18n="navHow">Cómo funciona</a>
+        <a href="./#api">API</a>
+        <a href="docs/" data-i18n="navDocs">Documentación</a>
+        <a href="pricing.html" data-i18n="navPricing">Precios</a>
+        <a href="app.html" data-i18n="navApp">Aplicación</a>
+      </nav>
+      <div class="header-actions" id="header-actions">
+        <label class="language-control" for="language-select"><span data-i18n="languageLabel">Idioma</span><select id="language-select" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option></select></label>
+        <button class="button small" data-open-auth="google"><span data-i18n="authGoogle">Continuar con Google</span></button>
+      </div>
+    </header>
+
+    <main id="inicio">
+      <section class="app-login" id="app-login">
+        <p class="eyebrow" data-i18n="dashboardEyebrow">TU ESPACIO</p>
+        <h1 data-i18n="authTitle">Entra a tu cuenta</h1>
+        <p class="lead" data-i18n="authIntro">Usa tu cuenta de Google para identificarte y conectar tus hojas.</p>
+        <button class="button" data-open-auth="google"><span data-i18n="authGoogle">Continuar con Google</span> <span aria-hidden="true">→</span></button>
+      </section>
+      <div id="app-content"><p class="app-loading">Cargando tu espacio…</p></div>
+    </main>
+
+    <footer><span>© 2026 LittleAPI</span><span><a href="pricing.html" data-i18n="navPricing">Precios</a> · <a href="privacy.html" data-i18n="footerPrivacy">Privacidad</a> · <a href="terms.html" data-i18n="footerTerms">Términos</a></span></footer>
+
+    <script>
+      (async () => {
+        const content = document.querySelector("#app-content");
+        try {
+          const response = await fetch("index.html", { cache: "no-store" });
+          if (!response.ok) throw new Error("No se pudo cargar el espacio de trabajo.");
+          const source = new DOMParser().parseFromString(await response.text(), "text/html");
+          const dashboard = source.querySelector("#dashboard");
+          if (!dashboard) throw new Error("No se encontró el panel de usuario.");
+          content.innerHTML = dashboard.outerHTML;
+          source.querySelectorAll("dialog").forEach(dialog => document.body.append(dialog.cloneNode(true)));
+          const translationSource = [...source.scripts].find(script => script.textContent.includes("const translations ="));
+          if (translationSource) {
+            const translationScript = document.createElement("script");
+            translationScript.textContent = translationSource.textContent;
+            document.body.append(translationScript);
+          }
+          const loadScript = src => new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("No se pudo cargar " + src));
+            document.body.append(script);
+          });
+          await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+          const googleScript = document.createElement("script");
+          googleScript.src = "https://accounts.google.com/gsi/client";
+          googleScript.async = true;
+          document.head.append(googleScript);
+          await loadScript("config.js");
+          await loadScript("app.js");
+          document.querySelector(".app-loading")?.remove();
+        } catch (error) {
+          if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
+        }
+      })();
+    </script>
+  </body>
+</html>

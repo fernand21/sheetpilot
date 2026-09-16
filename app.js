@@ -454,14 +454,18 @@ async function syncProviderRefreshToken(session) {
 }
 async function signOut() {
   token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
-  user = null; usageByApi = Object.create(null); togglePublicContent(true); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
+  user = null; usageByApi = Object.create(null); togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden"); $("#app-login")?.classList.remove("hidden");
   $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google" data-i18n="authGoogle">' + esc(tx("authGoogle", "Continuar con Google")) + '</button>'; bindAuthButtons();
+  if (isAppPage()) location.replace("./");
 }
+function isAppPage() { return /\/app\.html$/i.test(location.pathname); }
 function togglePublicContent(show) {
   $("main").querySelectorAll(":scope > section:not(#dashboard)").forEach(section => section.classList.toggle("hidden", !show));
 }
 function dashboard(account) {
-  if (!account) return; user = account; togglePublicContent(false); $("#public-home").classList.add("hidden"); $("#dashboard").classList.remove("hidden");
+  if (!account) return;
+  if (!isAppPage()) { location.replace("app.html"); return; }
+  user = account; $("#app-login")?.classList.add("hidden"); togglePublicContent(false); $("#public-home")?.classList.add("hidden"); $("#dashboard")?.classList.remove("hidden");
   const display = account.user_metadata?.full_name || account.user_metadata?.name || account.email?.split("@")[0] || "usuario";
   $("#user-name").textContent = display; $("#header-actions").innerHTML = '<span class="account-chip">' + esc(account.email || "") + '</span><button class="text-button" id="header-sign-out" data-i18n="signOut">' + esc(tx("signOut", "Salir")) + '</button>'; $("#header-sign-out").onclick = signOut; projects();
 }
@@ -654,5 +658,5 @@ bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
   sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; togglePublicContent(true); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
+  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; if (isAppPage()) return location.replace("./"); togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
 }
