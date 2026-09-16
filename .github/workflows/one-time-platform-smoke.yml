@@ -36,3 +36,66 @@ jobs:
           assert len(result['data']) <= 1, result
           print('PASS Python SDK', result.get('total'), len(result['data']))
           PY
+      - name: MCP server discover
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: server/discover' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            'https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/mcp' -o discover.json
+          python - <<'PY'
+          import json
+          d=json.load(open('discover.json'))
+          assert '2026-07-28' in d['result']['supportedVersions'], d
+          assert 'tools' in d['result']['capabilities'], d
+          print('PASS MCP discover')
+          PY
+      - name: MCP list tools
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/list' \
+            -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            'https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/mcp' -o tools.json
+          python - <<'PY'
+          import json
+          d=json.load(open('tools.json'))
+          names={x['name'] for x in d['result']['tools']}
+          assert {'read_rows','query_sheet','insert_rows','format_range','list_sheets'} <= names, names
+          print('PASS MCP tools', len(names))
+          PY
+      - name: MCP public read tool
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/call' \
+            -H 'Mcp-Name: read_rows' \
+            -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"read_rows","arguments":{"limit":1},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            'https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/mcp' -o read.json
+          python - <<'PY'
+          import json
+          d=json.load(open('read.json'))
+          assert d['result'].get('isError') is not True, d
+          data=d['result']['structuredContent']
+          assert isinstance(data.get('data'),list) and len(data['data']) <= 1, d
+          print('PASS MCP read')
+          PY
+      - name: MCP blocks unauthenticated writes
+        run: |
+          code=$(curl --silent --show-error -o write.json -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/call' \
+            -H 'Mcp-Name: insert_rows' \
+            -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"insert_rows","arguments":{"rows":{"Name":"SHOULD_NOT_WRITE"}},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            'https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/mcp')
+          test "$code" = '401'
+          python - <<'PY'
+          import json
+          d=json.load(open('write.json'))
+          assert d['error']['code'] == -32001, d
+          print('PASS MCP write protection')
+          PY
