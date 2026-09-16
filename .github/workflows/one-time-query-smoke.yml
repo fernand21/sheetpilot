@@ -12,7 +12,7 @@ jobs:
       - name: Test header-name query
         run: |
           curl --fail-with-body --silent --show-error --get \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFc0cI_g2t/query" \
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
             --data-urlencode "q=SELECT Name LIMIT 3" \
             -o query-result.json
           python - <<'PY'
@@ -30,7 +30,7 @@ jobs:
       - name: Test grouped query
         run: |
           curl --fail-with-body --silent --show-error --get \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFc0cI_g2t/query" \
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
             --data-urlencode "q=SELECT Name, COUNT(Name) GROUP BY Name LIMIT 3" \
             -o grouped-result.json
           python - <<'PY'
