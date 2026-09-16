@@ -182,6 +182,11 @@
           }
         };
         const selector = document.querySelector('#language-select');
+        const workspaceText = {
+          '.workspace-head .workspace-sheet label': ['Pestaña', 'Sheet'], '.workspace-dialog [data-tab="data"]': ['Datos', 'Data'], '.workspace-dialog [data-tab="edit"]': ['Editar', 'Edit'], '.workspace-dialog [data-tab="sheets"]': ['Pestañas', 'Sheets'], '.workspace-dialog [data-tab="format"]': ['Formato', 'Format'], '.workspace-dialog [data-tab="query"]': ['Consultas', 'Queries'], '.workspace-dialog [data-tab="stats"]': ['Estadísticas', 'Stats'],
+          '#load-data': ['Cargar datos', 'Load data'], '#download-csv': ['Descargar CSV', 'Download CSV'], '#download-excel': ['Descargar Excel', 'Download Excel'], '#search-data': ['Buscar', 'Search'], '#clear-search': ['Limpiar', 'Clear'], '#save-range': ['Guardar rango', 'Save range'], '#insert-row': ['Insertar fila', 'Insert row'], '#save-cell': ['Actualizar celda', 'Update cell'], '#delete-rows': ['Eliminar filas', 'Delete rows'], '#clear-values': ['Vaciar rango', 'Clear range'], '#add-sheet': ['Añadir pestaña', 'Add sheet'], '#rename-sheet': ['Renombrar pestaña', 'Rename sheet'], '#delete-sheet': ['Eliminar pestaña actual', 'Delete current sheet'], '#clear-filters': ['Limpiar filtros de la pestaña', 'Clear sheet filters'], '#copy-sheet': ['Copiar pestaña', 'Copy sheet'], '#check-capacity': ['Comprobar capacidad', 'Check capacity'], '#apply-format': ['Aplicar formato', 'Apply format'], '#format-header': ['Formatear encabezado', 'Format header'], '#resize-columns': ['Ajustar columnas', 'Resize columns'], '#run-query': ['Ejecutar consulta', 'Run query'], '#run-advanced': ['Filtrar datos', 'Filter data'], '#calculate-stats': ['Calcular', 'Calculate'], '#drive-quota': ['Ver cuota', 'View quota'], '#load-drive': ['Actualizar', 'Refresh'], '#create-folder': ['+ Nueva carpeta', '+ New folder'], '#copy-api-url': ['Copiar URL', 'Copy URL'], '#copy-api-key': ['Copiar clave', 'Copy key'], '#regenerate-api-key': ['Generar una clave nueva', 'Generate a new key']
+        };
+        const applyWorkspace = language => Object.entries(workspaceText).forEach(([query, values]) => { const node = document.querySelector(query); if (!node) return; if (query.includes('workspace-sheet')) node.firstChild.nodeValue = values[language === 'en' ? 1 : 0]; else node.textContent = values[language === 'en' ? 1 : 0]; });
         const current = () => localStorage.getItem('littleapi:language') === 'es' ? 'es' : 'en';
         const apply = lang => {
           const language = lang === 'en' ? 'en' : 'es';
@@ -192,6 +197,7 @@
           document.documentElement.lang = language;
           document.title = translations[language].pageTitle;
           document.querySelectorAll('[data-i18n]').forEach(node => { const value = translations[language][node.dataset.i18n]; if (value !== undefined) node.textContent = value; });
+          applyWorkspace(language);
           selector.value = language;
           localStorage.setItem('littleapi:language', language);
           window.dispatchEvent(new CustomEvent('littleapi:language-change', { detail: language }));
