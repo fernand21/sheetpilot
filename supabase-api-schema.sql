@@ -123,6 +123,27 @@ on public.api_usage_monthly for all to anon, authenticated
 using (false)
 with check (false);
 
+-- Cuentas autorizadas por el propietario para operar sin cuota mensual.
+-- La tabla es privada: sólo la Edge Function con service_role puede leerla.
+-- Para agregar otra cuenta, inserta su user_id de auth.users y su correo en minúsculas.
+create table if not exists public.littleapi_unlimited_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null check (email = lower(email)),
+  enabled boolean not null default true,
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.littleapi_unlimited_users enable row level security;
+revoke all on table public.littleapi_unlimited_users from anon, authenticated, public;
+grant select on table public.littleapi_unlimited_users to service_role;
+create index if not exists littleapi_unlimited_users_enabled_idx on public.littleapi_unlimited_users(enabled);
+drop policy if exists "No client access to unlimited users" on public.littleapi_unlimited_users;
+create policy "No client access to unlimited users"
+on public.littleapi_unlimited_users for all to anon, authenticated
+using (false)
+with check (false);
+
 create or replace function public.consume_api_quota(p_api_id text, p_limit integer)
 returns table(allowed boolean, used bigint, limit_value integer, reset_at timestamptz)
 language plpgsql
@@ -191,5 +212,37 @@ grant select, insert, update, delete on table public.google_connections to servi
 drop policy if exists "No client access to Google connections" on public.google_connections;
 create policy "No client access to Google connections"
 on public.google_connections for all to anon, authenticated
+using (false)
+with check (false);
+
+-- Pagos únicos de LittleAPI con Airtm. No crea suscripciones automáticas:
+-- cada renovación mensual genera un nuevo pay-in y la activación sigue siendo
+-- manual hasta que terminemos de conectar el control de planes.
+create table if not exists public.airtm_payments (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null default 'airtm' check (provider = 'airtm'),
+  provider_payment_id text not null unique,
+  code text not null unique,
+  plan text not null check (plan in ('inicial', 'pro', 'business')),
+  amount numeric(10,2) not null check (amount > 0),
+  currency text not null default 'USD' check (currency = 'USD'),
+  status text not null default 'CREATED' check (status in ('CREATED', 'CONFIRMED', 'CANCELED', 'PROCESSING', 'FAILED', 'BRIDGE_FAILED', 'BRIDGE_CANCELED')),
+  customer_email text,
+  user_id uuid references auth.users(id) on delete set null,
+  confirmation_uri text not null,
+  cancel_uri text not null,
+  confirmed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.airtm_payments enable row level security;
+revoke all on table public.airtm_payments from anon, authenticated, public;
+grant select, insert, update, delete on table public.airtm_payments to service_role;
+create index if not exists airtm_payments_status_idx on public.airtm_payments(status);
+create index if not exists airtm_payments_user_id_idx on public.airtm_payments(user_id);
+drop policy if exists "No client access to Airtm payments" on public.airtm_payments;
+create policy "No client access to Airtm payments"
+on public.airtm_payments for all to anon, authenticated
 using (false)
 with check (false);

@@ -75,6 +75,27 @@
           <div><p class="eyebrow">TU ESPACIO</p><h1>Hola, <span id="user-name">usuario</span>.</h1><p>Organiza las APIs de tus hojas de cálculo.</p></div>
           <div class="dashboard-actions"><button class="action-button" id="open-drive">Mi Drive</button><button class="button" id="new-project">+ Nuevo proyecto</button><button class="text-button" id="sign-out">Salir</button></div>
         </div>
+        <section class="account-api-panel" aria-labelledby="account-api-title">
+          <div class="account-api-heading">
+            <div><p class="eyebrow">CONTROL DE API</p><h2 id="account-api-title">Tu consumo, claro en todo momento</h2><p>Una API es una URL que entrega tus datos a otras aplicaciones. Aquí ves qué tienes publicado y cuánto puedes consultar.</p></div>
+            <button class="action-button" id="refresh-usage">Actualizar uso</button>
+          </div>
+          <div class="api-essentials" aria-label="Conceptos básicos de una API">
+            <article><span>01</span><div><strong>Una URL</strong><code>GET /api/v1/{API_ID}</code></div></article>
+            <article><span>02</span><div><strong>Cada request cuenta</strong><p>Una llamada a tu endpoint consume una consulta del mes.</p></div></article>
+            <article><span>03</span><div><strong>Límite predecible</strong><p>Al llegar a cero, responde <code>429 quota_exceeded</code> y se reinicia el próximo mes UTC.</p></div></article>
+          </div>
+          <div class="account-summary" id="account-summary"></div>
+          <section class="usage-section" aria-labelledby="usage-title">
+            <div class="section-heading"><div><p class="eyebrow">USO MENSUAL</p><h3 id="usage-title">Consultas restantes</h3></div><span class="usage-period" id="usage-period"></span></div>
+            <div class="api-usage-list" id="api-usage-list"></div>
+          </section>
+          <section class="limits-section" aria-labelledby="limits-title">
+            <div class="section-heading"><div><p class="eyebrow">CAPACIDAD</p><h3 id="limits-title">Límites por nivel</h3></div><a class="text-link" href="pricing.html">Ver precios</a></div>
+            <div class="plan-limits" id="plan-limits"></div>
+          </section>
+          <p class="form-message" id="usage-message" role="status" aria-live="polite"></p>
+        </section>
         <div class="empty-card" id="project-empty">
           <div class="empty-icon">▦</div><h2>Aún no tienes proyectos</h2><p>Tu primer proyecto conectará una hoja de Google Sheets y creará su API.</p><button class="button" id="connect-sheet">Conectar una hoja</button>
         </div>
@@ -136,6 +157,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="config.js"></script>
-    <script src="app-20260915-7.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

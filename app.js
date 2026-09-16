@@ -12,7 +12,13 @@ const GOOGLE_SCOPES = SHEETS_SCOPE + " " + DRIVE_SCOPE;
 const ready = () => Boolean(cfg.url && cfg.publishableKey && cfg.googleClientId && !cfg.url.includes("TU-"));
 const BRAND_NAME = cfg.brandName || "LittleAPI";
 const apiBase = () => cfg.apiBase || String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/sheetpilot-api";
-let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], dialogApi = null, dialogProject = null;
+const PLAN_LIMITS = {
+  free: { name: "Gratis", price: "$0", apiLimit: 2, requestsPerApi: 5000, features: ["2 APIs activas", "5.000 consultas por API/mes", "Lectura pública JSON", "Documentación y OpenAPI"] },
+  inicial: { name: "Inicial", price: "$3 / mes", apiLimit: 10, requestsPerApi: 50000, features: ["10 APIs activas", "50.000 consultas por API/mes", "CRUD con X-API-Key", "CSV y caché"] },
+  pro: { name: "Pro", price: "$7 / mes", apiLimit: 50, requestsPerApi: 250000, features: ["50 APIs activas", "250.000 consultas por API/mes", "Drive, pestañas y lotes", "Exportación Excel"] },
+  business: { name: "Business", price: "$25 / mes", apiLimit: 200, requestsPerApi: 1000000, features: ["200 APIs activas", "1 millón de consultas por API/mes", "Cuotas personalizadas", "Soporte prioritario"] }
+};
+let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], usageByApi = Object.create(null), dialogApi = null, dialogProject = null;
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -207,6 +213,92 @@ async function hashSecret(value) {
 }
 function apiForProject(project) { return apisCache.find(api => api.project_id === project.id && api.enabled !== false); }
 function apiUrl(api) { return apiBase() + "/" + encodeURIComponent(api.api_id); }
+function formatCount(value) { return Number(value || 0).toLocaleString("es-EC"); }
+function normalizePlan(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["business", "empresa", "team"].includes(raw)) return "business";
+  if (["pro", "professional"].includes(raw)) return "pro";
+  if (["inicial", "initial", "starter", "basic"].includes(raw)) return "inicial";
+  if (["gratis", "free", "gratuito"].includes(raw)) return "free";
+  return "";
+}
+function currentPlanKey(account) {
+  // El plan sólo orienta la interfaz. Las cuotas efectivas siempre vienen del servidor por API.
+  const metadata = account?.app_metadata || {}, profile = account?.user_metadata || {};
+  const explicit = normalizePlan(metadata.littleapi_plan || metadata.plan || profile.littleapi_plan || profile.plan);
+  if (explicit) return explicit;
+  const configuredLimits = apisCache.map(api => Number(api.monthly_request_limit || 0)).filter(Boolean);
+  const largest = Math.max(0, ...configuredLimits);
+  if (largest >= PLAN_LIMITS.business.requestsPerApi) return "business";
+  if (largest >= PLAN_LIMITS.pro.requestsPerApi) return "pro";
+  if (largest >= PLAN_LIMITS.inicial.requestsPerApi) return "inicial";
+  return "free";
+}
+function formatReset(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return "Reinicio: " + new Intl.DateTimeFormat("es-EC", { day: "numeric", month: "short", timeZone: "UTC" }).format(date) + " UTC";
+}
+function usageForApi(api) { return usageByApi[api.api_id] || null; }
+function renderUsageList() {
+  const list = $("#api-usage-list"), period = $("#usage-period");
+  if (!list) return;
+  if (!apisCache.length) {
+    list.innerHTML = '<div class="usage-empty"><strong>Aún no hay APIs publicadas</strong><p>Conecta una hoja y crea tu primera API para empezar a contar consultas.</p></div>';
+    if (period) period.textContent = "";
+    return;
+  }
+  let firstReset = "";
+  list.innerHTML = apisCache.map(api => {
+    const state = usageForApi(api), configuredLimit = Number(api.monthly_request_limit || PLAN_LIMITS[currentPlanKey(user)].requestsPerApi);
+    const limit = state?.limit == null ? configuredLimit : Number(state.limit);
+    const used = state && Number.isFinite(Number(state.used)) ? Number(state.used) : null;
+    const remaining = state?.unlimited ? null : state && Number.isFinite(Number(state.remaining)) ? Math.max(0, Number(state.remaining)) : null;
+    const ratio = used == null || !limit ? 0 : Math.min(100, Math.round(used / limit * 100));
+    if (!firstReset && state?.reset_at) firstReset = state.reset_at;
+    let status = "Cargando consumo…", statusClass = "loading", meter = "";
+    if (state?.error) { status = state.error; statusClass = "error"; }
+    else if (state?.unlimited) { status = formatCount(used) + " usadas · sin límite"; statusClass = "unlimited"; meter = '<div class="usage-meter"><span style="width:0%"></span></div>'; }
+    else if (remaining != null) { status = formatCount(remaining) + " restantes de " + formatCount(limit); statusClass = remaining === 0 ? "exhausted" : remaining / limit < .1 ? "warning" : "ok"; meter = '<div class="usage-meter ' + statusClass + '"><span style="width:' + ratio + '%"></span></div>'; }
+    return '<article class="api-usage-card"><div class="api-usage-main"><div class="api-usage-title"><span class="api-status">● API activa</span><h4>' + esc(api.name || api.api_id) + '</h4></div><code>' + esc(apiUrl(api)) + '</code><p class="api-usage-status ' + statusClass + '">' + esc(status) + '</p>' + meter + '</div><div class="api-usage-number"><strong>' + (remaining == null ? (state?.unlimited ? "∞" : "—") : formatCount(remaining)) + '</strong><span>consultas<br>disponibles</span></div></article>';
+  }).join("");
+  if (period) period.textContent = formatReset(firstReset) || "Se reinicia el primer día de cada mes UTC";
+}
+function renderPlanLimits() {
+  const node = $("#plan-limits"); if (!node) return;
+  const selected = currentPlanKey(user);
+  node.innerHTML = Object.entries(PLAN_LIMITS).map(([key, plan]) => '<article class="plan-limit-card ' + (key === selected ? "current" : "") + '"><div class="plan-limit-head"><div><span class="plan-limit-label">' + (key === selected ? "Tu nivel" : "Nivel") + '</span><h4>' + esc(plan.name) + '</h4></div><strong>' + esc(plan.price) + '</strong></div><p class="plan-limit-usage"><b>' + formatCount(plan.apiLimit) + '</b> APIs activas · <b>' + formatCount(plan.requestsPerApi) + '</b> consultas por API/mes</p><ul>' + plan.features.slice(2).map(feature => '<li>' + esc(feature) + '</li>').join("") + '</ul></article>').join("");
+}
+function renderAccountOverview() {
+  const summary = $("#account-summary"); if (!summary) return;
+  const key = currentPlanKey(user), plan = PLAN_LIMITS[key], activeCount = apisCache.filter(api => api.enabled !== false).length, overLimit = activeCount > plan.apiLimit;
+  summary.innerHTML = '<div class="account-stat"><span>Plan actual</span><strong>' + esc(plan.name) + '</strong><small>' + esc(plan.price) + '</small></div><div class="account-stat ' + (overLimit ? "over" : "") + '"><span>APIs activas</span><strong>' + formatCount(activeCount) + ' <small>/ ' + formatCount(plan.apiLimit) + '</small></strong><small>' + (overLimit ? "Superaste el límite del plan" : "Dentro del límite") + '</small></div><div class="account-stat"><span>Cuota por API</span><strong>' + formatCount(plan.requestsPerApi) + '</strong><small>consultas cada mes</small></div><div class="account-stat"><span>Renovación</span><strong>Manual</strong><small>Sin cobros automáticos</small></div>';
+  renderPlanLimits();
+  renderUsageList();
+}
+async function refreshUsage() {
+  if (!user) return;
+  const button = $("#refresh-usage"), status = $("#usage-message");
+  if (button) { button.disabled = true; button.textContent = "Actualizando…"; }
+  if (status) { status.textContent = "Consultando el consumo real de cada API…"; status.classList.remove("error", "success"); }
+  usageByApi = Object.create(null); renderUsageList();
+  const results = await Promise.all(apisCache.map(async api => {
+    try {
+      const secret = await loadApiKey(api);
+      const response = await fetch(apiUrl(api) + "/usage", { headers: { "X-API-Key": secret } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.quota) throw new Error(data.message || "No se pudo consultar el consumo.");
+      return [api.api_id, data.quota];
+    } catch (error) {
+      return [api.api_id, { error: error.code === "api_key_not_stored" ? "Abre el endpoint para activar el medidor." : friendlyError(error) }];
+    }
+  }));
+  results.forEach(([apiId, state]) => { usageByApi[apiId] = state; });
+  renderAccountOverview();
+  if (button) { button.disabled = false; button.textContent = "Actualizar uso"; }
+  if (status) { const hasErrors = results.some(([, state]) => state.error); status.textContent = hasErrors ? "Algunas APIs necesitan recuperar su clave para mostrar el consumo." : "Consumo actualizado desde el contador de la API."; status.classList.toggle("error", hasErrors); status.classList.toggle("success", !hasErrors); }
+}
 async function publishSheetForApi(spreadsheetId) {
   const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
   return gf(url, { method: "POST", body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }) });
@@ -249,13 +341,15 @@ async function showApiDialog(project, api, secret) {
 async function createApi(project) {
   const existing = apiForProject(project);
   if (existing) return showApiDialog(project, existing);
+  const plan = PLAN_LIMITS[currentPlanKey(user)], activeCount = apisCache.filter(api => api.enabled !== false).length;
+  if (activeCount >= plan.apiLimit) return notice("Tu plan " + plan.name + " permite hasta " + formatCount(plan.apiLimit) + " APIs activas. Renueva o cambia de nivel para publicar otra.", "error");
   const name = prompt("Nombre de la API:", project.name);
   if (name === null) return;
   const apiId = randomToken(15), secret = "sp_live_" + randomToken(24), keyHash = await hashSecret(secret);
   try {
-    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
+    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, monthly_request_limit: plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
     if (result.error) throw result.error;
-    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
+    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, monthly_request_limit: plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
     try { await saveApiKey(result.data, secret); } catch (error) { await sb.from("api_public_catalog").delete().eq("api_id", apiId).eq("user_id", user.id); await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw new Error("No se pudo guardar la clave cifrada: " + (error.message || error)); }
     let published = false;
@@ -294,12 +388,12 @@ function renderProjects(data) {
 }
 async function projects() {
   if (!sb || !user) return;
-  const apiFields = "id,user_id,project_id,api_id,name,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_prefix,public_read,permissions,enabled,cache_ttl,created_at,updated_at";
+  const apiFields = "id,user_id,project_id,api_id,name,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_prefix,public_read,permissions,enabled,cache_ttl,monthly_request_limit,created_at,updated_at";
   const [projectResult, apiResult] = await Promise.all([sb.from("projects").select("*").order("created_at", { ascending: false }), sb.from("api_endpoints").select(apiFields).order("created_at", { ascending: false })]);
   if (projectResult.error) { notice(friendlyError(projectResult.error), "error"); return; }
   if (apiResult.error && !["42P01", "PGRST205"].includes(apiResult.error.code)) { notice(friendlyError(apiResult.error), "error"); return; }
   apisCache = apiResult.data || [];
-  renderProjects(projectResult.data || []);
+  renderProjects(projectResult.data || []); renderAccountOverview(); void refreshUsage();
 }
 async function startLogin() {
   if (!ready() || !sb) { notice("La conexión todavía no está lista.", "error"); return; }
@@ -323,7 +417,7 @@ async function syncProviderRefreshToken(session) {
 }
 async function signOut() {
   token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
-  user = null; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
+  user = null; usageByApi = Object.create(null); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
   $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google">Continuar con Google</button>'; bindAuthButtons();
 }
 function dashboard(account) {
@@ -479,7 +573,7 @@ async function driveQuota() {
 }
 function bindAuthButtons() { $$("[data-open-auth]").forEach(button => { button.onclick = startLogin; }); }
 function bindEvents() {
-  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; if ($("#copy-api-key")) $("#copy-api-key").onclick = copyApiKey; if ($("#regenerate-api-key")) $("#regenerate-api-key").onclick = regenerateApiKey; $("#authorize-google").onclick = listSheetsForProject;
+  bindAuthButtons(); $("#close-dialog").onclick = () => authDialog.close(); $("#close-sheet-dialog").onclick = () => sheetDialog.close(); $("#close-workspace").onclick = () => workspaceDialog.close(); $("#close-drive").onclick = () => driveDialog.close(); $("#close-api").onclick = () => apiDialog.close(); $("#copy-api-url").onclick = copyApiUrl; if ($("#copy-api-key")) $("#copy-api-key").onclick = copyApiKey; if ($("#regenerate-api-key")) $("#regenerate-api-key").onclick = regenerateApiKey; $("#authorize-google").onclick = listSheetsForProject; if ($("#refresh-usage")) $("#refresh-usage").onclick = refreshUsage;
   $("#new-project").onclick = () => { $("#sheets-list").innerHTML = ""; $("#authorize-google").classList.remove("hidden"); $("#authorize-google").disabled = false; message("#sheet-message", ""); sheetDialog.showModal(); };
   $("#connect-sheet").onclick = () => $("#new-project").click(); $("#open-drive").onclick = () => { if (!driveDialog.open) driveDialog.showModal(); loadDrive(); }; $("#sign-out").onclick = signOut; $("#load-data").onclick = loadValues;
   $("#search-data").onclick = () => { const term = $("#search-value").value.toLowerCase(), index = $("#search-column").value; if (!term) return renderTable(loadedValues, "#data-table"); const result = [loadedValues[0] || []].concat(loadedValues.slice(1).filter(row => index === "" ? row.some(value => String(value || "").toLowerCase().includes(term)) : String(row[index] || "").toLowerCase().includes(term))); renderTable(result, "#data-table"); message("#workspace-message", Math.max(0, result.length - 1) + " coincidencias.", "success"); };
@@ -494,5 +588,5 @@ bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
   sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; providerToken = null; token = null; tokenExpiresAt = 0; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
+  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
 }
