@@ -324,7 +324,7 @@
   function refreshAdminEntryLanguage() {
     const link = $("#admin-console-link");
     if (!link) return;
-    link.textContent = text("Administración", "Admin");
+    link.textContent = text("⚙ Administración", "⚙ Admin");
     link.title = text("Abrir la consola privada de LittleAPI", "Open the private LittleAPI console");
   }
 
@@ -344,13 +344,42 @@
     const actions = $("#dashboard .dashboard-actions");
     if (!actions || $("#admin-console-link", actions) || adminEntryChecking) return;
     if (adminEntryRole) { insertAdminEntry(actions, adminEntryRole); return; }
-    if (adminEntryFailures >= 4) return;
+    if (adminEntryFailures >= 6) return;
     if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }
     adminEntryChecking = true;
     try {
       let sessionResult = await sb.auth.getSession();
-      let accessToken = sessionResult?.data?.session?.access_token;
-      if (!accessToken) return;
+      let session = sessionResult?.data?.session;
+      if (!session?.user?.id || !session?.access_token) return;
+
+      let roleResult = await sb.from("littleapi_admin_users")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("enabled", true)
+        .maybeSingle();
+
+      const roleErrorText = String(roleResult.error?.message || roleResult.error || "").toLowerCase();
+      if (roleResult.error && (roleErrorText.includes("jwt issued at future") || roleErrorText.includes("jwt issued in the future"))) {
+        const refreshed = await sb.auth.refreshSession();
+        session = refreshed?.data?.session || session;
+        if (session?.access_token) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          roleResult = await sb.from("littleapi_admin_users")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("enabled", true)
+            .maybeSingle();
+        }
+      }
+
+      if (!roleResult.error && roleResult.data?.role) {
+        adminEntryRole = roleResult.data.role;
+        adminEntryFailures = 0;
+        insertAdminEntry(actions, adminEntryRole);
+        return;
+      }
+
+      let accessToken = session?.access_token || "";
       const adminBase = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/littleapi-admin/me";
       let response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + accessToken } });
       if (!response.ok && (response.status === 401 || response.status === 403)) {
@@ -363,7 +392,7 @@
       }
       if (!response.ok) {
         adminEntryFailures += 1;
-        if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
+        if (adminEntryFailures < 6) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
         return;
       }
       const info = await response.json().catch(() => ({}));
@@ -373,7 +402,7 @@
       insertAdminEntry(actions, adminEntryRole);
     } catch (_) {
       adminEntryFailures += 1;
-      if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
+      if (adminEntryFailures < 6) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
     } finally {
       adminEntryChecking = false;
     }
