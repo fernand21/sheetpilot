@@ -56,7 +56,11 @@ class LittleAPI:
 
     def request(self, path: str = "", *, method: str = "GET", params: Optional[Mapping[str, Any]] = None,
                 body: Any = None, headers: Optional[Mapping[str, str]] = None, response_type: str = "json") -> Any:
-        request_headers: Dict[str, str] = dict(headers or {})
+        request_headers: Dict[str, str] = {
+            "User-Agent": "LittleAPI-Python/1.0",
+            "Accept": "application/json, text/plain;q=0.9, */*;q=0.8",
+            **dict(headers or {}),
+        }
         if self.api_key and "X-API-Key" not in request_headers:
             request_headers["X-API-Key"] = self.api_key
         payload = None
