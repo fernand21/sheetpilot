@@ -1,4 +1,4 @@
-name: LittleAPI v1.4 Smoke Test
+name: LittleAPI Platform Smoke Test
 
 on:
   push:
@@ -9,31 +9,30 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Test allowed browser origin
+      - uses: actions/checkout@v4
+      - name: Check dashboard JavaScript
+        run: node --check app-enhancements.js
+      - name: Test JavaScript SDK
         run: |
-          code=$(curl --silent --show-error -o allowed.json -D allowed-headers.txt -w "%{http_code}" \
-            -H "Origin: https://allowed.example" \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t?limit=1")
-          echo "HTTP=$code"
-          cat allowed-headers.txt
-          test "$code" = "200"
-          grep -i "access-control-allow-origin: https://allowed.example" allowed-headers.txt
-          grep -i "x-littleapi-version: 1.4.0" allowed-headers.txt
-      - name: Test blocked browser origin
+          cp sdk/javascript/littleapi.js /tmp/littleapi.mjs
+          node --check /tmp/littleapi.mjs
+          node --input-type=module <<'JS'
+          import { LittleAPI } from 'file:///tmp/littleapi.mjs';
+          const api = new LittleAPI({ apiId: '4gCDjwJ3DrqFcOcI_g2t' });
+          const result = await api.list({ limit: 1 });
+          if (!Array.isArray(result.data) || result.data.length > 1) throw new Error('Invalid JS SDK response');
+          console.log('PASS JS SDK', result.total, result.data.length);
+          JS
+      - name: Test Python SDK
         run: |
-          code=$(curl --silent --show-error -o blocked.json -w "%{http_code}" \
-            -H "Origin: https://blocked.example" \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t?limit=1")
-          echo "HTTP=$code"
-          cat blocked.json
-          test "$code" = "403"
+          python -m py_compile sdk/python/littleapi.py
           python - <<'PY'
-          import json
-          data=json.load(open('blocked.json',encoding='utf-8'))
-          assert data.get('error') == 'origin_not_allowed', data
-          print('PASS CORS allowlist')
+          import sys
+          sys.path.insert(0, 'sdk/python')
+          from littleapi import LittleAPI
+          api = LittleAPI('4gCDjwJ3DrqFcOcI_g2t')
+          result = api.list(limit=1)
+          assert isinstance(result.get('data'), list), result
+          assert len(result['data']) <= 1, result
+          print('PASS Python SDK', result.get('total'), len(result['data']))
           PY
-      - name: Check dashboard enhancement JavaScript syntax
-        run: |
-          curl --fail --silent --show-error https://raw.githubusercontent.com/fernand21/sheetpilot/main/app-enhancements.js -o app-enhancements.js
-          node --check app-enhancements.js
