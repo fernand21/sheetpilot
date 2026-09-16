@@ -52,6 +52,10 @@ function friendlyError(error) {
   return text;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+function isTransientJwtError(error) {
+  const value = String(error && (error.message || error.error_description || error.details || error.hint) || error || "").toLowerCase();
+  return value.includes("jwt issued at future") || value.includes("jwt issued in the future");
+}
 
 async function refreshGoogleFromServer() {
   if (!sb) throw new Error("La conexión de Supabase todavía no está lista.");
@@ -432,10 +436,19 @@ function renderProjects(data) {
     return '<article class="project-card"><p>' + esc(tx("appLabel", "LITTLEAPI · GOOGLE SHEETS")) + '</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || tx("noSheetSelected", "Sin pestaña seleccionada")) + '</p><div class="project-api">' + (api ? '<span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">' + esc(tx("noApiPublished", "○ Sin API publicada")) + '</span>') + '</div><div class="project-actions">' + (sheetUrl ? '<a class="action-button" href="' + esc(sheetUrl) + '" target="_blank" rel="noreferrer">' + esc(tx("openOriginalSheet", "Abrir hoja original")) + ' ↗</a>' : '') + '<button class="action-button" data-api-project="' + project.id + '">' + esc(api ? tx("viewEndpoint", "Ver endpoint") : tx("createApi", "Crear API")) + '</button>' + (api ? '<button class="danger-button" data-remove-api="' + project.id + '">' + esc(tx("deleteApi", "Eliminar API")) + '</button>' : '') + '<button class="danger-button" data-remove-project="' + project.id + '">' + esc(tx("remove", "Quitar")) + '</button></div></article>';
   }).join("");
 }
-async function projects() {
+async function projects(retryAuth = true) {
   if (!sb || !user) return;
   const apiFields = "id,user_id,project_id,api_id,name,resource_type,spreadsheet_id,default_sheet,drive_file_id,api_key_prefix,public_read,permissions,enabled,cache_ttl,monthly_request_limit,created_at,updated_at";
   const [projectResult, apiResult] = await Promise.all([sb.from("projects").select("*").order("created_at", { ascending: false }), sb.from("api_endpoints").select(apiFields).order("created_at", { ascending: false })]);
+  const projectAuthError = projectResult.error && isTransientJwtError(projectResult.error) ? projectResult.error : null;
+  const apiAuthError = apiResult.error && isTransientJwtError(apiResult.error) ? apiResult.error : null;
+  if (retryAuth && (projectAuthError || apiAuthError)) {
+    const refreshed = await sb.auth.refreshSession();
+    if (!refreshed.error && refreshed.data.session?.access_token) {
+      await wait(1200);
+      return projects(false);
+    }
+  }
   if (projectResult.error) { notice(friendlyError(projectResult.error), "error"); return; }
   if (apiResult.error && !["42P01", "PGRST205"].includes(apiResult.error.code)) { notice(friendlyError(apiResult.error), "error"); return; }
   apisCache = apiResult.data || [];
