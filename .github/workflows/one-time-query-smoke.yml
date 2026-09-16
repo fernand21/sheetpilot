@@ -1,0 +1,42 @@
+name: LittleAPI Public Query Smoke Test
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-query-smoke.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test header-name query
+        run: |
+          curl --fail-with-body --silent --show-error --get \
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFc0cI_g2t/query" \
+            --data-urlencode "q=SELECT Name LIMIT 3" \
+            -o query-result.json
+          python - <<'PY'
+          import json
+          data = json.load(open('query-result.json', encoding='utf-8'))
+          assert isinstance(data.get('data'), list), data
+          assert len(data['data']) <= 3, data
+          meta = data.get('meta') or {}
+          assert meta.get('query') == 'SELECT Name LIMIT 3', data
+          translated = meta.get('translated_query', '')
+          assert translated and translated != meta.get('query'), data
+          print('PASS:', json.dumps({'total': data.get('total'), 'translated_query': translated}, ensure_ascii=False))
+          PY
+
+      - name: Test grouped query
+        run: |
+          curl --fail-with-body --silent --show-error --get \
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFc0cI_g2t/query" \
+            --data-urlencode "q=SELECT Name, COUNT(Name) GROUP BY Name LIMIT 3" \
+            -o grouped-result.json
+          python - <<'PY'
+          import json
+          data = json.load(open('grouped-result.json', encoding='utf-8'))
+          assert isinstance(data.get('data'), list), data
+          assert len(data['data']) <= 3, data
+          print('PASS grouped:', json.dumps({'total': data.get('total'), 'columns': data.get('columns')}, ensure_ascii=False))
+          PY
