@@ -25,6 +25,30 @@
     node.classList.toggle('error', kind === 'error');
   }
 
+  function actionButton(attribute, projectId) {
+    return Array.from(document.querySelectorAll('[' + attribute + ']'))
+      .find(button => button.getAttribute(attribute) === String(projectId)) || null;
+  }
+
+  function setButtonBusy(button, busy, label = '') {
+    if (!button) return;
+    if (busy) {
+      if (!button.dataset.originalLabel) button.dataset.originalLabel = button.textContent || '';
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      button.style.opacity = '0.7';
+      if (label) button.textContent = label;
+      return;
+    }
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    button.style.opacity = '';
+    if (button.dataset.originalLabel) {
+      button.textContent = button.dataset.originalLabel;
+      delete button.dataset.originalLabel;
+    }
+  }
+
   function parseSpreadsheetId(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -97,6 +121,8 @@
       return showNotice(text('Esta hoja ya está conectada.', 'This spreadsheet is already connected.'));
     }
 
+    const connect = document.querySelector('#littleapi-connect-reference');
+    setButtonBusy(connect, true, text('Conectando…', 'Connecting…'));
     try {
       const existing = await sb.from('projects')
         .select('id,name,spreadsheet_id,sheet_name')
@@ -129,6 +155,8 @@
         typeof friendlyError === 'function' ? friendlyError(error) : (error?.message || String(error)),
         'error'
       );
+    } finally {
+      setButtonBusy(connect, false);
     }
   }
 
@@ -176,8 +204,13 @@
 
   async function verifyFileAccess(spreadsheetId) {
     const session = await currentSession();
-    await syncCurrentProviderConnection(session).catch(() => {});
-    const googleToken = await backendGoogleToken(session);
+    let googleToken = '';
+    try {
+      googleToken = await backendGoogleToken(session);
+    } catch (_) {
+      await syncCurrentProviderConnection(session);
+      googleToken = await backendGoogleToken(session);
+    }
     const response = await fetch(
       'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(spreadsheetId) +
       '?fields=id,name,mimeType,capabilities(canEdit)',
@@ -268,26 +301,60 @@
   const originalCreateApi = typeof createApi === 'function' ? createApi : null;
   if (originalCreateApi) {
     createApi = async function(project) {
+      const button = actionButton('data-api-project', project.id);
       try {
         const existing = typeof apiForProject === 'function' ? apiForProject(project) : null;
         if (existing) return showApiDialog(project, existing);
 
-        const access = await verifyFileAccess(project.spreadsheet_id).catch(() => null);
-        if (!access) {
+        // Projects connected by URL have no sheet_name until the file is authorized.
+        // Skip all network preflight and go straight to the per-file grant.
+        if (!project.sheet_name) {
+          setButtonBusy(button, true, text('Autorizando…', 'Authorizing…'));
           showNotice(text(
             'Autoriza únicamente esta hoja para crear su API.',
             'Authorize only this spreadsheet to create its API.'
           ));
-          return requestSheetGrant(project);
+          await requestSheetGrant(project);
+          return;
         }
 
+        setButtonBusy(button, true, text('Comprobando…', 'Checking…'));
+        const access = await verifyFileAccess(project.spreadsheet_id).catch(() => null);
+        if (!access) {
+          setButtonBusy(button, true, text('Autorizando…', 'Authorizing…'));
+          showNotice(text(
+            'Autoriza únicamente esta hoja para crear su API.',
+            'Authorize only this spreadsheet to create its API.'
+          ));
+          await requestSheetGrant(project);
+          return;
+        }
+
+        setButtonBusy(button, true, text('Creando…', 'Creating…'));
         await completeProjectMetadata(project, access);
-        return originalCreateApi(project);
+        return await originalCreateApi(project);
       } catch (error) {
+        localStorage.removeItem(PENDING_API_KEY);
         showNotice(
           typeof friendlyError === 'function' ? friendlyError(error) : (error?.message || String(error)),
           'error'
         );
+      } finally {
+        const pending = readPendingApi();
+        if (!pending || pending.projectId !== project.id) setButtonBusy(button, false);
+      }
+    };
+  }
+
+  const originalRemoveProject = typeof removeProject === 'function' ? removeProject : null;
+  if (originalRemoveProject) {
+    removeProject = async function(project) {
+      const button = actionButton('data-remove-project', project.id);
+      setButtonBusy(button, true, text('Quitando…', 'Removing…'));
+      try {
+        return await originalRemoveProject(project);
+      } finally {
+        setButtonBusy(button, false);
       }
     };
   }
@@ -345,7 +412,6 @@
     if (authorize) authorize.classList.add('hidden');
   }
 
-  // Remove temporary state created by the discarded discovery experiments.
   localStorage.removeItem('littleapi:pending-sheet-list');
   localStorage.removeItem('littleapi:pending-project-pick');
 
