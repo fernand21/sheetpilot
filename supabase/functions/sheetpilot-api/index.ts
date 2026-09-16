@@ -1,5 +1,7 @@
+import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynamicCors, scheduleTelemetry } from "./platform.ts";
+
 /*
- * LittleAPI API v1.3
+ * LittleAPI API v1.4
  * Public REST API for Google Sheets and Google Drive.
  *
  * Published APIs do not require a Supabase login. Public GETs can be anonymous;
@@ -36,7 +38,7 @@ type PageResult = {
 };
 type QuotaState = { allowed: boolean; used: number; limit: number; reset_at: string };
 
-const API_VERSION = "1.3.0";
+const API_VERSION = "1.4.0";
 const MAX_PAGE_SIZE = 1000;
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "";
@@ -899,6 +901,7 @@ async function handler(request: Request) {
   if (path[0] === "health" && request.method === "GET") return response({ status: "ok", name: "LittleAPI", version: API_VERSION, time: new Date().toISOString() });
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
+  if (path[0] === "account") return accountRequest(request, path.slice(1));
   if (!path[0]) return response({ name: "LittleAPI", version: API_VERSION, usage: "/sheetpilot-api/{API_ID}", public_url: "https://littleapi.online/api/v1/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Public GETs can be anonymous; use X-API-Key for writes, private reads, Drive and admin operations." });
   const api = await getApi(path[0]);
   if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada.");
@@ -916,9 +919,39 @@ async function handler(request: Request) {
   return mutationOperation(api, request, path.slice(1));
 }
 Deno.serve(async (request) => {
-  try { return await handler(request); }
+  const started = Date.now();
+  const requestId = crypto.randomUUID();
+  const path = partsFor(new URL(request.url));
+  const apiId = path[0] && !["health", "auth", "account"].includes(path[0]) ? path[0] : "";
+  const settings = apiId ? await getSecuritySettings(apiId).catch(() => null) : null;
+
+  if (request.method === "OPTIONS") {
+    const preflight = new Response(null, { status: 204, headers: { ...corsHeaders, "X-LittleAPI-Version": API_VERSION, "X-LittleAPI-Request-Id": requestId } });
+    return withDynamicCors(preflight, request, settings);
+  }
+
+  if (apiId) {
+    const blocked = enforceRequestSecurity(request, settings);
+    if (blocked) {
+      const headers = new Headers(blocked.headers);
+      headers.set("X-LittleAPI-Version", API_VERSION);
+      headers.set("X-LittleAPI-Request-Id", requestId);
+      const secured = new Response(blocked.body, { status: blocked.status, headers });
+      scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });
+      return withDynamicCors(secured, request, settings);
+    }
+  }
+
+  let result: Response;
+  try { result = await handler(request); }
   catch (error) {
     console.error("sheetpilot-api request failed", error);
-    return failure(502, "upstream_error", "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.");
+    result = failure(502, "upstream_error", "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.");
   }
+
+  const headers = new Headers(result.headers);
+  headers.set("X-LittleAPI-Request-Id", requestId);
+  result = new Response(result.body, { status: result.status, statusText: result.statusText, headers });
+  if (apiId) scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });
+  return withDynamicCors(result, request, settings);
 });
