@@ -70,6 +70,7 @@
           await loadScript("app.js");
           await loadScript("app-enhancements.js");
           await loadScript("google-file-grant.js");
+          await loadScript("project-sheet-picker.js");
           document.querySelector(".app-loading")?.remove();
         } catch (error) {
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
