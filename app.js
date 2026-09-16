@@ -213,7 +213,8 @@ async function hashSecret(value) {
 }
 function apiForProject(project) { return apisCache.find(api => api.project_id === project.id && api.enabled !== false); }
 function apiUrl(api) { return apiBase() + "/" + encodeURIComponent(api.api_id); }
-function formatCount(value) { return Number(value || 0).toLocaleString("es-EC"); }
+function formatCount(value) { return Number(value || 0).toLocaleString(window.LittleAPI?.language === "en" ? "en-US" : "es-EC"); }
+function tx(key, fallback) { return window.LittleAPI?.t ? window.LittleAPI.t(key) : fallback; }
 function normalizePlan(value) {
   const raw = String(value || "").trim().toLowerCase();
   if (["business", "empresa", "team"].includes(raw)) return "business";
@@ -238,14 +239,16 @@ function formatReset(value) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return "Reinicio: " + new Intl.DateTimeFormat("es-EC", { day: "numeric", month: "short", timeZone: "UTC" }).format(date) + " UTC";
+  const locale = window.LittleAPI?.language === "en" ? "en-US" : "es-EC";
+  const formatted = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+  return tx("resetAt", "Reinicio: {date}").replace("{date}", formatted + " UTC");
 }
 function usageForApi(api) { return usageByApi[api.api_id] || null; }
 function renderUsageList() {
   const list = $("#api-usage-list"), period = $("#usage-period");
   if (!list) return;
   if (!apisCache.length) {
-    list.innerHTML = '<div class="usage-empty"><strong>Aún no hay APIs publicadas</strong><p>Conecta una hoja y crea tu primera API para empezar a contar consultas.</p></div>';
+    list.innerHTML = '<div class="usage-empty"><strong>' + esc(tx("noApis", "Aún no hay APIs publicadas")) + '</strong><p>' + esc(tx("noApisText", "Conecta una hoja y crea tu primera API para empezar a contar consultas.")) + '</p></div>';
     if (period) period.textContent = "";
     return;
   }
@@ -257,31 +260,36 @@ function renderUsageList() {
     const remaining = state?.unlimited ? null : state && Number.isFinite(Number(state.remaining)) ? Math.max(0, Number(state.remaining)) : null;
     const ratio = used == null || !limit ? 0 : Math.min(100, Math.round(used / limit * 100));
     if (!firstReset && state?.reset_at) firstReset = state.reset_at;
-    let status = "Cargando consumo…", statusClass = "loading", meter = "";
+    let status = tx("loadingUsage", "Cargando consumo…"), statusClass = "loading", meter = "";
     if (state?.error) { status = state.error; statusClass = "error"; }
-    else if (state?.unlimited) { status = formatCount(used) + " usadas · sin límite"; statusClass = "unlimited"; meter = '<div class="usage-meter"><span style="width:0%"></span></div>'; }
-    else if (remaining != null) { status = formatCount(remaining) + " restantes de " + formatCount(limit); statusClass = remaining === 0 ? "exhausted" : remaining / limit < .1 ? "warning" : "ok"; meter = '<div class="usage-meter ' + statusClass + '"><span style="width:' + ratio + '%"></span></div>'; }
-    return '<article class="api-usage-card"><div class="api-usage-main"><div class="api-usage-title"><span class="api-status">● API activa</span><h4>' + esc(api.name || api.api_id) + '</h4></div><code>' + esc(apiUrl(api)) + '</code><p class="api-usage-status ' + statusClass + '">' + esc(status) + '</p>' + meter + '</div><div class="api-usage-number"><strong>' + (remaining == null ? (state?.unlimited ? "∞" : "—") : formatCount(remaining)) + '</strong><span>consultas<br>disponibles</span></div></article>';
+    else if (state?.unlimited) { status = formatCount(used) + " " + (window.LittleAPI?.language === "en" ? "used · " : "usadas · ") + tx("unlimited", "sin límite"); statusClass = "unlimited"; meter = '<div class="usage-meter"><span style="width:0%"></span></div>'; }
+    else if (remaining != null) { status = formatCount(remaining) + (window.LittleAPI?.language === "en" ? " remaining of " : " restantes de ") + formatCount(limit); statusClass = remaining === 0 ? "exhausted" : remaining / limit < .1 ? "warning" : "ok"; meter = '<div class="usage-meter ' + statusClass + '"><span style="width:' + ratio + '%"></span></div>'; }
+    return '<article class="api-usage-card"><div class="api-usage-main"><div class="api-usage-title"><span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><h4>' + esc(api.name || api.api_id) + '</h4></div><code>' + esc(apiUrl(api)) + '</code><p class="api-usage-status ' + statusClass + '">' + esc(status) + '</p>' + meter + '</div><div class="api-usage-number"><strong>' + (remaining == null ? (state?.unlimited ? "∞" : "—") : formatCount(remaining)) + '</strong><span>' + esc(tx("available", "consultas disponibles")).replace(" ", "<br>") + '</span></div></article>';
   }).join("");
   if (period) period.textContent = formatReset(firstReset) || "Se reinicia el primer día de cada mes UTC";
 }
 function renderPlanLimits() {
   const node = $("#plan-limits"); if (!node) return;
   const selected = currentPlanKey(user);
-  node.innerHTML = Object.entries(PLAN_LIMITS).map(([key, plan]) => '<article class="plan-limit-card ' + (key === selected ? "current" : "") + '"><div class="plan-limit-head"><div><span class="plan-limit-label">' + (key === selected ? "Tu nivel" : "Nivel") + '</span><h4>' + esc(plan.name) + '</h4></div><strong>' + esc(plan.price) + '</strong></div><p class="plan-limit-usage"><b>' + formatCount(plan.apiLimit) + '</b> APIs activas · <b>' + formatCount(plan.requestsPerApi) + '</b> consultas por API/mes</p><ul>' + plan.features.slice(2).map(feature => '<li>' + esc(feature) + '</li>').join("") + '</ul></article>').join("");
+  const planNames = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" } };
+  const featureNames = { "Lectura pública JSON": "Public JSON reads", "Documentación y OpenAPI": "Documentation and OpenAPI", "CSV y caché": "CSV and caching", "Drive, pestañas y lotes": "Drive, tabs, and batches", "Exportación Excel": "Excel export", "Cuotas personalizadas": "Custom quotas", "Soporte prioritario": "Priority support" };
+  const locale = window.LittleAPI?.language === "en" ? "en" : "es";
+  node.innerHTML = Object.entries(PLAN_LIMITS).map(([key, plan]) => '<article class="plan-limit-card ' + (key === selected ? "current" : "") + '"><div class="plan-limit-head"><div><span class="plan-limit-label">' + (key === selected ? esc(tx("yourLevel", "Tu nivel")) : esc(tx("level", "Nivel"))) + '</span><h4>' + esc(planNames[key]?.[locale] || plan.name) + '</h4></div><strong>' + esc(plan.price) + '</strong></div><p class="plan-limit-usage"><b>' + formatCount(plan.apiLimit) + '</b> ' + esc(tx("activeApis", "APIs activas").toLowerCase()) + ' · <b>' + formatCount(plan.requestsPerApi) + '</b> ' + esc(tx("requestsPerApi", "consultas por API/mes")) + '</p><ul>' + plan.features.slice(2).map(feature => '<li>' + esc(locale === "en" ? (featureNames[feature] || feature) : feature) + '</li>').join("") + '</ul></article>').join("");
 }
 function renderAccountOverview() {
   const summary = $("#account-summary"); if (!summary) return;
   const key = currentPlanKey(user), plan = PLAN_LIMITS[key], activeCount = apisCache.filter(api => api.enabled !== false).length, overLimit = activeCount > plan.apiLimit;
-  summary.innerHTML = '<div class="account-stat"><span>Plan actual</span><strong>' + esc(plan.name) + '</strong><small>' + esc(plan.price) + '</small></div><div class="account-stat ' + (overLimit ? "over" : "") + '"><span>APIs activas</span><strong>' + formatCount(activeCount) + ' <small>/ ' + formatCount(plan.apiLimit) + '</small></strong><small>' + (overLimit ? "Superaste el límite del plan" : "Dentro del límite") + '</small></div><div class="account-stat"><span>Cuota por API</span><strong>' + formatCount(plan.requestsPerApi) + '</strong><small>consultas cada mes</small></div><div class="account-stat"><span>Renovación</span><strong>Manual</strong><small>Sin cobros automáticos</small></div>';
+  const locale = window.LittleAPI?.language === "en" ? "en" : "es";
+  const planName = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" } }[key]?.[locale] || plan.name;
+  summary.innerHTML = '<div class="account-stat"><span>' + esc(tx("currentPlan", "Plan actual")) + '</span><strong>' + esc(planName) + '</strong><small>' + esc(plan.price) + '</small></div><div class="account-stat ' + (overLimit ? "over" : "") + '"><span>' + esc(tx("activeApis", "APIs activas")) + '</span><strong>' + formatCount(activeCount) + ' <small>/ ' + formatCount(plan.apiLimit) + '</small></strong><small>' + esc(overLimit ? tx("overLimit", "Superaste el límite del plan") : tx("withinLimit", "Dentro del límite")) + '</small></div><div class="account-stat"><span>' + esc(tx("quotaPerApi", "Cuota por API")) + '</span><strong>' + formatCount(plan.requestsPerApi) + '</strong><small>' + esc(tx("eachMonth", "consultas cada mes")) + '</small></div><div class="account-stat"><span>' + esc(tx("renewal", "Renovación")) + '</span><strong>' + esc(tx("manual", "Manual")) + '</strong><small>' + esc(tx("noAutomaticCharges", "Sin cobros automáticos")) + '</small></div>';
   renderPlanLimits();
   renderUsageList();
 }
 async function refreshUsage() {
   if (!user) return;
   const button = $("#refresh-usage"), status = $("#usage-message");
-  if (button) { button.disabled = true; button.textContent = "Actualizando…"; }
-  if (status) { status.textContent = "Consultando el consumo real de cada API…"; status.classList.remove("error", "success"); }
+  if (button) { button.disabled = true; button.textContent = window.LittleAPI?.language === "en" ? "Refreshing…" : "Actualizando…"; }
+  if (status) { status.textContent = window.LittleAPI?.language === "en" ? "Checking the live usage for each API…" : "Consultando el consumo real de cada API…"; status.classList.remove("error", "success"); }
   usageByApi = Object.create(null); renderUsageList();
   const results = await Promise.all(apisCache.map(async api => {
     try {
@@ -296,9 +304,12 @@ async function refreshUsage() {
   }));
   results.forEach(([apiId, state]) => { usageByApi[apiId] = state; });
   renderAccountOverview();
-  if (button) { button.disabled = false; button.textContent = "Actualizar uso"; }
-  if (status) { const hasErrors = results.some(([, state]) => state.error); status.textContent = hasErrors ? "Algunas APIs necesitan recuperar su clave para mostrar el consumo." : "Consumo actualizado desde el contador de la API."; status.classList.toggle("error", hasErrors); status.classList.toggle("success", !hasErrors); }
+  if (button) { button.disabled = false; button.textContent = tx("refreshUsage", "Actualizar uso"); }
+  if (status) { const hasErrors = results.some(([, state]) => state.error); status.textContent = hasErrors ? (window.LittleAPI?.language === "en" ? "Some APIs need their key recovered to show usage." : "Algunas APIs necesitan recuperar su clave para mostrar el consumo.") : (window.LittleAPI?.language === "en" ? "Usage updated from the API counter." : "Consumo actualizado desde el contador de la API."); status.classList.toggle("error", hasErrors); status.classList.toggle("success", !hasErrors); }
 }
+window.addEventListener("littleapi:language-change", () => {
+  if (user) { renderAccountOverview(); renderUsageList(); }
+});
 async function publishSheetForApi(spreadsheetId) {
   const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
   return gf(url, { method: "POST", body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }) });

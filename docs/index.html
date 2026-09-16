@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -271,10 +271,10 @@ curl "https://littleapi.online/api/v1/YOUR_API_ID/usage" \
         if (value !== undefined) node.textContent = value;
       });
       languageSelect.value = lang;
-      try { localStorage.setItem("littleapi-doc-language", lang); } catch (_) {}
+      try { localStorage.setItem("littleapi:language", lang); localStorage.setItem("littleapi-doc-language", lang); } catch (_) {}
     }
     let savedLanguage = "es";
-    try { savedLanguage = localStorage.getItem("littleapi-doc-language") || "es"; } catch (_) {}
+    try { savedLanguage = localStorage.getItem("littleapi:language") || localStorage.getItem("littleapi-doc-language") || "en"; } catch (_) {}
     applyLanguage(savedLanguage);
     languageSelect.addEventListener("change", () => applyLanguage(languageSelect.value));
 
