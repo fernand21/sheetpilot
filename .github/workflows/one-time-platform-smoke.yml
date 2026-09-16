@@ -9,19 +9,27 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Test public query and response headers
+      - name: Wait for security cache
+        run: sleep 35
+      - name: Test allowed browser origin
         run: |
-          curl --fail-with-body --silent --show-error --get \
-            -D headers.txt \
+          code=$(curl --silent --show-error --get -o allowed.json -D allowed-headers.txt -w "%{http_code}" \
+            -H "Origin: https://allowed.example" \
             "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
-            --data-urlencode "q=SELECT Name LIMIT 2" \
-            -o result.json
-          grep -i "x-littleapi-version: 1.4.0" headers.txt
-          grep -i "x-littleapi-request-id:" headers.txt
+            --data-urlencode "q=SELECT Name LIMIT 1")
+          test "$code" = "200"
+          grep -i "access-control-allow-origin: https://allowed.example" allowed-headers.txt
+          grep -i "x-littleapi-version: 1.4.0" allowed-headers.txt
+      - name: Test blocked browser origin
+        run: |
+          code=$(curl --silent --show-error --get -o blocked.json -w "%{http_code}" \
+            -H "Origin: https://blocked.example" \
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
+            --data-urlencode "q=SELECT Name LIMIT 1")
+          test "$code" = "403"
           python - <<'PY'
           import json
-          data=json.load(open('result.json',encoding='utf-8'))
-          assert isinstance(data.get('data'),list), data
-          assert len(data['data']) <= 2, data
-          print('PASS', data.get('meta',{}).get('translated_query'))
+          data=json.load(open('blocked.json',encoding='utf-8'))
+          assert data.get('error') == 'origin_not_allowed', data
+          print('PASS CORS allowlist')
           PY
