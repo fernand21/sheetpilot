@@ -9,23 +9,23 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for security cache
-        run: sleep 35
       - name: Test allowed browser origin
         run: |
-          code=$(curl --silent --show-error --get -o allowed.json -D allowed-headers.txt -w "%{http_code}" \
+          code=$(curl --silent --show-error -o allowed.json -D allowed-headers.txt -w "%{http_code}" \
             -H "Origin: https://allowed.example" \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
-            --data-urlencode "q=SELECT Name LIMIT 1")
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t?limit=1")
+          echo "HTTP=$code"
+          cat allowed-headers.txt
           test "$code" = "200"
           grep -i "access-control-allow-origin: https://allowed.example" allowed-headers.txt
           grep -i "x-littleapi-version: 1.4.0" allowed-headers.txt
       - name: Test blocked browser origin
         run: |
-          code=$(curl --silent --show-error --get -o blocked.json -w "%{http_code}" \
+          code=$(curl --silent --show-error -o blocked.json -w "%{http_code}" \
             -H "Origin: https://blocked.example" \
-            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t/query" \
-            --data-urlencode "q=SELECT Name LIMIT 1")
+            "https://littleapi.online/api/v1/4gCDjwJ3DrqFcOcI_g2t?limit=1")
+          echo "HTTP=$code"
+          cat blocked.json
           test "$code" = "403"
           python - <<'PY'
           import json
@@ -33,3 +33,7 @@ jobs:
           assert data.get('error') == 'origin_not_allowed', data
           print('PASS CORS allowlist')
           PY
+      - name: Check dashboard enhancement JavaScript syntax
+        run: |
+          curl --fail --silent --show-error https://raw.githubusercontent.com/fernand21/sheetpilot/main/app-enhancements.js -o app-enhancements.js
+          node --check app-enhancements.js
