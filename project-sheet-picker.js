@@ -250,8 +250,9 @@
     void startGoogleSheetPicker();
   }, true);
 
-  const observer = new MutationObserver(installPickerEntry);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  // The dashboard is already mounted before this file is loaded. A full-document
+  // MutationObserver here was unnecessary and caused work on every dashboard update.
   installPickerEntry();
   setTimeout(() => void completePendingPick(), 1000);
+  window.addEventListener('littleapi:language-change', installPickerEntry);
 })();
