@@ -1,0 +1,31 @@
+name: LittleAPI Shared Admin Session
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-shared-admin-session.yml"
+      - "scripts/patch_shared_admin_session.py"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply shared session patch
+        run: python scripts/patch_shared_admin_session.py
+      - name: Verify JavaScript
+        run: |
+          node --check app.js
+          node --check admin/admin.js
+          grep -q 'authStorageKey' app.js
+          grep -q 'authStorageKey' admin/admin.js
+      - name: Commit patch
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add app.js admin/admin.js
+          git commit -m "Share Supabase session between app and admin"
+          git push
