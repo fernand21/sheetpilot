@@ -65,10 +65,6 @@
             if (!existing) document.body.append(script);
           });
 
-          // The dashboard depends on Supabase, not on the Google Identity SDK.
-          // Sheet discovery and per-file authorization use the existing Supabase
-          // OAuth session, so a blocked/slow Google GSI script can no longer hold
-          // the whole application startup hostage.
           await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           await loadScript("config.js");
           await loadScript("app.js?v=20260916-stable4");
@@ -76,7 +72,7 @@
           document.querySelector(".app-loading")?.remove();
 
           try {
-            await loadScript("permissions-flow.js?v=20260916-permissions3");
+            await loadScript("permissions-flow.js?v=20260916-permissions4");
           } catch (permissionError) {
             console.error("LittleAPI permission flow failed", permissionError);
           }
