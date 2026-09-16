@@ -67,14 +67,14 @@
 
           await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           await loadScript("config.js");
-          await loadScript("app.js?v=20260916-stable4");
+          await loadScript("app.js?v=20260916-stable5");
 
           document.querySelector(".app-loading")?.remove();
 
           try {
-            await loadScript("permissions-flow-strict.js?v=20260916-strict1");
+            await loadScript("create-api-auth.js?v=20260916-api1");
           } catch (permissionError) {
-            console.error("LittleAPI permission flow failed", permissionError);
+            console.error("LittleAPI API authorization flow failed", permissionError);
           }
 
           const NativeMutationObserver = window.MutationObserver;
@@ -85,7 +85,7 @@
             }
           };
           try {
-            await loadScript("app-enhancements.js?v=20260916-stable4");
+            await loadScript("app-enhancements.js?v=20260916-stable5");
           } catch (enhancementError) {
             console.error("LittleAPI enhancements failed", enhancementError);
           } finally {
