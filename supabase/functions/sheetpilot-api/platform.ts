@@ -197,7 +197,7 @@ async function mutationEvent(request: Request, apiId: string) {
   const marker = parts.indexOf("v1"), route = marker >= 0 ? parts.slice(marker + 2) : parts.slice(parts.indexOf("sheetpilot-api") + 2);
   const first = route[0] || "";
   if (request.method === "GET") return "api.request.completed";
-  if (first === "query") return "api.request.completed";
+  if (first === "query" || first === "mcp") return "api.request.completed";
   if (first === "format") return "sheet.formatted";
   if (first === "clear") return "sheet.cleared";
   if (first === "batch") return "sheet.batch";

@@ -1,4 +1,5 @@
 import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynamicCors, scheduleTelemetry } from "./platform.ts";
+import { handleMcp } from "./mcp.ts";
 
 /*
  * LittleAPI API v1.4
@@ -106,7 +107,8 @@ async function getApi(apiId: string): Promise<ApiRecord | null> {
   return catalog?.[0] ? { ...catalog[0], api_key_hash: "", cache_ttl: 60, monthly_request_limit: catalog[0].monthly_request_limit || 5000 } : null;
 }
 async function hasApiKey(api: ApiRecord, request: Request) {
-  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || "";
+  const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1] || "";
+  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";
   if (!supplied || !api.api_key_hash) return false;
   return sameSecret(await sha256(supplied), api.api_key_hash);
 }
@@ -892,6 +894,7 @@ function operationNeedsApiKey(api: ApiRecord, path: string[], method: string) {
   return path[1] === "sheets" || path[1] === "export.xlsx";
 }
 function quotaExempt(path: string[], method: string) {
+  if (path[1] === "mcp") return true;
   return method === "GET" && ["name", "metadata", "openapi.json", "usage"].includes(path[1] || "");
 }
 async function handler(request: Request) {
@@ -913,6 +916,7 @@ async function handler(request: Request) {
   if (!quotaExempt(path, request.method)) {
     const quotaError = await consumeQuota(api); if (quotaError) return quotaError;
   }
+  if (path[1] === "mcp") return handleMcp(request, api);
   if (path[1] === "query" && (request.method === "GET" || request.method === "POST")) return queryOperation(api, request);
   if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request);
   if (request.method === "GET") return readOperation(api, request, path.slice(1));
