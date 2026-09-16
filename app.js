@@ -327,13 +327,20 @@ async function publishSheetForApi(spreadsheetId) {
   const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
   return gf(url, { method: "POST", body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }) });
 }
-async function ownerApiRequest(path, options) {
+async function ownerApiRequest(path, options, retryAuth = true) {
   const sessionResult = await sb.auth.getSession(), accessToken = sessionResult.data.session?.access_token;
   if (!accessToken) throw new Error("Tu sesión ha caducado. Inicia sesión otra vez.");
   const opts = Object.assign({}, options || {}), headers = new Headers(opts.headers || {});
   headers.set("apikey", cfg.publishableKey); headers.set("Authorization", "Bearer " + accessToken); opts.headers = headers;
   const response = await fetch(apiBase() + path, opts), type = response.headers.get("content-type") || "", data = type.includes("json") ? await response.json() : await response.text();
-  if (!response.ok) { const error = new Error(data?.message || data?.error || "No se pudo completar la operación segura."); error.code = data?.error || "request_failed"; throw error; }
+  if (!response.ok && retryAuth && response.status === 401) {
+    const refreshed = await sb.auth.refreshSession();
+    if (refreshed.data.session?.access_token) {
+      await wait(900);
+      return ownerApiRequest(path, options, false);
+    }
+  }
+  if (!response.ok) { const error = new Error(data?.message || data?.error || "No se pudo completar la operación segura."); error.code = data?.error || "request_failed"; error.status = response.status; throw error; }
   return data;
 }
 async function loadApiKey(api) { const data = await ownerApiRequest("/auth/api-key?api_id=" + encodeURIComponent(api.api_id)); return data.api_key; }
@@ -660,5 +667,19 @@ bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
   sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; if (isAppPage()) return location.replace("./"); togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_OUT") {
+      user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0;
+      if (isAppPage()) return location.replace("./");
+      togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden");
+      return;
+    }
+    if (!session?.user) return;
+    providerToken = session.provider_token || providerToken;
+    token = providerToken || token;
+    if (providerToken) tokenExpiresAt = Date.now() + 3300000;
+    const sameUser = user?.id === session.user.id;
+    if (!sameUser) dashboard(session.user); else user = session.user;
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") void syncProviderRefreshToken(session);
+  });
 }

@@ -318,7 +318,8 @@
   }
 
   let adminEntryChecking = false;
-  let adminEntryDenied = false;
+  let adminEntryRole = "";
+  let adminEntryFailures = 0;
 
   function refreshAdminEntryLanguage() {
     const link = $("#admin-console-link");
@@ -327,33 +328,52 @@
     link.title = text("Abrir la consola privada de LittleAPI", "Open the private LittleAPI console");
   }
 
+  function insertAdminEntry(actions, role) {
+    if (!actions || $("#admin-console-link", actions)) return;
+    const link = document.createElement("a");
+    link.id = "admin-console-link";
+    link.className = "action-button";
+    link.href = "admin/";
+    link.dataset.adminRole = role || "admin";
+    const signOut = $("#sign-out", actions);
+    if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);
+    refreshAdminEntryLanguage();
+  }
+
   async function enhanceAdminEntry() {
     const actions = $("#dashboard .dashboard-actions");
-    if (!actions || $("#admin-console-link", actions) || adminEntryChecking || adminEntryDenied) return;
+    if (!actions || $("#admin-console-link", actions) || adminEntryChecking) return;
+    if (adminEntryRole) { insertAdminEntry(actions, adminEntryRole); return; }
+    if (adminEntryFailures >= 4) return;
     if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }
     adminEntryChecking = true;
     try {
-      const sessionResult = await sb.auth.getSession();
-      const session = sessionResult?.data?.session;
-      if (!session?.access_token) return;
+      let sessionResult = await sb.auth.getSession();
+      let accessToken = sessionResult?.data?.session?.access_token;
+      if (!accessToken) return;
       const adminBase = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/littleapi-admin/me";
-      const response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + session.access_token } });
+      let response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + accessToken } });
+      if (!response.ok && (response.status === 401 || response.status === 403)) {
+        const refreshed = await sb.auth.refreshSession();
+        accessToken = refreshed?.data?.session?.access_token || "";
+        if (accessToken) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + accessToken } });
+        }
+      }
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) adminEntryDenied = true;
+        adminEntryFailures += 1;
+        if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
         return;
       }
       const info = await response.json().catch(() => ({}));
       if (!info?.user || !info?.role) return;
-      const link = document.createElement("a");
-      link.id = "admin-console-link";
-      link.className = "action-button";
-      link.href = "admin/";
-      link.dataset.adminRole = info.role;
-      const signOut = $("#sign-out", actions);
-      if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);
-      refreshAdminEntryLanguage();
+      adminEntryRole = info.role;
+      adminEntryFailures = 0;
+      insertAdminEntry(actions, adminEntryRole);
     } catch (_) {
-      // Keep the normal dashboard unchanged if the admin check is unavailable.
+      adminEntryFailures += 1;
+      if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
     } finally {
       adminEntryChecking = false;
     }
