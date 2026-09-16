@@ -1,3 +1,4 @@
+# Smoke tests for LittleAPI platform integrations
 name: LittleAPI Platform Smoke Test
 
 on:
