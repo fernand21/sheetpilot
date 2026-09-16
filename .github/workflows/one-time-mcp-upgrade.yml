@@ -1,0 +1,49 @@
+name: LittleAPI MCP Upgrade
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-mcp-upgrade.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate MCP endpoint
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('supabase/functions/sheetpilot-api/index.ts')
+          s=p.read_text(encoding='utf-8')
+          if 'from "./mcp.ts"' not in s:
+              s=s.replace('import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynamicCors, scheduleTelemetry } from "./platform.ts";\n', 'import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynamicCors, scheduleTelemetry } from "./platform.ts";\nimport { handleMcp } from "./mcp.ts";\n')
+          old='''async function hasApiKey(api: ApiRecord, request: Request) {\n  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || "";\n  if (!supplied || !api.api_key_hash) return false;\n  return sameSecret(await sha256(supplied), api.api_key_hash);\n}'''
+          new='''async function hasApiKey(api: ApiRecord, request: Request) {\n  const bearer = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1] || "";\n  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";\n  if (!supplied || !api.api_key_hash) return false;\n  return sameSecret(await sha256(supplied), api.api_key_hash);\n}'''
+          if old not in s:
+              raise SystemExit('hasApiKey block not found')
+          s=s.replace(old,new)
+          oldq='''function quotaExempt(path: string[], method: string) {\n  return method === "GET" && ["name", "metadata", "openapi.json", "usage"].includes(path[1] || "");\n}'''
+          newq='''function quotaExempt(path: string[], method: string) {\n  if (path[1] === "mcp") return true;\n  return method === "GET" && ["name", "metadata", "openapi.json", "usage"].includes(path[1] || "");\n}'''
+          if oldq not in s:
+              raise SystemExit('quotaExempt block not found')
+          s=s.replace(oldq,newq)
+          needle='''  if (path[1] === "query" && (request.method === "GET" || request.method === "POST")) return queryOperation(api, request);'''
+          if 'return handleMcp(request, api);' not in s:
+              s=s.replace(needle, '''  if (path[1] === "mcp") return handleMcp(request, api);\n''' + needle)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('supabase/functions/sheetpilot-api/platform.ts')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('''  if (first === "query") return "api.request.completed";''','''  if (first === "query" || first === "mcp") return "api.request.completed";''')
+          p.write_text(s,encoding='utf-8')
+      - name: Commit integration
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add supabase/functions/sheetpilot-api/index.ts supabase/functions/sheetpilot-api/platform.ts supabase/functions/sheetpilot-api/mcp.ts
+          git commit -m "Expose LittleAPI through MCP 2026-07-28"
+          git push
