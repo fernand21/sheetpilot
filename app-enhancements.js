@@ -314,10 +314,53 @@
     const select = $("#language-select");
     if (!select || select.dataset.enhancementBound === "true") return;
     select.dataset.enhancementBound = "true";
-    select.addEventListener("change", () => setTimeout(() => { refreshEnhancementLanguage(); refreshApiSelector(); }, 0));
+    select.addEventListener("change", () => setTimeout(() => { refreshEnhancementLanguage(); refreshApiSelector(); refreshAdminEntryLanguage(); }, 0));
   }
 
-  function apply() { enhanceUsageList(); enhanceQueryPanel(); enhancePlatformPanel(); bindLanguageRefresh(); refreshApiSelector(); }
+  let adminEntryChecking = false;
+  let adminEntryChecked = false;
+
+  function refreshAdminEntryLanguage() {
+    const link = $("#admin-console-link");
+    if (!link) return;
+    link.textContent = text("Administración", "Admin");
+    link.title = text("Abrir la consola privada de LittleAPI", "Open the private LittleAPI console");
+  }
+
+  async function enhanceAdminEntry() {
+    const actions = $("#dashboard .dashboard-actions");
+    if (!actions || $("#admin-console-link", actions) || adminEntryChecking || adminEntryChecked) return;
+    if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }
+    adminEntryChecking = true;
+    try {
+      const sessionResult = await sb.auth.getSession();
+      const session = sessionResult?.data?.session;
+      if (!session?.access_token) return;
+      const adminBase = String(cfg.url || "").replace(/\/$/, "") + "/functions/v1/littleapi-admin/me";
+      const response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + session.access_token } });
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) adminEntryChecked = true;
+        return;
+      }
+      const info = await response.json().catch(() => ({}));
+      if (!info?.user || !info?.role) return;
+      const link = document.createElement("a");
+      link.id = "admin-console-link";
+      link.className = "action-button";
+      link.href = "admin/";
+      link.dataset.adminRole = info.role;
+      const signOut = $("#sign-out", actions);
+      if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);
+      refreshAdminEntryLanguage();
+      adminEntryChecked = true;
+    } catch (_) {
+      // Keep the normal dashboard unchanged if the admin check is unavailable.
+    } finally {
+      adminEntryChecking = false;
+    }
+  }
+
+  function apply() { enhanceUsageList(); enhanceQueryPanel(); enhancePlatformPanel(); bindLanguageRefresh(); refreshApiSelector(); enhanceAdminEntry(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply); else apply();
   new MutationObserver(apply).observe(document.documentElement, { childList:true, subtree:true });
   window.addEventListener("littleapi:language-change", () => setTimeout(() => { refreshEnhancementLanguage(); refreshApiSelector(); }, 0));
