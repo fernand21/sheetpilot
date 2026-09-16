@@ -1,0 +1,41 @@
+name: LittleAPI Platform Upgrade
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-platform-upgrade.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Edge Function entrypoint
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('supabase/functions/sheetpilot-api/index.ts')
+          s=p.read_text(encoding='utf-8')
+          imp='import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynamicCors, scheduleTelemetry } from "./platform.ts";\n\n'
+          if 'from "./platform.ts"' not in s:
+              s=imp+s
+          s=s.replace('LittleAPI API v1.3','LittleAPI API v1.4').replace('const API_VERSION = "1.3.0";','const API_VERSION = "1.4.0";')
+          needle='  if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);\n'
+          if 'path[0] === "account"' not in s:
+              s=s.replace(needle, needle+'  if (path[0] === "account") return accountRequest(request, path.slice(1));\n')
+          old='''Deno.serve(async (request) => {\n  try { return await handler(request); }\n  catch (error) {\n    console.error("sheetpilot-api request failed", error);\n    return failure(502, "upstream_error", "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.");\n  }\n});'''
+          new='''Deno.serve(async (request) => {\n  const started = Date.now();\n  const requestId = crypto.randomUUID();\n  const path = partsFor(new URL(request.url));\n  const apiId = path[0] && !["health", "auth", "account"].includes(path[0]) ? path[0] : "";\n  const settings = apiId ? await getSecuritySettings(apiId).catch(() => null) : null;\n\n  if (request.method === "OPTIONS") {\n    const preflight = new Response(null, { status: 204, headers: { ...corsHeaders, "X-LittleAPI-Version": API_VERSION, "X-LittleAPI-Request-Id": requestId } });\n    return withDynamicCors(preflight, request, settings);\n  }\n\n  if (apiId) {\n    const blocked = enforceRequestSecurity(request, settings);\n    if (blocked) {\n      const headers = new Headers(blocked.headers);\n      headers.set("X-LittleAPI-Version", API_VERSION);\n      headers.set("X-LittleAPI-Request-Id", requestId);\n      const secured = new Response(blocked.body, { status: blocked.status, headers });\n      scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });\n      return withDynamicCors(secured, request, settings);\n    }\n  }\n\n  let result: Response;\n  try { result = await handler(request); }\n  catch (error) {\n    console.error("sheetpilot-api request failed", error);\n    result = failure(502, "upstream_error", "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.");\n  }\n\n  const headers = new Headers(result.headers);\n  headers.set("X-LittleAPI-Request-Id", requestId);\n  result = new Response(result.body, { status: result.status, statusText: result.statusText, headers });\n  if (apiId) scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });\n  return withDynamicCors(result, request, settings);\n});'''
+          if old not in s:
+              raise SystemExit('Expected Deno.serve block not found')
+          s=s.replace(old,new)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit upgrade
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add supabase/functions/sheetpilot-api/index.ts
+          git commit -m "Add logs security and webhooks to LittleAPI" || exit 0
+          git push
