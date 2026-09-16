@@ -1,0 +1,11 @@
+/* LittleAPI dashboard enhancements: compact quota list + query examples */
+.usage-section{position:relative}
+.api-usage-list{max-height:360px;overflow:auto;padding-right:6px;scrollbar-width:thin;scrollbar-color:#315e52 #0a211b}
+.api-usage-list::-webkit-scrollbar{width:8px}.api-usage-list::-webkit-scrollbar-track{background:#0a211b;border-radius:99px}.api-usage-list::-webkit-scrollbar-thumb{background:#315e52;border-radius:99px}
+.api-usage-card{min-height:104px;padding:13px 15px}.api-usage-main>code{max-width:760px}.api-usage-number strong{font-size:1.4rem}
+.usage-list-toolbar{display:flex;align-items:center;gap:10px;margin:-3px 0 12px;color:var(--muted);font-size:.76rem}.usage-list-toolbar strong{color:var(--text);font-size:.8rem}.usage-list-toolbar .usage-scroll-hint{margin-left:auto}
+.query-help{margin-bottom:18px;padding:18px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,#0d2a23,#091d18)}
+.query-help-head{display:flex;align-items:start;justify-content:space-between;gap:18px}.query-help h3{margin:0;font-size:1.05rem}.query-help p{margin:5px 0 0;color:var(--muted);font-size:.83rem}.query-example-group{margin-top:14px}.query-example-label{display:block;margin-bottom:8px;color:#a8c6bc;font-size:.72rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.query-example-list{display:flex;gap:7px;flex-wrap:wrap}.query-example{border:1px solid #315b50;border-radius:999px;padding:7px 10px;background:#0a211b;color:#cce9df;font:700 .72rem ui-monospace,SFMono-Regular,Consolas,monospace;cursor:pointer;transition:.18s ease}.query-example:hover{border-color:var(--teal);color:#fff;transform:translateY(-1px)}
+.query-tip{margin-top:13px!important;padding-top:12px;border-top:1px solid var(--line);font-size:.78rem!important}.query-tip code{color:var(--lime)}
+@media(max-width:720px){.api-usage-list{max-height:315px}.usage-list-toolbar{align-items:flex-start;flex-direction:column}.usage-list-toolbar .usage-scroll-hint{margin-left:0}.query-help-head{display:block}.query-example{white-space:normal;text-align:left}}
