@@ -65,20 +65,18 @@
             if (!existing) document.body.append(script);
           });
 
-          // Supabase and Google Identity can download in parallel, but LittleAPI
-          // must not initialize until BOTH libraries have fired their load event.
-          await Promise.all([
-            loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"),
-            loadScript("https://accounts.google.com/gsi/client")
-          ]);
-
+          // The dashboard depends on Supabase, not on the Google Identity SDK.
+          // Sheet discovery and per-file authorization use the existing Supabase
+          // OAuth session, so a blocked/slow Google GSI script can no longer hold
+          // the whole application startup hostage.
+          await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           await loadScript("config.js");
-          await loadScript("app.js?v=20260916-stable3");
+          await loadScript("app.js?v=20260916-stable4");
 
           document.querySelector(".app-loading")?.remove();
 
           try {
-            await loadScript("permissions-flow.js?v=20260916-permissions2");
+            await loadScript("permissions-flow.js?v=20260916-permissions3");
           } catch (permissionError) {
             console.error("LittleAPI permission flow failed", permissionError);
           }
@@ -91,7 +89,7 @@
             }
           };
           try {
-            await loadScript("app-enhancements.js?v=20260916-stable3");
+            await loadScript("app-enhancements.js?v=20260916-stable4");
           } catch (enhancementError) {
             console.error("LittleAPI enhancements failed", enhancementError);
           } finally {
