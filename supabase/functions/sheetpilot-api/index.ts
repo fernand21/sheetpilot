@@ -887,6 +887,7 @@ async function statsOperation(api: ApiRecord, request: Request) {
   return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, numeric_count: values.length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null });
 }
 function operationNeedsApiKey(api: ApiRecord, path: string[], method: string) {
+  if (path[1] === "mcp") return false;
   if (path[1] === "query" && (method === "GET" || method === "POST")) return api.public_read !== true;
   if (method !== "GET") return true;
   if (api.resource_type === "drive") return true;
@@ -916,7 +917,7 @@ async function handler(request: Request) {
   if (!quotaExempt(path, request.method)) {
     const quotaError = await consumeQuota(api); if (quotaError) return quotaError;
   }
-  if (path[1] === "mcp") return handleMcp(request, api);
+  if (path[1] === "mcp") return handleMcp(request, api, await hasApiKey(api, request));
   if (path[1] === "query" && (request.method === "GET" || request.method === "POST")) return queryOperation(api, request);
   if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request);
   if (request.method === "GET") return readOperation(api, request, path.slice(1));

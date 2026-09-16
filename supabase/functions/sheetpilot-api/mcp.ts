@@ -297,7 +297,7 @@ function validateHeaders(request: Request, method: string, name: string) {
   return "";
 }
 
-export async function handleMcp(request: Request, api: { api_id: string; name: string; resource_type: ResourceType }) {
+export async function handleMcp(request: Request, api: { api_id: string; name: string; resource_type: ResourceType; public_read: boolean }, authorized = false) {
   if (request.method !== "POST") return rpcError(null, -32600, "LittleAPI MCP uses stateless HTTP POST requests.", undefined, 405);
   const payload = await request.json().catch(() => null) as any;
   if (!payload || payload.jsonrpc !== "2.0" || !payload.method) return rpcError(payload?.id, -32600, "Invalid JSON-RPC request.");
@@ -322,7 +322,12 @@ export async function handleMcp(request: Request, api: { api_id: string; name: s
 
   if (method === "tools/call") {
     if (!toolName) return rpcError(payload.id, -32602, "params.name is required.");
-    if (!toolList(api.resource_type).some(tool => tool.name === toolName)) return rpcError(payload.id, -32602, `Unknown tool: ${toolName}`);
+    const tool = toolList(api.resource_type).find(candidate => candidate.name === toolName);
+    if (!tool) return rpcError(payload.id, -32602, `Unknown tool: ${toolName}`);
+    const publicReadAllowed = api.resource_type === "sheet" && api.public_read === true && tool.annotations?.readOnlyHint === true;
+    if (!authorized && !publicReadAllowed) {
+      return mcpResponse({ jsonrpc: "2.0", id: payload.id ?? null, error: { code: -32001, message: "This MCP tool requires the LittleAPI API key. Send X-API-Key or Authorization: Bearer <your apikey>." } }, 401, { "WWW-Authenticate": 'Bearer realm="LittleAPI"' });
+    }
     try {
       const data = await executeTool(request, api.api_id, api.resource_type, toolName, payload.params?.arguments || {});
       return toolResult(payload.id, data, false);
