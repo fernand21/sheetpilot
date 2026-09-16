@@ -1,0 +1,34 @@
+name: LittleAPI Webhook Event Fix
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-webhook-events-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Distinguish Sheets and Drive webhook events
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('supabase/functions/sheetpilot-api/platform.ts')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('function mutationEvent(request: Request) {')
+          end=s.index('\n\nasync function insertAudit', start)
+          new='''async function mutationEvent(request: Request, apiId: string) {\n  const url = new URL(request.url), parts = url.pathname.split("/").filter(Boolean);\n  const marker = parts.indexOf("v1"), route = marker >= 0 ? parts.slice(marker + 2) : parts.slice(parts.indexOf("sheetpilot-api") + 2);\n  const first = route[0] || "";\n  if (request.method === "GET") return "api.request.completed";\n  if (first === "query") return "api.request.completed";\n  if (first === "format") return "sheet.formatted";\n  if (first === "clear") return "sheet.cleared";\n  if (first === "batch") return "sheet.batch";\n  if (first === "sheets") {\n    if (route[1] === "copy") return "sheet.copied";\n    if (request.method === "POST") return "sheet.created";\n    if (request.method === "PATCH") return "sheet.renamed";\n    if (request.method === "DELETE") return "sheet.deleted";\n  }\n  let resourceType = "sheet";\n  try {\n    const rows = await dbFetch(`api_endpoints?select=resource_type&api_id=eq.${encodeURIComponent(apiId)}&limit=1`);\n    resourceType = rows?.[0]?.resource_type || "sheet";\n  } catch (_) {}\n  if (resourceType === "drive") {\n    if (request.method === "POST") return "drive.created";\n    if (request.method === "PATCH") return "drive.updated";\n    if (request.method === "DELETE") return "drive.deleted";\n  }\n  if (request.method === "POST") return "row.created";\n  if (request.method === "PATCH") return "row.updated";\n  if (request.method === "DELETE") return "row.deleted";\n  return "api.request.completed";\n}'''
+          s=s[:start]+new+s[end:]
+          s=s.replace('const event = mutationEvent(input.request);','const event = await mutationEvent(input.request, input.apiId);')
+          p.write_text(s,encoding='utf-8')
+      - name: Commit fix
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add supabase/functions/sheetpilot-api/platform.ts
+          git commit -m "Emit correct Sheets and Drive webhook events"
+          git push
