@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/one-time-jwt-session-fix.yml"
+      - "scripts/patch_jwt_session.py"
 
 permissions:
   contents: write
@@ -13,126 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch session refresh and admin resilience
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-
-          p = Path('app.js')
-          s = p.read_text(encoding='utf-8')
-
-          old_owner = '''async function ownerApiRequest(path, options) {
-  const sessionResult = await sb.auth.getSession(), accessToken = sessionResult.data.session?.access_token;
-  if (!accessToken) throw new Error("Tu sesión ha caducado. Inicia sesión otra vez.");
-  const opts = Object.assign({}, options || {}), headers = new Headers(opts.headers || {});
-  headers.set("apikey", cfg.publishableKey); headers.set("Authorization", "Bearer " + accessToken); opts.headers = headers;
-  const response = await fetch(apiBase() + path, opts), type = response.headers.get("content-type") || "", data = type.includes("json") ? await response.json() : await response.text();
-  if (!response.ok) { const error = new Error(data?.message || data?.error || "No se pudo completar la operación segura."); error.code = data?.error || "request_failed"; throw error; }
-  return data;
-}'''
-          new_owner = '''async function ownerApiRequest(path, options, retryAuth = true) {
-  const sessionResult = await sb.auth.getSession(), accessToken = sessionResult.data.session?.access_token;
-  if (!accessToken) throw new Error("Tu sesión ha caducado. Inicia sesión otra vez.");
-  const opts = Object.assign({}, options || {}), headers = new Headers(opts.headers || {});
-  headers.set("apikey", cfg.publishableKey); headers.set("Authorization", "Bearer " + accessToken); opts.headers = headers;
-  const response = await fetch(apiBase() + path, opts), type = response.headers.get("content-type") || "", data = type.includes("json") ? await response.json() : await response.text();
-  if (!response.ok && retryAuth && response.status === 401) {
-    const refreshed = await sb.auth.refreshSession();
-    if (refreshed.data.session?.access_token) {
-      await wait(900);
-      return ownerApiRequest(path, options, false);
-    }
-  }
-  if (!response.ok) { const error = new Error(data?.message || data?.error || "No se pudo completar la operación segura."); error.code = data?.error || "request_failed"; error.status = response.status; throw error; }
-  return data;
-}'''
-          if old_owner not in s:
-              raise SystemExit('ownerApiRequest target not found')
-          s = s.replace(old_owner, new_owner, 1)
-
-          old_listener = '''  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; if (isAppPage()) return location.replace("./"); togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });'''
-          new_listener = '''  sb.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_OUT") {
-      user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0;
-      if (isAppPage()) return location.replace("./");
-      togglePublicContent(true); $("#public-home")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden");
-      return;
-    }
-    if (!session?.user) return;
-    providerToken = session.provider_token || providerToken;
-    token = providerToken || token;
-    if (providerToken) tokenExpiresAt = Date.now() + 3300000;
-    const sameUser = user?.id === session.user.id;
-    if (!sameUser) dashboard(session.user); else user = session.user;
-    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") void syncProviderRefreshToken(session);
-  });'''
-          if old_listener not in s:
-              raise SystemExit('auth listener target not found')
-          s = s.replace(old_listener, new_listener, 1)
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('app-enhancements.js')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('''  let adminEntryChecking = false;\n  let adminEntryDenied = false;''', '''  let adminEntryChecking = false;\n  let adminEntryRole = "";\n  let adminEntryFailures = 0;''', 1)
-
-          pattern = re.compile(r'''  async function enhanceAdminEntry\(\) \{.*?\n  \}\n\n  function apply\(\)''', re.S)
-          replacement = '''  function insertAdminEntry(actions, role) {
-    if (!actions || $("#admin-console-link", actions)) return;
-    const link = document.createElement("a");
-    link.id = "admin-console-link";
-    link.className = "action-button";
-    link.href = "admin/";
-    link.dataset.adminRole = role || "admin";
-    const signOut = $("#sign-out", actions);
-    if (signOut) actions.insertBefore(link, signOut); else actions.appendChild(link);
-    refreshAdminEntryLanguage();
-  }
-
-  async function enhanceAdminEntry() {
-    const actions = $("#dashboard .dashboard-actions");
-    if (!actions || $("#admin-console-link", actions) || adminEntryChecking) return;
-    if (adminEntryRole) { insertAdminEntry(actions, adminEntryRole); return; }
-    if (adminEntryFailures >= 4) return;
-    if (!sb) { setTimeout(enhanceAdminEntry, 500); return; }
-    adminEntryChecking = true;
-    try {
-      let sessionResult = await sb.auth.getSession();
-      let accessToken = sessionResult?.data?.session?.access_token;
-      if (!accessToken) return;
-      const adminBase = String(cfg.url || "").replace(/\\/$/, "") + "/functions/v1/littleapi-admin/me";
-      let response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + accessToken } });
-      if (!response.ok && (response.status === 401 || response.status === 403)) {
-        const refreshed = await sb.auth.refreshSession();
-        accessToken = refreshed?.data?.session?.access_token || "";
-        if (accessToken) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          response = await fetch(adminBase, { headers: { apikey: cfg.publishableKey, Authorization: "Bearer " + accessToken } });
-        }
-      }
-      if (!response.ok) {
-        adminEntryFailures += 1;
-        if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
-        return;
-      }
-      const info = await response.json().catch(() => ({}));
-      if (!info?.user || !info?.role) return;
-      adminEntryRole = info.role;
-      adminEntryFailures = 0;
-      insertAdminEntry(actions, adminEntryRole);
-    } catch (_) {
-      adminEntryFailures += 1;
-      if (adminEntryFailures < 4) setTimeout(enhanceAdminEntry, adminEntryFailures * 1500);
-    } finally {
-      adminEntryChecking = false;
-    }
-  }
-
-  function apply()'''
-          s2, count = pattern.subn(replacement, s, count=1)
-          if count != 1:
-              raise SystemExit('enhanceAdminEntry target not found')
-          p.write_text(s2, encoding='utf-8')
+      - name: Apply JWT session patch
+        run: python scripts/patch_jwt_session.py
       - name: Verify JavaScript
         run: |
           node --check app.js
