@@ -87,8 +87,9 @@ async function getApi(apiId: string): Promise<ApiRecord | null> {
   return catalog?.[0] ? { ...catalog[0], api_key_hash: "", cache_ttl: 60, monthly_request_limit: catalog[0].monthly_request_limit || 5000 } : null;
 }
 async function hasApiKey(api: ApiRecord, request: Request) {
-  const url = new URL(request.url);
-  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || url.searchParams.get("api_key") || "";
+  // Las claves no se aceptan en la URL: podrían quedar expuestas en historial,
+  // logs o cabeceras Referer. Usa siempre X-API-Key (o el alias legado).
+  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || "";
   if (!supplied || !api.api_key_hash) return false;
   return sameSecret(await sha256(supplied), api.api_key_hash);
 }
@@ -223,7 +224,7 @@ async function readOperation(api: ApiRecord, request: Request, path: string[]) {
   if (api.resource_type === "drive") return driveOperation(api, request, path);
   const sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1", denied = requirePermission(api, path[0] === "search" || path[0] === "search_or" ? "search" : "read"); if (denied) return denied;
   const cacheKey = `${api.api_id}:${url.search}`, cached = cache.get(cacheKey); if (cached && cached.expires > Date.now()) return response(cached.value, 200, { "X-LittleAPI-Cache": "HIT", "Cache-Control": `public, max-age=${Math.min(api.cache_ttl, 3600)}` });
-  const data = await readPublicSheet(api, sheet), objects = rowsAsObjects(data.headers, data.rows); if (path[0] === "keys") return response(data.headers); if (path[0] === "count") return response({ rows: objects.length });
+  const data = api.public_read ? await readPublicSheet(api, sheet) : await readAuthorized(api, await googleTokenForUser(api.user_id), sheet), objects = rowsAsObjects(data.headers, data.rows); if (path[0] === "keys") return response(data.headers); if (path[0] === "count") return response({ rows: objects.length });
   if (path[0] === "cells") { const matrix = [data.headers, ...data.rows], cells: Record<string, unknown> = {}; for (const cell of (path[1] || "").split(",")) { const match = cell.toUpperCase().match(/^([A-Z]+)(\d+)$/); if (match) cells[cell.toUpperCase()] = matrix[Number(match[2]) - 1]?.[columnNumber(match[1]) - 1] ?? ""; } return response(cells); }
   const result = path[0] === "search" || path[0] === "search_or" ? searchRows(objects, url, path[0] === "search_or") : transform(objects, url), grouped = aggregate(objects, url), finalResult = grouped ? { data: grouped, total: grouped.length, limit: grouped.length, offset: 0 } : result;
   const body = url.searchParams.get("legacy") === "true" ? finalResult.data : { data: finalResult.data, total: finalResult.total, limit: finalResult.limit, offset: finalResult.offset, meta: { api_id: api.api_id, name: api.name, sheet } }; if (api.cache_ttl > 0) cache.set(cacheKey, { expires: Date.now() + Math.min(api.cache_ttl, 3600) * 1000, value: body });
@@ -378,11 +379,38 @@ async function googleConnection(request: Request) {
   const body = await request.json().catch(() => ({})); if (!body.provider_refresh_token) return failure(400, "refresh_token_required", "Google no entregó un refresh token. Vuelve a autorizar con access_type=offline y prompt=consent."); const encrypted = await encryptToken(String(body.provider_refresh_token)); await dbFetch("google_connections", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ user_id: user.id, refresh_token_ciphertext: encrypted, scopes: body.scopes || [], updated_at: new Date().toISOString() }) }); return response({ success: true, connected: true });
 }
 async function statsOperation(api: ApiRecord, request: Request) { const denied = requirePermission(api, "read"); if (denied) return denied; const url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1"; let table: { headers: string[]; rows: unknown[][] }; if (api.public_read) table = await readPublicSheet(api, sheet); else { if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key."); table = await readAuthorized(api, await googleTokenForUser(api.user_id), sheet); } const column = url.searchParams.get("column") || "", rows = rowsAsObjects(table.headers, table.rows); if (!column) return response({ columns: table.headers, rows: rows.length }); const values = rows.map((row) => Number(valueOf(row, column))).filter((value) => !Number.isNaN(value)); return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null }); }
+function operationNeedsApiKey(api: ApiRecord, path: string[], method: string) {
+  if (method !== "GET") return true;
+  if (api.public_read !== true) return true;
+  // Estas lecturas administrativas ya exigen clave dentro de su operación.
+  return path[1] === "sheets" || path[1] === "export.xlsx";
+}
 async function handler(request: Request) {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders }); const url = new URL(request.url), path = partsFor(url);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  const url = new URL(request.url), path = partsFor(url);
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) return failure(405, "method_not_allowed", "Usa GET, POST, PATCH o DELETE.", { allowed_methods: ["GET", "POST", "PATCH", "DELETE"] });
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
   if (!path[0]) return response({ name: "LittleAPI", version: "1", usage: "/sheetpilot-api/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Las APIs publicadas se consumen sin login; usa X-API-Key para escrituras." });
-  const api = await getApi(path[0]); if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada."); const quotaError = path[1] === "usage" ? null : await consumeQuota(api); if (quotaError) return quotaError; if (path[1] === "usage" && request.method === "GET") { if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Consultar el consumo requiere la cabecera X-API-Key."); return response({ api_id: api.api_id, quota: await quotaStatus(api) }); } if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request); if (request.method === "GET") return readOperation(api, request, path.slice(1)); return mutationOperation(api, request, path.slice(1));
+  const api = await getApi(path[0]);
+  if (!api) return failure(404, "api_not_found", "No existe una API con ese identificador o está desactivada.");
+  if (path[1] === "usage" && request.method === "GET") {
+    if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Consultar el consumo requiere la cabecera X-API-Key.");
+    return response({ api_id: api.api_id, quota: await quotaStatus(api) });
+  }
+  // Autenticar antes de contabilizar evita que peticiones inválidas agoten la
+  // cuota de una API privada. Las lecturas públicas sí cuentan por diseño.
+  if (operationNeedsApiKey(api, path, request.method) && !(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta operación requiere la cabecera X-API-Key.");
+  const quotaError = await consumeQuota(api);
+  if (quotaError) return quotaError;
+  if (path[1] === "stats" && request.method === "GET") return statsOperation(api, request);
+  if (request.method === "GET") return readOperation(api, request, path.slice(1));
+  return mutationOperation(api, request, path.slice(1));
 }
-Deno.serve(async (request) => { try { return await handler(request); } catch (error) { return failure(502, "upstream_error", error instanceof Error ? error.message : "No se pudo completar la solicitud."); } });
+Deno.serve(async (request) => {
+  try { return await handler(request); }
+  catch (error) {
+    console.error("sheetpilot-api request failed", error);
+    return failure(502, "upstream_error", "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.");
+  }
+});
