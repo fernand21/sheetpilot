@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#071512">
+  <title>LittleAPI · Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">↗</span><span>Little<span>API</span></span><small>ADMIN</small></div>
+      <nav id="admin-nav" class="admin-nav hidden" aria-label="Admin navigation">
+        <button class="nav-item active" data-view="overview">▦ <span data-i18n="navOverview">Resumen</span></button>
+        <button class="nav-item" data-view="sales">$ <span data-i18n="navSales">Ventas</span></button>
+        <button class="nav-item" data-view="users">◎ <span data-i18n="navUsers">Usuarios</span></button>
+        <button class="nav-item" data-view="apis">⌁ <span data-i18n="navApis">APIs</span></button>
+        <button class="nav-item" data-view="activity">↯ <span data-i18n="navActivity">Actividad</span></button>
+        <button class="nav-item" data-view="webhooks">◇ <span data-i18n="navWebhooks">Webhooks</span></button>
+      </nav>
+      <div class="sidebar-foot">
+        <label class="language-control"><span data-i18n="language">Idioma</span><select id="language-select"><option value="es">Español</option><option value="en">English</option></select></label>
+        <button class="ghost hidden" id="sign-out" data-i18n="signOut">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="login-card" id="login-panel">
+        <div class="login-icon">↗</div>
+        <p class="eyebrow">PRIVATE CONTROL</p>
+        <h1 data-i18n="loginTitle">LittleAPI Admin</h1>
+        <p data-i18n="loginText">Esta consola está reservada para cuentas administradoras autorizadas.</p>
+        <button class="primary" id="login-google"><span data-i18n="loginGoogle">Entrar con Google</span> →</button>
+        <p class="status" id="login-status"></p>
+      </section>
+
+      <section class="denied hidden" id="denied-panel">
+        <p class="eyebrow">403</p><h1 data-i18n="deniedTitle">Acceso no autorizado</h1>
+        <p data-i18n="deniedText">La sesión es válida, pero esta cuenta no tiene permisos de administración.</p>
+        <button class="ghost" id="denied-sign-out" data-i18n="signOut">Cerrar sesión</button>
+      </section>
+
+      <div class="admin-app hidden" id="admin-app">
+        <header class="page-head">
+          <div><p class="eyebrow" id="view-eyebrow">CONTROL CENTER</p><h1 id="view-title">Resumen</h1><p id="view-subtitle">Estado general de LittleAPI.</p></div>
+          <div class="head-actions"><span class="admin-chip" id="admin-identity"></span><button class="refresh" id="refresh-view" title="Refresh">↻</button></div>
+        </header>
+
+        <section class="view" data-view-panel="overview">
+          <div class="metric-grid" id="summary-cards"></div>
+          <div class="split-grid">
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">PLATFORM</p><h2 data-i18n="platformTitle">Estado de la plataforma</h2></div><span class="live-dot">● LIVE</span></div><div id="platform-status" class="status-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">BILLING</p><h2 data-i18n="billingTitle">Ventas y suscripciones</h2></div></div><div id="billing-summary" class="status-list"></div></article>
+          </div>
+        </section>
+
+        <section class="view hidden" data-view-panel="sales">
+          <div class="split-grid wide-left">
+            <article class="panel">
+              <div class="panel-head"><div><p class="eyebrow">PAYPAL</p><h2 data-i18n="salesTitle">Ventas registradas</h2><p data-i18n="salesHint">Los Hosted Buttons actuales no confirman automáticamente una venta en Supabase. Aquí puedes registrar una venta confirmada; luego conectaremos el webhook de PayPal.</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th data-i18n="date">Fecha</th><th data-i18n="account">Cuenta</th><th data-i18n="plan">Plan</th><th data-i18n="amount">Importe</th><th data-i18n="status">Estado</th><th>ID</th></tr></thead><tbody id="sales-table"></tbody></table></div>
+            </article>
+            <article class="panel sticky-form">
+              <p class="eyebrow">NEW SALE</p><h2 data-i18n="registerSale">Registrar venta</h2>
+              <form id="sale-form" class="form-stack">
+                <label><span data-i18n="customerEmail">Correo del cliente</span><input id="sale-email" type="email" placeholder="cliente@example.com"></label>
+                <label><span data-i18n="plan">Plan</span><select id="sale-plan"><option value="inicial">Inicial · $3</option><option value="pro">Pro · $7</option><option value="business">Business · $25</option></select></label>
+                <div class="inline-fields"><label><span data-i18n="amount">Importe</span><input id="sale-amount" type="number" min="0" step="0.01" value="3"></label><label><span data-i18n="status">Estado</span><select id="sale-status"><option value="completed">Completed</option><option value="pending">Pending</option><option value="refunded">Refunded</option><option value="failed">Failed</option><option value="canceled">Canceled</option></select></label></div>
+                <label><span>PayPal ID</span><input id="sale-payment-id" placeholder="Transaction / order ID"></label>
+                <label><span data-i18n="notes">Notas</span><textarea id="sale-notes" rows="3"></textarea></label>
+                <label class="check"><input id="sale-activate" type="checkbox" checked><span data-i18n="activatePlan">Activar/renovar el plan al confirmar</span></label>
+                <button class="primary" type="submit" data-i18n="saveSale">Guardar venta</button>
+                <p class="status" id="sale-status-message"></p>
+              </form>
+            </article>
+          </div>
+        </section>
+
+        <section class="view hidden" data-view-panel="users">
+          <article class="panel">
+            <div class="panel-head search-head"><div><p class="eyebrow">ACCOUNTS</p><h2 data-i18n="usersTitle">Usuarios y planes</h2></div><input id="user-search" class="search" placeholder="Buscar correo o nombre"></div>
+            <div class="table-wrap"><table><thead><tr><th data-i18n="user">Usuario</th><th data-i18n="plan">Plan</th><th data-i18n="status">Estado</th><th>APIs</th><th data-i18n="projects">Proyectos</th><th data-i18n="lastAccess">Último acceso</th><th></th></tr></thead><tbody id="users-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="view hidden" data-view-panel="apis">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">ENDPOINTS</p><h2 data-i18n="apisTitle">APIs publicadas</h2></div></div>
+            <div class="table-wrap"><table><thead><tr><th>API</th><th data-i18n="owner">Propietario</th><th data-i18n="type">Tipo</th><th data-i18n="requestsMonth">Requests mes</th><th data-i18n="monthlyLimit">Límite mensual</th><th data-i18n="publicRead">Lectura pública</th><th data-i18n="enabled">Activa</th><th></th></tr></thead><tbody id="apis-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="view hidden" data-view-panel="activity">
+          <div class="split-grid">
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">REQUEST LOG</p><h2 data-i18n="requestsTitle">Peticiones recientes</h2></div></div><div class="table-wrap compact"><table><thead><tr><th data-i18n="date">Fecha</th><th>API</th><th>Method</th><th>Status</th><th>ms</th><th>IP</th></tr></thead><tbody id="logs-table"></tbody></table></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">AUDIT</p><h2 data-i18n="auditTitle">Cambios registrados</h2></div></div><div class="table-wrap compact"><table><thead><tr><th data-i18n="date">Fecha</th><th>API</th><th data-i18n="action">Acción</th><th data-i18n="actor">Actor</th></tr></thead><tbody id="audit-table"></tbody></table></div></article>
+          </div>
+        </section>
+
+        <section class="view hidden" data-view-panel="webhooks">
+          <div class="split-grid">
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">WEBHOOKS</p><h2 data-i18n="webhooksTitle">Configurados</h2></div></div><div class="table-wrap compact"><table><thead><tr><th>API</th><th>URL</th><th>Events</th><th>Status</th><th>Failures</th></tr></thead><tbody id="webhooks-table"></tbody></table></div></article>
+            <article class="panel"><div class="panel-head"><div><p class="eyebrow">DELIVERIES</p><h2 data-i18n="deliveriesTitle">Entregas recientes</h2></div></div><div class="table-wrap compact"><table><thead><tr><th data-i18n="date">Fecha</th><th>API</th><th>Event</th><th>HTTP</th><th data-i18n="status">Estado</th></tr></thead><tbody id="deliveries-table"></tbody></table></div></article>
+          </div>
+        </section>
+
+        <p class="global-status" id="global-status"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
