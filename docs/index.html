@@ -1,51 +1,405 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071512">
-<meta name="description" content="LittleAPI Google Sheets and Google Drive documentation with complete copy-ready examples.">
-<title>LittleAPI · Google Sheets & Drive</title><link rel="stylesheet" href="../styles.css">
-<style>
-.docs-main section{scroll-margin-top:96px}.docs-main section+section{margin-top:70px}.docs-main h2{margin:0 0 14px;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.05em}.lead2{max-width:900px;color:var(--muted);font-size:1.04rem}.pill{display:inline-flex;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(34,199,168,.08);color:var(--lime);font:800 .75rem ui-monospace,monospace}.ops,.features{display:grid;gap:14px;margin-top:20px}.features{grid-template-columns:repeat(2,minmax(0,1fr))}.op,.feature{padding:18px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,var(--surface-2),#0b201b);min-width:0}.feature{background:rgba(255,255,255,.02)}.op-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.method{display:inline-flex;min-width:58px;justify-content:center;padding:4px 7px;border-radius:7px;background:rgba(34,199,168,.1);color:var(--lime);font:900 .72rem ui-monospace,monospace}.method.write{background:rgba(141,114,255,.12);color:#c8bbff}.method.delete{background:rgba(255,138,122,.1);color:#ffb0a5}.badge{display:inline-flex;padding:3px 7px;border-radius:999px;background:rgba(141,114,255,.1);color:#c8bbff;font-size:.7rem;font-weight:850}.badge.public{background:rgba(34,199,168,.1);color:#a7efdc}.op p,.feature p{color:var(--muted)}.feature h3{margin:0 0 7px}.example-label{margin:14px 0 6px;color:var(--lime);font-size:.73rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.note{margin:18px 0;padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:0 12px 12px 0;background:rgba(34,199,168,.06);color:var(--muted)}.note strong{color:var(--text)}.note.danger{border-left-color:var(--danger);background:rgba(255,138,122,.06)}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.steps article{padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)}.steps b{display:block;margin-bottom:6px}.jump{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:22px}.jump a{padding:12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);color:var(--muted);text-decoration:none;font-weight:750}.copy-button.auto{top:9px}@media(max-width:900px){.features{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.jump{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.jump{grid-template-columns:1fr}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LittleAPI — Documentation</title>
+  <meta name="description" content="Complete LittleAPI documentation for Google Sheets and Google Drive with copy-ready examples." />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .docs-main{padding-bottom:70px}.docs-main section{scroll-margin-top:100px}.docs-main h2{margin-top:72px}.docs-main h4{margin:24px 0 8px;font-size:1rem}.docs-main .lead{font-size:1.03rem}.docs-top-note{display:grid;gap:10px;margin:24px 0}.token-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.token-card{padding:15px;border:1px solid var(--line);border-radius:12px;background:#0b211c}.token-card strong{display:block;margin-bottom:5px}.token-card code{word-break:break-all}.operation-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.operation-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:#0c221d}.operation-card h3{margin:0 0 8px}.operation-card p{margin:0 0 12px}.example-title{margin:22px 0 7px;font-size:.82rem;font-weight:850;color:#d8ebe4}.plain-example{padding:12px 14px;border-radius:10px;background:#071613;border:1px solid #275347;color:#c8eee4;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto;white-space:pre-wrap}.danger-box{padding:16px;border:1px solid rgba(255,138,122,.42);border-left:4px solid var(--danger);border-radius:10px;background:rgba(255,138,122,.07)}.method-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}.method-pill{display:inline-flex;padding:4px 8px;border-radius:7px;background:#123b31;color:var(--lime);font:850 .72rem ui-monospace,monospace}.method-pill.write{background:#24204b;color:#cbbcff}.method-pill.delete{background:#44201d;color:#ffb0a5}.side-group{margin-top:15px}.side-group>span{display:block;padding:0 8px 5px;color:#6f9488;font-size:.68rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.docs-side nav{max-height:calc(100vh - 185px);overflow:auto}.docs-side nav a{padding:5px 8px}.quick-index{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:26px 0}.quick-index a{padding:13px;border:1px solid var(--line);border-radius:10px;background:#0b211c;text-decoration:none;color:#cce9df;font-weight:780;font-size:.82rem}.quick-index a:hover{border-color:var(--teal);color:#fff}.copy-row{position:relative}.copy-code{position:absolute;right:8px;top:8px;border:1px solid #37685c;border-radius:7px;background:#103229;color:#e9f8f3;padding:5px 8px;font-size:11px;font-weight:800}.example-table td:first-child{white-space:nowrap;font-weight:800;color:#dff4ed}.tester-lite{padding:20px;border:1px solid var(--line);border-radius:14px;background:#0c221d}.tester-lite .tester-fields{display:grid;grid-template-columns:1fr 240px;gap:10px}.tester-lite label{margin:0}.tester-lite pre{min-height:130px}.lang-note{font-size:.82rem;color:var(--muted)}
+    @media(max-width:900px){.operation-grid,.token-grid,.quick-index{grid-template-columns:1fr 1fr}.docs-side nav{max-height:none}}
+    @media(max-width:650px){.operation-grid,.token-grid,.quick-index,.tester-lite .tester-fields{grid-template-columns:1fr}}
+  </style>
 </head>
 <body class="docs-page">
-<header class="topbar"><a class="brand" href="../"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a><nav><a href="../" data-es="Inicio" data-en="Home">Home</a><a href="../app.html" data-es="Aplicación" data-en="App">App</a><a href="../pricing.html" data-es="Precios" data-en="Pricing">Pricing</a></nav><div class="header-actions"><label class="language-control"><span data-es="Idioma" data-en="Language">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label><a class="button small" href="../app.html" data-es="Crear API" data-en="Create API">Create API</a></div></header>
-<div class="docs-shell"><aside class="docs-side"><strong>LittleAPI v1.2</strong><nav><a href="#overview" data-es="Introducción" data-en="Overview">Overview</a><a href="#start" data-es="Antes de empezar" data-en="Before you start">Before you start</a><a href="#json">JSON</a><a href="#sheets" data-es="Google Sheets" data-en="Google Sheets">Google Sheets</a><a href="#sheet-options" data-es="Opciones de lectura" data-en="Read options">Read options</a><a href="#filters" data-es="Filtros" data-en="Filters">Filters</a><a href="#analytics" data-es="Análisis" data-en="Analytics">Analytics</a><a href="#writes" data-es="Escrituras" data-en="Writes">Writes</a><a href="#tabs" data-es="Pestañas" data-en="Sheet tabs">Sheet tabs</a><a href="#format" data-es="Formato" data-en="Formatting">Formatting</a><a href="#drive">Google Drive</a><a href="#tester" data-es="Probar API" data-en="Try API">Try API</a><a href="#security" data-es="Seguridad" data-en="Security">Security</a></nav></aside>
-<main class="docs-main">
-<section class="docs-hero" id="overview"><div class="pill">LittleAPI REST API · v1.2.0</div><p class="eyebrow">GOOGLE SHEETS + GOOGLE DRIVE</p><h1 data-es="Documentación pensada para personas, no sólo para programadores." data-en="Documentation written for people, not only programmers.">Documentation written for people, not only programmers.</h1><p class="lead2" data-es="Aquí sólo encontrarás las funciones públicas de Google Sheets y Google Drive. Cada función muestra una URL completa y un ejemplo listo para copiar. No necesitas aprender variables como $API o $KEY." data-en="This page only covers the public Google Sheets and Google Drive capabilities. Every function shows a complete URL and a copy-ready example. You do not need to learn variables such as $API or $KEY.">This page only covers the public Google Sheets and Google Drive capabilities. Every function shows a complete URL and a copy-ready example. You do not need to learn variables such as $API or $KEY.</p><div class="hero-card"><strong data-es="Ejemplo de una API de Sheets" data-en="Example Sheets API">Example Sheets API</strong><div class="code-wrap"><pre><code>https://littleapi.online/api/v1/YOUR_API_ID</code></pre></div><p data-es="Sustituye YOUR_API_ID por el ID que aparece en tu panel de LittleAPI." data-en="Replace YOUR_API_ID with the ID shown in your LittleAPI dashboard.">Replace YOUR_API_ID with the ID shown in your LittleAPI dashboard.</p></div><div class="jump"><a href="#sheets">Google Sheets</a><a href="#writes">Add / edit / delete</a><a href="#tabs">Sheet tabs</a><a href="#format">Format</a><a href="#drive">Google Drive</a><a href="#tester">Try it</a></div></section>
-<section id="start"><p class="eyebrow" data-es="ANTES DE EMPEZAR" data-en="BEFORE YOU START">BEFORE YOU START</p><h2 data-es="Tres cosas que verás en los ejemplos" data-en="Three things you will see in the examples">Three things you will see in the examples</h2><div class="steps"><article><b>YOUR_API_ID</b><span data-es="El identificador de tu API de Google Sheets." data-en="The identifier of your Google Sheets API.">The identifier of your Google Sheets API.</span></article><article><b>YOUR_DRIVE_API_ID</b><span data-es="El identificador de una API configurada para Google Drive." data-en="The identifier of an API configured for Google Drive.">The identifier of an API configured for Google Drive.</span></article><article><b>your apikey</b><span data-es="Tu clave privada. Cuando sea necesaria se envía como X-API-Key." data-en="Your private key. When required it is sent as X-API-Key.">Your private key. When required it is sent as X-API-Key.</span></article></div><div class="note"><strong data-es="Ejemplo con clave" data-en="Example with a key">Example with a key</strong><div class="code-wrap"><pre><code>curl "https://littleapi.online/api/v1/YOUR_API_ID/usage" \
-  -H "X-API-Key: your apikey"</code></pre></div></div></section>
-<section id="json"><p class="eyebrow">JSON</p><h2 data-es="Los datos grandes siguen siendo un solo array" data-en="Large datasets remain one single array">Large datasets remain one single array</h2><p class="lead2" data-es="Firefox puede mostrar [0…99], [100…199] y otros grupos. Eso es sólo una ayuda visual del navegador. LittleAPI sigue devolviendo un único data[]." data-en="Firefox may show [0…99], [100…199] and other groups. That is only a browser display aid. LittleAPI still returns one single data[] array.">Firefox may show [0…99], [100…199] and other groups. That is only a browser display aid. LittleAPI still returns one single data[] array.</p><div class="code-wrap"><pre><code>{
-  "data": [{"id":"1","name":"Ana"}],
-  "total": 421,
-  "limit": 100,
-  "offset": 0,
-  "returned": 100,
-  "has_more": true,
-  "next_offset": 100,
-  "max_limit": 1000
-}</code></pre></div><div class="note"><strong data-es="Si quieres sólo el array" data-en="If you only want the array">If you only want the array</strong><div class="code-wrap"><pre><code>https://littleapi.online/api/v1/YOUR_API_ID?raw=true</code></pre></div><span data-es="legacy=true también funciona por compatibilidad." data-en="legacy=true also works for compatibility.">legacy=true also works for compatibility.</span></div></section>
-<section id="sheets"><p class="eyebrow">GOOGLE SHEETS</p><h2 data-es="Todas las rutas principales" data-en="All main routes">All main routes</h2><div id="sheet-ops" class="ops"></div></section>
-<section id="sheet-options"><p class="eyebrow" data-es="OPCIONES DE LECTURA" data-en="READ OPTIONS">READ OPTIONS</p><h2 data-es="Elegir pestaña, ordenar, paginar y convertir tipos" data-en="Choose a sheet, sort, paginate and convert types">Choose a sheet, sort, paginate and convert types</h2><div id="read-features" class="features"></div></section>
-<section id="filters"><p class="eyebrow" data-es="BUSCAR Y FILTRAR" data-en="SEARCH & FILTER">SEARCH & FILTER</p><h2 data-es="Filtros exactos, texto, AND, OR y comparadores" data-en="Exact filters, text, AND, OR and comparisons">Exact filters, text, AND, OR and comparisons</h2><div id="filter-features" class="features"></div></section>
-<section id="analytics"><p class="eyebrow" data-es="ANÁLISIS" data-en="ANALYTICS">ANALYTICS</p><h2 data-es="Agrupar, contar, sumar, promediar, mínimo y máximo" data-en="Group, count, sum, average, minimum and maximum">Group, count, sum, average, minimum and maximum</h2><div id="analytics-features" class="features"></div></section>
-<section id="writes"><p class="eyebrow" data-es="ESCRITURAS" data-en="WRITES">WRITES</p><h2 data-es="Agregar, actualizar y eliminar filas" data-en="Add, update and delete rows">Add, update and delete rows</h2><div class="note danger"><strong data-es="Protección contra errores" data-en="Safety protection">Safety protection</strong><br><span data-es="PATCH y DELETE necesitan where/match, o all:true si realmente quieres afectar todas las filas." data-en="PATCH and DELETE require where/match, or all:true if you really intend to affect every row.">PATCH and DELETE require where/match, or all:true if you really intend to affect every row.</span></div><div id="write-ops" class="ops"></div><div id="write-features" class="features"></div></section>
-<section id="tabs"><p class="eyebrow" data-es="PESTAÑAS" data-en="SHEET TABS">SHEET TABS</p><h2 data-es="Listar, crear, renombrar, borrar y copiar" data-en="List, create, rename, delete and copy">List, create, rename, delete and copy</h2><div id="tab-ops" class="ops"></div><div id="tab-features" class="features"></div></section>
-<section id="format"><p class="eyebrow" data-es="FORMATO" data-en="FORMATTING">FORMATTING</p><h2 data-es="Formato, limpieza y batch" data-en="Formatting, clear and batch">Formatting, clear and batch</h2><div id="tool-ops" class="ops"></div><div id="tool-features" class="features"></div></section>
-<section id="drive"><p class="eyebrow">GOOGLE DRIVE</p><h2 data-es="Archivos y carpetas" data-en="Files and folders">Files and folders</h2><p class="lead2" data-es="Todas estas operaciones requieren X-API-Key: your apikey." data-en="Every operation below requires X-API-Key: your apikey.">Every operation below requires X-API-Key: your apikey.</p><div id="drive-ops" class="ops"></div><div id="drive-features" class="features"></div></section>
-<section id="tester"><p class="eyebrow" data-es="PROBAR" data-en="TRY IT">TRY IT</p><h2 data-es="Probador interactivo" data-en="Interactive tester">Interactive tester</h2><p class="lead2" data-es="Pega una URL completa de cualquiera de los ejemplos. Si requiere clave, escribe tu API key debajo." data-en="Paste a complete URL from any example. If it requires a key, enter your API key below.">Paste a complete URL from any example. If it requires a key, enter your API key below.</p><form class="tester" id="api-tester"><div class="tester-grid"><label>Endpoint<input id="tester-url" type="url" value="https://littleapi.online/api/v1/YOUR_API_ID" required></label><label><span data-es="Método" data-en="Method">Method</span><select id="tester-method"><option>GET</option><option>POST</option><option>PATCH</option><option>DELETE</option></select></label></div><div class="tester-row"><label>X-API-Key<input id="tester-key" type="password" autocomplete="off" placeholder="your apikey"></label><label><span data-es="Parámetros extra" data-en="Extra parameters">Extra parameters</span><input id="tester-query" placeholder="limit=20&sheet=Sheet1"></label></div><label style="margin-top:12px"><span data-es="Cuerpo JSON" data-en="JSON body">JSON body</span><textarea id="tester-body" spellcheck="false" placeholder='{"data":{"name":"Ana","status":"ACTIVE"}}'></textarea></label><div class="tester-actions"><button class="primary-button" type="submit" data-es="Enviar" data-en="Send">Send</button><button class="secondary-button" id="tester-clear" type="button" data-es="Limpiar" data-en="Clear">Clear</button><span class="tester-status" id="tester-status"></span></div><pre class="tester-output" id="tester-output"><code data-es="La respuesta aparecerá aquí." data-en="The response will appear here.">The response will appear here.</code></pre></form></section>
-<section id="security"><p class="eyebrow" data-es="SEGURIDAD" data-en="SECURITY">SECURITY</p><h2 data-es="Reglas simples" data-en="Simple rules">Simple rules</h2><div class="features"><article class="feature"><h3>X-API-Key</h3><p data-es="Nunca pongas una clave real en una URL pública." data-en="Never put a real key in a public URL.">Never put a real key in a public URL.</p></article><article class="feature"><h3>public_read</h3><p data-es="Sólo publica hojas cuyos datos puedan ser públicos." data-en="Only publish sheets whose data may safely be public.">Only publish sheets whose data may safely be public.</p></article><article class="feature"><h3>all:true</h3><p data-es="Úsalo sólo si quieres modificar o borrar todas las filas." data-en="Use it only if you intend to change or delete every row.">Use it only if you intend to change or delete every row.</p></article><article class="feature"><h3>Drive</h3><p data-es="Todas las rutas de Drive requieren tu API key." data-en="Every Drive route requires your API key.">Every Drive route requires your API key.</p></article></div></section>
-</main></div><footer class="footer"><span>© 2026 LittleAPI · Google Sheets & Drive</span><span><a href="../pricing.html" data-es="Precios" data-en="Pricing">Pricing</a> · <a href="../privacy.html" data-es="Privacidad" data-en="Privacy">Privacy</a> · <a href="../terms.html" data-es="Términos" data-en="Terms">Terms</a></span></footer>
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
+  <nav><a href="../" data-t="home">Home</a><a href="../pricing.html" data-t="pricing">Pricing</a><a href="../app.html" data-t="app">App</a></nav>
+  <div class="header-actions"><label class="language-control"><span data-t="language">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label></div>
+</header>
+
+<div class="docs-shell">
+  <aside class="docs-side">
+    <strong>LittleAPI Docs</strong>
+    <nav>
+      <div class="side-group"><span data-t="startGroup">Start</span><a href="#quickstart" data-t="quickstart">Quick start</a><a href="#keys" data-t="placeholders">Placeholders</a><a href="#tester" data-t="tryIt">Try a request</a></div>
+      <div class="side-group"><span>Google Sheets</span><a href="#reads" data-t="readData">Read data</a><a href="#filters" data-t="filters">Filters & search</a><a href="#query" data-t="queries">Queries</a><a href="#aggregations" data-t="aggregations">Aggregations</a><a href="#insert" data-t="insertData">Insert data</a><a href="#update" data-t="updateData">Update data</a><a href="#delete" data-t="deleteData">Delete / clear</a><a href="#format" data-t="formatData">Formatting</a><a href="#sheets" data-t="tabs">Sheet tabs</a><a href="#batch">Batch</a><a href="#exports" data-t="exports">Exports</a></div>
+      <div class="side-group"><span>Google Drive</span><a href="#drive-read" data-t="driveBrowse">Browse & search</a><a href="#drive-upload" data-t="driveUpload">Create & upload</a><a href="#drive-manage" data-t="driveManage">Rename / delete</a><a href="#drive-export" data-t="driveExport">Download / export</a></div>
+      <div class="side-group"><span data-t="reference">Reference</span><a href="#errors" data-t="errors">Errors</a><a href="#security" data-t="security">API key & safety</a></div>
+    </nav>
+  </aside>
+
+  <main class="docs-main">
+    <section class="docs-hero" id="quickstart">
+      <p class="eyebrow">LITTLEAPI · GOOGLE SHEETS + DRIVE</p>
+      <h1><span data-t="docsTitleA">Everything you can do,</span> <span data-t="docsTitleB">with real examples.</span></h1>
+      <p data-t="docsLead">This guide uses complete URLs and copy-ready examples. You do not need to understand programming variables before you start.</p>
+      <div class="hero-card">
+        <strong data-t="basicRead">Basic read</strong>
+        <code>https://littleapi.online/api/v1/YOUR_API_ID</code>
+        <p data-t="basicReadText">Replace YOUR_API_ID with the ID shown in your LittleAPI dashboard.</p>
+      </div>
+      <div class="quick-index"><a href="#reads">01 · Read</a><a href="#filters">02 · Search</a><a href="#insert">03 · Insert</a><a href="#update">04 · Update</a><a href="#delete">05 · Delete</a><a href="#format">06 · Format</a><a href="#sheets">07 · Tabs</a><a href="#drive-read">08 · Drive</a></div>
+    </section>
+
+    <section id="keys">
+      <p class="eyebrow" data-t="beforeCopy">BEFORE YOU COPY AN EXAMPLE</p>
+      <h2 data-t="replaceThese">Replace only these values</h2>
+      <div class="token-grid">
+        <div class="token-card"><strong>YOUR_API_ID</strong><code>https://littleapi.online/api/v1/YOUR_API_ID</code><p data-t="apiIdHelp">The API identifier shown in your dashboard.</p></div>
+        <div class="token-card"><strong>your apikey</strong><code>X-API-Key: your apikey</code><p data-t="keyHelp">Your private administration key. It is required for writing and Drive operations.</p></div>
+        <div class="token-card"><strong>Archive</strong><code>?sheet=Archive</code><p data-t="sheetHelp">Replace Archive with the exact Google Sheets tab name.</p></div>
+        <div class="token-card"><strong>FILE_ID / FOLDER_ID</strong><code>/download/FILE_ID</code><p data-t="driveIdHelp">The Google Drive file or folder identifier returned by Drive operations.</p></div>
+      </div>
+      <div class="callout warning docs-top-note"><strong data-t="keyRule">Do not put your real API key in a public web page.</strong><p data-t="keyRuleText">Use it from your own application, server or private automation. Public reads can remain keyless when Public Read is enabled.</p></div>
+    </section>
+
+    <section id="tester">
+      <p class="eyebrow">TRY IT</p><h2 data-t="tryTitle">Test a GET request from the documentation</h2>
+      <div class="tester-lite"><div class="tester-fields"><label><span data-t="url">URL</span><input id="test-url" value="https://littleapi.online/api/v1/YOUR_API_ID" /></label><label><span>API key <small data-t="optional">(optional)</small></span><input id="test-key" placeholder="your apikey" /></label></div><button class="primary-button" id="test-button" type="button" data-t="send">Send request</button><p class="tester-status" id="test-status"></p><pre id="test-output">{ }</pre></div>
+    </section>
+
+    <section id="reads">
+      <p class="eyebrow">GOOGLE SHEETS · GET</p><h2 data-t="readTitle">Read data in different ways</h2>
+      <div class="operation-grid">
+        <article class="operation-card"><div class="method-line"><span class="method-pill">GET</span><strong data-t="defaultTab">Default tab</strong></div><p data-t="defaultTabText">Returns the rows from the tab selected as default in LittleAPI.</p><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID</div></article>
+        <article class="operation-card"><div class="method-line"><span class="method-pill">GET</span><strong data-t="specificTab">A specific tab</strong></div><p data-t="specificTabText">Use the exact tab name.</p><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?sheet=Archive</div></article>
+        <article class="operation-card"><div class="method-line"><span class="method-pill">GET</span><strong data-t="rawArray">Only the array</strong></div><p data-t="rawArrayText">Removes total, limit and meta. Useful when your app only needs the rows.</p><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?raw=true</div></article>
+        <article class="operation-card"><div class="method-line"><span class="method-pill">GET</span><strong data-t="selectColumns">Only selected columns</strong></div><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?select=Name,Status,Total</div></article>
+      </div>
+      <h3 data-t="utilityReads">Useful read endpoints</h3>
+      <div class="table-wrap"><table class="example-table"><thead><tr><th data-t="purpose">Purpose</th><th>URL</th><th data-t="keyRequired">Key?</th></tr></thead><tbody>
+        <tr><td data-t="apiName">API name</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/name</code></td><td>No*</td></tr>
+        <tr><td data-t="metadata">Metadata</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/metadata</code></td><td>No*</td></tr>
+        <tr><td data-t="columns">Column names</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/keys?sheet=Archive</code></td><td>No*</td></tr>
+        <tr><td data-t="rowCount">Row count</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/count?sheet=Archive</code></td><td>No*</td></tr>
+        <tr><td data-t="cells">Specific cells</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/cells/A2,B2,C5?sheet=Archive</code></td><td>No*</td></tr>
+        <tr><td data-t="listTabs">List tabs</td><td><code>https://littleapi.online/api/v1/YOUR_API_ID/sheets</code></td><td>Yes</td></tr>
+      </tbody></table></div>
+      <p class="lang-note" data-t="privateNote">* If Public Read is disabled, the same GET requests require X-API-Key.</p>
+
+      <h3 data-t="pagination">Pagination for large sheets</h3>
+      <p data-t="paginationText">LittleAPI returns at most 1,000 rows per page. Use limit and offset when you want smaller pages.</p>
+      <div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?limit=100&offset=0
+https://littleapi.online/api/v1/YOUR_API_ID?limit=100&offset=100
+https://littleapi.online/api/v1/YOUR_API_ID?limit=100&offset=200</div>
+      <p data-t="paginationMeta">The response includes returned, has_more and next_offset so your application knows whether another page exists.</p>
+
+      <h3 data-t="sortTypes">Sorting and types</h3>
+      <div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?sort_by=Total&sort_order=desc
+https://littleapi.online/api/v1/YOUR_API_ID?cast_numbers=Total,Age
+https://littleapi.online/api/v1/YOUR_API_ID?cast_numbers=*
+https://littleapi.online/api/v1/YOUR_API_ID?infer_types=true
+https://littleapi.online/api/v1/YOUR_API_ID?single_object=true</div>
+    </section>
+
+    <section id="filters">
+      <p class="eyebrow">SEARCH · FILTERS</p><h2 data-t="filterTitle">Search and filter without writing SQL</h2>
+      <p data-t="filterLead">These examples work directly in the URL. Column names are matched without caring about uppercase/lowercase unless casesensitive=true.</p>
+      <h3 data-t="globalSearch">Search any column</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?search=Daniel</div>
+      <h3 data-t="exactFilter">Exact value</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Status=ACTIVE</div>
+      <h3 data-t="andFilter">Two conditions: AND</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Status=ACTIVE&City=Quito</div>
+      <h3 data-t="orFilter">Different columns: OR</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search_or?Status=ACTIVE&City=Quito</div>
+      <h3 data-t="contains">Text contains</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?contains[Name]=ana</div>
+      <h3 data-t="notEqual">Not equal</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Status=!CANCELLED</div>
+      <h3 data-t="comparisons">Numeric / text comparisons</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Total=%3E100
+https://littleapi.online/api/v1/YOUR_API_ID/search?Age=%3E%3D18
+https://littleapi.online/api/v1/YOUR_API_ID/search?Score=%3C50</div>
+      <h3 data-t="wildcard">Wildcard</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Name=Ana*</div>
+      <h3 data-t="caseSensitive">Case-sensitive match</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Name=ANA&casesensitive=true</div>
+      <h3 data-t="combineRead">Combine filter + sheet + select + sort + pagination</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?sheet=Sales&Status=ACTIVE&select=Name,Total&sort_by=Total&sort_order=desc&limit=50</div>
+    </section>
+
+    <section id="query">
+      <p class="eyebrow">QUERY</p><h2 data-t="queryTitle">Advanced query examples</h2>
+      <p data-t="queryLead">The LittleAPI workspace includes a Google Visualization query editor. It automatically maps your header names to Google column letters before running the query.</p>
+      <div class="callout"><strong data-t="queryWhere">You can use these directly in App → Project → Queries.</strong></div>
+      <div class="plain-example">SELECT * LIMIT 100
+
+SELECT Name, Status WHERE Status = 'ACTIVE'
+
+SELECT * WHERE Name CONTAINS 'ana'
+
+SELECT Name, Total WHERE Total > 100 ORDER BY Total DESC
+
+SELECT Product, SUM(Total) GROUP BY Product
+
+SELECT Issue, COUNT(Issue) GROUP BY Issue
+
+SELECT Name, Date WHERE Date >= date '2026-01-01' ORDER BY Date
+
+SELECT * ORDER BY Date DESC LIMIT 50 OFFSET 50</div>
+      <h3 data-t="whereOnly">WHERE-only examples</h3><div class="plain-example">Status = 'ACTIVE'
+Quantity > 10
+Name CONTAINS 'ana'
+Status = 'ACTIVE' AND City = 'Quito'
+Status = 'ACTIVE' OR Status = 'PENDING'
+Date >= date '2026-01-01'</div>
+      <p data-t="queryNote">For public REST URLs, use the filter examples above. The full SELECT query editor is currently a workspace tool.</p>
+    </section>
+
+    <section id="aggregations">
+      <p class="eyebrow">ANALYSIS</p><h2 data-t="aggregationTitle">Counts, totals, averages, minimums and maximums</h2>
+      <div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?count=Status
+https://littleapi.online/api/v1/YOUR_API_ID?sum=Total
+https://littleapi.online/api/v1/YOUR_API_ID?avg=Total
+https://littleapi.online/api/v1/YOUR_API_ID?min=Total
+https://littleapi.online/api/v1/YOUR_API_ID?max=Total</div>
+      <h3 data-t="groupBy">Group and calculate</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID?group_by=Product&sum=Total
+https://littleapi.online/api/v1/YOUR_API_ID?group_by=Status&count=Status
+https://littleapi.online/api/v1/YOUR_API_ID?group_by=City&sum=Total&avg=Total&min=Total&max=Total</div>
+      <h3 data-t="filterAggregate">Filter first, then aggregate</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/search?Status=ACTIVE&group_by=Product&sum=Total</div>
+    </section>
+
+    <section id="insert">
+      <p class="eyebrow">GOOGLE SHEETS · POST</p><h2 data-t="insertTitle">Different ways to insert data</h2>
+      <p data-t="writeKey">All write examples require the header X-API-Key: your apikey.</p>
+      <h3 data-t="oneObject">1. Insert one row using column names</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"Name":"Ana","Status":"ACTIVE","Total":125.50}'</pre>
+      <h3 data-t="manyObjects">2. Insert several rows at once</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"rows":[{"Name":"Ana","Status":"ACTIVE"},{"Name":"Luis","Status":"PENDING"}]}'</pre>
+      <h3 data-t="positionRows">3. Insert rows by column position</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '[["Ana","ACTIVE",125.50],["Luis","PENDING",80]]'</pre>
+      <h3 data-t="insertOtherTab">4. Insert into another tab</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID?sheet=Archive" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"Name":"Ana","Status":"ARCHIVED"}'</pre>
+      <div class="callout"><strong data-t="insertTip">When you send objects, LittleAPI follows the sheet header order automatically.</strong></div>
+    </section>
+
+    <section id="update">
+      <p class="eyebrow">GOOGLE SHEETS · PATCH</p><h2 data-t="updateTitle">Different ways to update data</h2>
+      <h3 data-t="updateRange">1. Update an exact A1 range</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID?sheet=Sales" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"range":"B2:C3","values":[["ACTIVE",150],["PENDING",90]]}'</pre>
+      <h3 data-t="updateMatch">2. Update rows that match a value</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"ID":"42"},"data":{"Status":"DONE"}}'</pre>
+      <h3 data-t="updateMulti">3. Match several conditions</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"Status":"ACTIVE","City":"Quito"},"data":{"Reviewed":"YES"}}'</pre>
+      <h3 data-t="updateContains">4. Update rows whose text contains a word</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"contains":{"Name":"ana"}},"data":{"Group":"A"}}'</pre>
+      <h3 data-t="updateAll">5. Update every data row explicitly</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"all":true,"data":{"Reviewed":"NO"}}'</pre>
+      <div class="danger-box"><strong data-t="allWarning">all:true is intentionally required for whole-sheet changes. LittleAPI will not update every row by accident.</strong></div>
+    </section>
+
+    <section id="delete">
+      <p class="eyebrow">DELETE + CLEAR</p><h2 data-t="deleteTitle">Delete rows or only clear cell contents</h2>
+      <h3 data-t="deleteExact">1. Delete rows with an exact match</h3>
+      <pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"ID":"42"}}'</pre>
+      <h3 data-t="deleteSeveral">2. Delete rows matching several conditions</h3>
+      <pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"Status":"CANCELLED","Year":"2025"}}'</pre>
+      <h3 data-t="deleteContains">3. Delete when a column contains text</h3>
+      <pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"contains":{"Notes":"duplicate"}}}'</pre>
+      <h3 data-t="deleteCompare">4. Delete using a comparison</h3>
+      <pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"where":{"Total":"<0"}}'</pre>
+      <h3 data-t="clearRange">5. Clear cells without deleting rows</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID/clear" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","range":"B2:D100"}'</pre>
+      <h3 data-t="deleteAll">6. Delete every data row</h3>
+      <pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"all":true}'</pre>
+      <div class="danger-box"><strong data-t="deleteWarning">DELETE removes complete sheet rows. /clear keeps the rows and only empties the chosen cells.</strong></div>
+    </section>
+
+    <section id="format">
+      <p class="eyebrow">GOOGLE SHEETS · FORMAT</p><h2 data-t="formatTitle">Different ways to format cells</h2>
+      <p data-t="formatSupport">Supported properties: bold, italic, underline, strikethrough, fontSize, textColor, bgColor, horizontalAlignment, verticalAlignment and wrapStrategy.</p>
+      <h3 data-t="formatHeader">1. Style a header</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID/format" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","range":"A1:F1","bold":true,"fontSize":14,"bgColor":"#087a70","textColor":"#ffffff"}'</pre>
+      <h3 data-t="formatText">2. Italic, underline and alignment</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID/format" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","range":"A2:C20","italic":true,"underline":true,"horizontalAlignment":"CENTER","verticalAlignment":"MIDDLE"}'</pre>
+      <h3 data-t="formatWrap">3. Wrap text and change colors</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID/format" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","range":"D2:D200","wrapStrategy":"WRAP","bgColor":"#102a24","textColor":"#d8ff7d"}'</pre>
+      <h3 data-t="formatGrid">4. Advanced gridRange instead of A1</h3>
+      <pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID/format" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","gridRange":{"sheetId":0,"startRowIndex":0,"endRowIndex":1,"startColumnIndex":0,"endColumnIndex":6},"bold":true,"bgColor":"#087a70"}'</pre>
+      <p data-t="gridTip">Use GET /sheets to discover the sheetId before using gridRange.</p>
+    </section>
+
+    <section id="sheets">
+      <p class="eyebrow">SHEET TABS</p><h2 data-t="tabsTitle">List, create, rename, delete and copy tabs</h2>
+      <h3 data-t="listTabsTitle">List tabs</h3><pre>curl "https://littleapi.online/api/v1/YOUR_API_ID/sheets" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="createTab">Create a tab</h3><pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID/sheets" -H "X-API-Key: your apikey" -H "Content-Type: application/json" -d '{"name":"Archive 2026"}'</pre>
+      <h3 data-t="renameTab">Rename a tab</h3><pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_API_ID/sheets/Archive%202026" -H "X-API-Key: your apikey" -H "Content-Type: application/json" -d '{"name":"Closed 2026"}'</pre>
+      <h3 data-t="deleteTab">Delete a tab</h3><pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_API_ID/sheets/Closed%202026" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="copyTab">Copy a tab to another spreadsheet</h3><pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID/sheets/copy" \
+  -H "X-API-Key: your apikey" -H "Content-Type: application/json" \
+  -d '{"sheet":"Sales","destination_spreadsheet_id":"DESTINATION_SPREADSHEET_ID"}'</pre>
+    </section>
+
+    <section id="batch">
+      <p class="eyebrow">ADVANCED</p><h2>Batch</h2>
+      <p data-t="batchText">Send between 1 and 50 native Google Sheets batchUpdate requests in one LittleAPI call. Use this only when the simpler endpoints above do not cover your task.</p>
+      <h3 data-t="batchResize">Example: auto-resize columns A:F</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID/batch" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"requests":[{"autoResizeDimensions":{"dimensions":{"sheetId":0,"dimension":"COLUMNS","startIndex":0,"endIndex":6}}}]}'</pre>
+      <h3 data-t="batchFreeze">Example: freeze the first row</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_API_ID/batch" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"requests":[{"updateSheetProperties":{"properties":{"sheetId":0,"gridProperties":{"frozenRowCount":1}},"fields":"gridProperties.frozenRowCount"}}]}'</pre>
+    </section>
+
+    <section id="exports">
+      <p class="eyebrow">EXPORT</p><h2 data-t="exportTitle">JSON, CSV and Excel</h2>
+      <div class="plain-example">https://littleapi.online/api/v1/YOUR_API_ID/export.json?sheet=Sales
+https://littleapi.online/api/v1/YOUR_API_ID/export.csv?sheet=Sales</div>
+      <p data-t="excelKey">Excel export requires your API key:</p>
+      <pre>curl "https://littleapi.online/api/v1/YOUR_API_ID/export.xlsx" \
+  -H "X-API-Key: your apikey" \
+  -o spreadsheet.xlsx</pre>
+      <div class="callout"><strong>Firefox JSON viewer</strong><p data-t="firefoxNote">If Firefox visually groups a large array as [0…99], [100…199], etc., the API did not split your JSON. That is only Firefox's viewer. Use raw=true or export.json when you want a simpler representation.</p></div>
+    </section>
+
+    <section id="drive-read">
+      <p class="eyebrow">GOOGLE DRIVE · GET</p><h2 data-t="driveReadTitle">Browse and search Drive</h2>
+      <p data-t="driveKeyEvery">Drive endpoints require X-API-Key.</p>
+      <h3 data-t="driveFileInfo">File or folder information</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/FILE_ID" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="driveChildren">List folder children</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/children/FOLDER_ID?page_size=100" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="driveSearchName">Search by name</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/search?name=invoice" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="driveSearchFolder">Search inside one folder</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/search?name=invoice&parent_id=FOLDER_ID" -H "X-API-Key: your apikey"</pre>
+      <h3 data-t="drivePage">Drive pagination and order</h3><div class="plain-example">https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/children/FOLDER_ID?page_size=50&page_token=NEXT_PAGE_TOKEN&order_by=modifiedTime%20desc</div>
+      <h3 data-t="driveQuota">Storage quota</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/quota" -H "X-API-Key: your apikey"</pre>
+    </section>
+
+    <section id="drive-upload">
+      <p class="eyebrow">GOOGLE DRIVE · POST</p><h2 data-t="driveUploadTitle">Create folders and upload files</h2>
+      <h3 data-t="createFolder">Create a folder</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Reports","mimeType":"application/vnd.google-apps.folder"}'</pre>
+      <h3 data-t="createFolderInside">Create inside another folder</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/FOLDER_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"September","mimeType":"application/vnd.google-apps.folder"}'</pre>
+      <h3 data-t="uploadBase64">Upload a file with Base64</h3>
+      <pre>curl -X POST "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/FOLDER_ID" \
+  -H "X-API-Key: your apikey" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"report.txt","mimeType":"text/plain","content_base64":"SGVsbG8gTGl0dGxlQVBJ"}'</pre>
+      <div class="callout"><strong data-t="base64Note">API uploads use JSON + content_base64.</strong><p data-t="base64Text">Multipart form-data is intentionally not accepted by this endpoint.</p></div>
+    </section>
+
+    <section id="drive-manage">
+      <p class="eyebrow">GOOGLE DRIVE · PATCH / DELETE</p><h2 data-t="driveManageTitle">Rename or delete Drive items</h2>
+      <h3 data-t="renameDrive">Rename</h3><pre>curl -X PATCH "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/FILE_ID" -H "X-API-Key: your apikey" -H "Content-Type: application/json" -d '{"name":"new-name.pdf"}'</pre>
+      <h3 data-t="deleteDrive">Delete</h3><pre>curl -X DELETE "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/FILE_ID" -H "X-API-Key: your apikey"</pre>
+    </section>
+
+    <section id="drive-export">
+      <p class="eyebrow">GOOGLE DRIVE · DOWNLOAD</p><h2 data-t="driveExportTitle">Download normal files or export Google-native files</h2>
+      <h3 data-t="downloadFile">Download a normal file</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/download/FILE_ID" -H "X-API-Key: your apikey" -o downloaded-file</pre>
+      <h3 data-t="exportGoogle">Export a Google Docs/Sheets/Slides file</h3><pre>curl "https://littleapi.online/api/v1/YOUR_DRIVE_API_ID/export/FILE_ID?mime_type=application/pdf" -H "X-API-Key: your apikey" -o exported.pdf</pre>
+    </section>
+
+    <section id="errors">
+      <p class="eyebrow">REFERENCE</p><h2 data-t="errorTitle">Common errors</h2>
+      <div class="table-wrap"><table><thead><tr><th>HTTP</th><th>Code</th><th data-t="meaning">Meaning</th></tr></thead><tbody>
+        <tr><td>400</td><td><code>filter_required</code></td><td data-t="filterError">PATCH or DELETE needs where/match, or explicit all:true.</td></tr>
+        <tr><td>401</td><td><code>api_key_required</code></td><td data-t="keyError">The operation needs X-API-Key.</td></tr>
+        <tr><td>403</td><td><code>permission_denied</code></td><td data-t="permissionError">That API permission is disabled.</td></tr>
+        <tr><td>404</td><td><code>sheet_not_found</code></td><td data-t="sheetError">The requested tab does not exist.</td></tr>
+        <tr><td>409</td><td><code>last_sheet</code></td><td data-t="lastSheetError">Google requires at least one tab to remain.</td></tr>
+        <tr><td>429</td><td><code>quota_exceeded</code></td><td data-t="quotaError">Monthly LittleAPI requests were exhausted.</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="security">
+      <p class="eyebrow">SECURITY</p><h2 data-t="securityTitle">When do I need the API key?</h2>
+      <div class="checklist"><div>✓ <span data-t="publicRead">Public Sheets GET: no key when Public Read is enabled.</span></div><div>✓ <span data-t="privateRead">Private Sheets GET: key required.</span></div><div>✓ <span data-t="writes">POST, PATCH and DELETE: key required.</span></div><div>✓ <span data-t="driveAll">Google Drive operations: key required.</span></div></div>
+      <div class="danger-box"><strong data-t="neverPublish">Never publish a real API key in screenshots, public repositories or client-side source code that anyone can inspect.</strong></div>
+    </section>
+  </main>
+</div>
+
+<footer><span>© 2026 LittleAPI</span><span><a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></span></footer>
 <script>
-const S='https://littleapi.online/api/v1/YOUR_API_ID',D='https://littleapi.online/api/v1/YOUR_DRIVE_API_ID',K='your apikey';
-const OPS=[
-['sheet','GET',S,'Public*','Leer filas.','Read rows.',`curl "${S}"`],['sheet','GET',S+'/search','Public*','Buscar y filtrar con AND.','Search and filter with AND.',`curl "${S}/search?status=ACTIVE&country=EC"`],['sheet','GET',S+'/search_or','Public*','Filtrar con OR.','Filter with OR.',`curl "${S}/search_or?status=ACTIVE&country=EC"`],['sheet','GET',S+'/keys','Public*','Ver nombres de columnas.','List column names.',`curl "${S}/keys"`],['sheet','GET',S+'/name','Public*','Ver nombre e ID de la API.','Get API name and ID.',`curl "${S}/name"`],['sheet','GET',S+'/count','Public*','Contar filas.','Count rows.',`curl "${S}/count"`],['sheet','GET',S+'/cells/A1,B2,C5','Public*','Leer celdas concretas.','Read specific cells.',`curl "${S}/cells/A1,B2,C5"`],['sheet','GET',S+'/stats?column=amount','Public*','Obtener estadísticas.','Get statistics.',`curl "${S}/stats?column=amount"`],['sheet','GET',S+'/metadata','Public*','Ver configuración y permisos.','View configuration and permissions.',`curl "${S}/metadata"`],['sheet','GET',S+'/openapi.json','Public*','Obtener OpenAPI.','Get OpenAPI.',`curl "${S}/openapi.json"`],['sheet','GET',S+'/usage','X-API-Key','Consultar uso mensual.','Check monthly usage.',`curl "${S}/usage" -H "X-API-Key: ${K}"`],['sheet','GET',S+'/export.json','Public*','Descargar JSON.','Download JSON.',`curl -OJ "${S}/export.json?select=id,name,amount&cast_numbers=amount&raw=true"`],['sheet','GET',S+'/export.csv','Public*','Descargar CSV.','Download CSV.',`curl -OJ "${S}/export.csv?sheet=Orders"`],['sheet','GET',S+'/export.xlsx','X-API-Key','Descargar Excel.','Download Excel.',`curl -OJ "${S}/export.xlsx" -H "X-API-Key: ${K}"`],
-['write','POST',S,'X-API-Key','Agregar una fila.','Add a row.',`curl -X POST "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"data":{"id":"42","name":"Ana","status":"ACTIVE"}}'`],['write','PATCH',S,'X-API-Key','Actualizar filas.','Update rows.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"where":{"id":"42"},"data":{"status":"CLOSED"}}'`],['write','DELETE',S,'X-API-Key','Eliminar filas.','Delete rows.',`curl -X DELETE "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"where":{"id":"42"}}'`],
-['tab','GET',S+'/sheets','X-API-Key','Listar pestañas.','List sheet tabs.',`curl "${S}/sheets" -H "X-API-Key: ${K}"`],['tab','POST',S+'/sheets','X-API-Key','Crear pestaña.','Create sheet tab.',`curl -X POST "${S}/sheets" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"Archive 2026"}'`],['tab','PATCH',S+'/sheets/Archive','X-API-Key','Renombrar pestaña.','Rename sheet tab.',`curl -X PATCH "${S}/sheets/Archive" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"Archive 2027"}'`],['tab','DELETE',S+'/sheets/Archive','X-API-Key','Eliminar pestaña.','Delete sheet tab.',`curl -X DELETE "${S}/sheets/Archive" -H "X-API-Key: ${K}"`],['tab','POST',S+'/sheets/copy','X-API-Key','Copiar pestaña a otro libro.','Copy sheet tab to another workbook.',`curl -X POST "${S}/sheets/copy" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","destination_spreadsheet_id":"DESTINATION_SPREADSHEET_ID"}'`],
-['tool','POST',S+'/format','X-API-Key','Dar formato a un rango.','Format a range.',`curl -X POST "${S}/format" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","range":"A1:F1","bold":true,"fontSize":14,"textColor":"#ffffff","bgColor":"#087a70"}'`],['tool','POST',S+'/clear','X-API-Key','Vaciar un rango.','Clear a range.',`curl -X POST "${S}/clear" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","range":"A2:F100"}'`],['tool','POST',S+'/batch','X-API-Key','Ejecutar 1–50 cambios.','Run 1–50 changes.',`curl -X POST "${S}/batch" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"requests":[{"autoResizeDimensions":{"dimensions":{"sheetId":0,"dimension":"COLUMNS","startIndex":0,"endIndex":6}}}]}'`],
-['drive','GET',D,'X-API-Key','Ver recurso raíz.','View root resource.',`curl "${D}" -H "X-API-Key: ${K}"`],['drive','GET',D+'/FILE_ID','X-API-Key','Ver metadatos de archivo.','View file metadata.',`curl "${D}/FILE_ID" -H "X-API-Key: ${K}"`],['drive','GET',D+'/children/FOLDER_ID','X-API-Key','Listar carpeta.','List folder.',`curl "${D}/children/FOLDER_ID?page_size=100&order_by=folder,name" -H "X-API-Key: ${K}"`],['drive','GET',D+'/search','X-API-Key','Buscar archivos.','Search files.',`curl "${D}/search?name=report&parent_id=FOLDER_ID&page_size=50" -H "X-API-Key: ${K}"`],['drive','GET',D+'/quota','X-API-Key','Consultar espacio de Drive.','Check Drive storage.',`curl "${D}/quota" -H "X-API-Key: ${K}"`],['drive','GET',D+'/about','X-API-Key','Ver cuenta y formatos soportados.','View account and supported formats.',`curl "${D}/about" -H "X-API-Key: ${K}"`],['drive','GET',D+'/download/FILE_ID','X-API-Key','Descargar archivo normal.','Download regular file.',`curl -OJ "${D}/download/FILE_ID" -H "X-API-Key: ${K}"`],['drive','GET',D+'/export/FILE_ID?mime_type=application%2Fpdf','X-API-Key','Exportar archivo Google nativo.','Export native Google file.',`curl -o document.pdf "${D}/export/FILE_ID?mime_type=application%2Fpdf" -H "X-API-Key: ${K}"`],['drive','POST',D+'/FOLDER_ID','X-API-Key','Crear carpeta o subir Base64.','Create folder or upload Base64.',`curl -X POST "${D}/FOLDER_ID" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"hello.txt","mimeType":"text/plain","content_base64":"SGVsbG8gTGl0dGxlQVBJ"}'`],['drive','PATCH',D+'/FILE_ID','X-API-Key','Renombrar archivo o carpeta.','Rename file or folder.',`curl -X PATCH "${D}/FILE_ID" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"new-name.txt"}'`],['drive','DELETE',D+'/FILE_ID','X-API-Key','Eliminar archivo o carpeta.','Delete file or folder.',`curl -X DELETE "${D}/FILE_ID" -H "X-API-Key: ${K}"`]
-];
-const F={read:[['sheet','Elegir pestaña.','Choose sheet.',`${S}?sheet=Orders`],['limit','Filas por página; máximo 1000.','Rows per page; maximum 1000.',`${S}?limit=100`],['offset','Continuar desde otra posición.','Continue from another position.',`${S}?limit=100&offset=200`],['sort / sort_by','Ordenar por columna.','Sort by column.',`${S}?sort=amount&order=desc`],['order / sort_order','Orden asc o desc.','asc or desc order.',`${S}?sort_by=name&sort_order=asc`],['select','Devolver sólo ciertas columnas.','Return selected columns only.',`${S}?select=id,name,status`],['cast_numbers','Convertir columnas a números.','Convert columns to numbers.',`${S}?cast_numbers=amount,age`],['cast_numbers=*','Intentar convertir todos los números.','Try converting all numbers.',`${S}?cast_numbers=*`],['infer_types=true','Inferir números, booleanos y null.','Infer numbers, booleans and null.',`${S}?infer_types=true`],['single_object=true','Devolver sólo el primer objeto.','Return only first object.',`${S}?single_object=true`],['raw=true','Devolver únicamente data[]. legacy=true es alias.','Return data[] only. legacy=true is an alias.',`${S}?raw=true`]],filter:[['search','Buscar texto en cualquier columna.','Search text in any column.',`${S}/search?search=Acme`],['Exacto','Filtro exacto.','Exact filter.',`${S}/search?status=ACTIVE`],['AND','Todas las condiciones deben coincidir.','All conditions must match.',`${S}/search?status=ACTIVE&country=EC`],['campo[]','Varios valores para la misma columna.','Several values for one column.',`${S}/search?status[]=ACTIVE&status[]=PENDING`],['contains[campo]','Buscar texto dentro de una columna.','Find text inside one column.',`${S}/search?contains[name]=ana`],['!valor','Excluir un valor.','Exclude a value.',`${S}/search?status=!CLOSED`],['>= / >','Comparación mayor.','Greater comparison.',`${S}/search?amount=%3E%3D100`],['<= / <','Comparación menor.','Smaller comparison.',`${S}/search?age=%3C65`],['*','Comodín.','Wildcard.',`${S}/search?name=Ana*`],['casesensitive=true','Distinguir mayúsculas.','Case-sensitive matching.',`${S}/search?name=Ana&casesensitive=true`],['search_or','Basta una condición.','Any condition can match.',`${S}/search_or?status=ACTIVE&country=EC`],['Combinado','Filtro + columnas + paginación.','Filter + columns + pagination.',`${S}/search?status=ACTIVE&limit=50&select=id,name`]],analytics:[['group_by','Agrupar.','Group.',`${S}?group_by=status`],['count','Contar valores no vacíos.','Count non-empty values.',`${S}?count=id`],['sum','Sumar.','Sum.',`${S}?sum=amount,tax`],['avg','Promedio.','Average.',`${S}?avg=amount`],['min','Mínimo.','Minimum.',`${S}?min=amount`],['max','Máximo.','Maximum.',`${S}?max=amount`],['Todo combinado','Agrupar y calcular varias métricas.','Group and calculate several metrics.',`${S}?group_by=status&count=id&sum=amount&avg=amount&min=amount&max=amount`],['Filtro + análisis','Filtrar antes de agregar.','Filter before aggregating.',`${S}/search?country=EC&group_by=status&sum=amount`]],write:[['Varias filas','Agregar varias filas con rows.','Add several rows with rows.',`curl -X POST "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"rows":[{"id":"43"},{"id":"44"}]}'`],['Array directo','También acepta un array de objetos.','A direct object array is also accepted.',`curl -X POST "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '[{"id":"45","name":"Zoe"},{"id":"46","name":"Noah"}]'`],['Otra pestaña','Elegir sheet desde el body.','Choose sheet from the body.',`curl -X POST "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","data":{"id":"A-100"}}'`],['match / update','Aliases de where / data.','Aliases for where / data.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"match":{"status":"PENDING"},"update":{"status":"ACTIVE"}}'`],['contains','Usar contains dentro de where.','Use contains inside where.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"where":{"contains":{"name":"ana"}},"data":{"reviewed":"yes"}}'`],['Comparadores','where admite !, >, >=, <, <= y *.','where supports !, >, >=, <, <= and *.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"where":{"amount":">=100"},"data":{"tier":"high"}}'`],['casesensitive','Filtro sensible a mayúsculas.','Case-sensitive filter.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"where":{"name":"Ana"},"casesensitive":true,"data":{"reviewed":"yes"}}'`],['Actualizar rango','Escribir values directamente en un rango.','Write values directly to a range.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","range":"B2:C3","values":[["PAID",125],["PENDING",80]]}'`],['all:true','Actualizar todas las filas; confirm_all:true es alias.','Update every row; confirm_all:true is an alias.',`curl -X PATCH "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"all":true,"data":{"migrated":"yes"}}'`],['DELETE all','Eliminar todas las filas de datos.','Delete every data row.',`curl -X DELETE "${S}" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"all":true}'`]],tab:[['copy con sheet_id','También acepta un ID numérico de pestaña.','Also accepts numeric sheet ID.',`curl -X POST "${S}/sheets/copy" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet_id":0,"destination_spreadsheet_id":"DESTINATION_SPREADSHEET_ID"}'`]],tool:[['Formato completo','bold, italic, underline, strikethrough, fontSize, textColor, bgColor, horizontalAlignment, verticalAlignment y wrapStrategy.','bold, italic, underline, strikethrough, fontSize, textColor, bgColor, horizontalAlignment, verticalAlignment and wrapStrategy.',`curl -X POST "${S}/format" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"sheet":"Orders","range":"A1:F1","bold":true,"italic":false,"underline":false,"strikethrough":false,"fontSize":14,"textColor":"#ffffff","bgColor":"#087a70","horizontalAlignment":"CENTER","verticalAlignment":"MIDDLE","wrapStrategy":"WRAP"}'`],['gridRange','Alternativa avanzada al rango A1.','Advanced alternative to A1 range.',`curl -X POST "${S}/format" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"gridRange":{"sheetId":0,"startRowIndex":0,"endRowIndex":1,"startColumnIndex":0,"endColumnIndex":6},"bold":true}'`],['Batch','1 a 50 requests compatibles con batchUpdate.','1 to 50 batchUpdate-compatible requests.',`curl -X POST "${S}/batch" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"requests":[{"updateSheetProperties":{"properties":{"sheetId":0,"gridProperties":{"frozenRowCount":1}},"fields":"gridProperties.frozenRowCount"}}]}'`]],drive:[['page_size','1 a 1000 resultados.','1 to 1000 results.',`${D}/children/FOLDER_ID?page_size=100`],['page_token','Continuar con nextPageToken.','Continue with nextPageToken.',`${D}/children/FOLDER_ID?page_token=NEXT_PAGE_TOKEN`],['order_by','Ordenar, por ejemplo folder,name.','Sort, for example folder,name.',`${D}/children/FOLDER_ID?order_by=folder,name`],['q','q es alias de name en search.','q aliases name in search.',`${D}/search?q=report`],['parent_id','Buscar sólo dentro de una carpeta.','Search only inside one folder.',`${D}/search?name=report&parent_id=FOLDER_ID`],['Crear carpeta','Crear una carpeta de Drive.','Create a Drive folder.',`curl -X POST "${D}/FOLDER_ID" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"Reports","mimeType":"application/vnd.google-apps.folder"}'`],['parents','Indicar parents manualmente.','Provide parents manually.',`curl -X POST "${D}/root" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"Reports","mimeType":"application/vnd.google-apps.folder","parents":["FOLDER_ID"]}'`],['content_base64','Subir contenido Base64.','Upload Base64 content.',`curl -X POST "${D}/FOLDER_ID" -H "X-API-Key: ${K}" -H "Content-Type: application/json" -d '{"name":"hello.txt","mimeType":"text/plain","content_base64":"SGVsbG8gTGl0dGxlQVBJ"}'`],['Exportar Google Doc','Exportar a PDF.','Export as PDF.',`curl -o document.pdf "${D}/export/FILE_ID?mime_type=application%2Fpdf" -H "X-API-Key: ${K}"`],['Exportar Google Sheet','Exportar a XLSX.','Export as XLSX.',`curl -o workbook.xlsx "${D}/export/FILE_ID?mime_type=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet" -H "X-API-Key: ${K}"`]]};
-let lang='en';const sel=document.querySelector('#language-select');function e(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function mc(m){return m==='DELETE'?'method delete':(m==='POST'||m==='PATCH'?'method write':'method')}function bc(a){return a.startsWith('Public')?'badge public':'badge'}function ops(g,id){document.querySelector(id).innerHTML=OPS.filter(x=>x[0]===g).map(x=>`<article class="op"><div class="op-head"><span class="${mc(x[1])}">${e(x[1])}</span><code>${e(x[2])}</code><span class="${bc(x[3])}">${e(x[3])}</span></div><p>${e(lang==='es'?x[4]:x[5])}</p><div class="example-label">${lang==='es'?'Ejemplo completo':'Complete example'}</div><div class="code-wrap"><pre><code>${e(x[6])}</code></pre></div></article>`).join('')}function feats(g,id){document.querySelector(id).innerHTML=(F[g]||[]).map(x=>`<article class="feature"><h3>${e(x[0])}</h3><p>${e(lang==='es'?x[1]:x[2])}</p><div class="example-label">${lang==='es'?'Ejemplo':'Example'}</div><div class="code-wrap"><pre><code>${e(x[3])}</code></pre></div></article>`).join('')}function copies(){document.querySelectorAll('pre:not(#tester-output)').forEach(pre=>{let w=pre.parentElement;if(!w.classList.contains('code-wrap'))return;if(w.querySelector('.copy-button'))return;const b=document.createElement('button');b.type='button';b.className='copy-button auto';b.textContent=lang==='es'?'Copiar':'Copy';b.onclick=async()=>{try{await navigator.clipboard.writeText(pre.textContent||'');b.textContent=lang==='es'?'Copiado':'Copied';setTimeout(()=>b.textContent=lang==='es'?'Copiar':'Copy',1200)}catch(_){}};w.appendChild(b)})}function render(){ops('sheet','#sheet-ops');ops('write','#write-ops');ops('tab','#tab-ops');ops('tool','#tool-ops');ops('drive','#drive-ops');feats('read','#read-features');feats('filter','#filter-features');feats('analytics','#analytics-features');feats('write','#write-features');feats('tab','#tab-features');feats('tool','#tool-features');feats('drive','#drive-features');copies()}function setLang(l){lang=l==='es'?'es':'en';document.documentElement.lang=lang;document.title=lang==='es'?'LittleAPI · Google Sheets y Drive':'LittleAPI · Google Sheets & Drive';document.querySelectorAll('[data-es][data-en]').forEach(n=>n.textContent=n.dataset[lang]);sel.value=lang;try{localStorage.setItem('littleapi:language',lang)}catch(_){}render()}try{lang=localStorage.getItem('littleapi:language')==='es'?'es':'en'}catch(_){}setLang(lang);sel.onchange=()=>setLang(sel.value);
-const form=document.querySelector('#api-tester'),out=document.querySelector('#tester-output code'),st=document.querySelector('#tester-status');form.onsubmit=async ev=>{ev.preventDefault();const m=document.querySelector('#tester-method').value,raw=document.querySelector('#tester-url').value.trim(),q=document.querySelector('#tester-query').value.trim().replace(/^\?/,''),k=document.querySelector('#tester-key').value.trim(),rb=document.querySelector('#tester-body').value.trim();let u;try{u=new URL(raw);if(q)new URLSearchParams(q).forEach((v,n)=>u.searchParams.append(n,v))}catch(_){st.textContent=lang==='es'?'URL inválida.':'Invalid URL.';return}const h={};if(k)h['X-API-Key']=k;let body;if(rb&&['POST','PATCH','DELETE'].includes(m)){try{body=JSON.stringify(JSON.parse(rb));h['Content-Type']='application/json'}catch(_){st.textContent=lang==='es'?'JSON inválido.':'Invalid JSON.';return}}if(['PATCH','DELETE'].includes(m)&&!confirm(lang==='es'?`${m} puede modificar datos reales. ¿Continuar?`:`${m} can modify real data. Continue?`))return;try{const r=await fetch(u,{method:m,headers:h,body}),t=await r.text();let p;try{p=JSON.parse(t)}catch(_){p=t}st.textContent=`HTTP ${r.status}`;out.textContent=typeof p==='string'?p:JSON.stringify(p,null,2)}catch(err){st.textContent=lang==='es'?'Solicitud fallida.':'Request failed.';out.textContent=String(err?.message||err)}};document.querySelector('#tester-clear').onclick=()=>{document.querySelector('#tester-key').value='';document.querySelector('#tester-query').value='';document.querySelector('#tester-body').value='';st.textContent='';out.textContent=lang==='es'?'La respuesta aparecerá aquí.':'The response will appear here.'};
-</script></body></html>
+(() => {
+  const translations = {
+    en: {
+      home:"Home",pricing:"Pricing",app:"App",language:"Language",startGroup:"Start",quickstart:"Quick start",placeholders:"Placeholders",tryIt:"Try a request",readData:"Read data",filters:"Filters & search",queries:"Queries",aggregations:"Aggregations",insertData:"Insert data",updateData:"Update data",deleteData:"Delete / clear",formatData:"Formatting",tabs:"Sheet tabs",exports:"Exports",driveBrowse:"Browse & search",driveUpload:"Create & upload",driveManage:"Rename / delete",driveExport:"Download / export",reference:"Reference",errors:"Errors",security:"API key & safety",
+      docsTitleA:"Everything you can do,",docsTitleB:"with real examples.",docsLead:"This guide uses complete URLs and copy-ready examples. You do not need to understand programming variables before you start.",basicRead:"Basic read",basicReadText:"Replace YOUR_API_ID with the ID shown in your LittleAPI dashboard.",beforeCopy:"BEFORE YOU COPY AN EXAMPLE",replaceThese:"Replace only these values",apiIdHelp:"The API identifier shown in your dashboard.",keyHelp:"Your private administration key. It is required for writing and Drive operations.",sheetHelp:"Replace Archive with the exact Google Sheets tab name.",driveIdHelp:"The Google Drive file or folder identifier returned by Drive operations.",keyRule:"Do not put your real API key in a public web page.",keyRuleText:"Use it from your own application, server or private automation. Public reads can remain keyless when Public Read is enabled.",tryTitle:"Test a GET request from the documentation",url:"URL",optional:"(optional)",send:"Send request",
+      readTitle:"Read data in different ways",defaultTab:"Default tab",defaultTabText:"Returns the rows from the tab selected as default in LittleAPI.",specificTab:"A specific tab",specificTabText:"Use the exact tab name.",rawArray:"Only the array",rawArrayText:"Removes total, limit and meta. Useful when your app only needs the rows.",selectColumns:"Only selected columns",utilityReads:"Useful read endpoints",purpose:"Purpose",keyRequired:"Key?",apiName:"API name",metadata:"Metadata",columns:"Column names",rowCount:"Row count",cells:"Specific cells",listTabs:"List tabs",privateNote:"* If Public Read is disabled, the same GET requests require X-API-Key.",pagination:"Pagination for large sheets",paginationText:"LittleAPI returns at most 1,000 rows per page. Use limit and offset when you want smaller pages.",paginationMeta:"The response includes returned, has_more and next_offset so your application knows whether another page exists.",sortTypes:"Sorting and types",
+      filterTitle:"Search and filter without writing SQL",filterLead:"These examples work directly in the URL. Column names are matched without caring about uppercase/lowercase unless casesensitive=true.",globalSearch:"Search any column",exactFilter:"Exact value",andFilter:"Two conditions: AND",orFilter:"Different columns: OR",contains:"Text contains",notEqual:"Not equal",comparisons:"Numeric / text comparisons",wildcard:"Wildcard",caseSensitive:"Case-sensitive match",combineRead:"Combine filter + sheet + select + sort + pagination",
+      queryTitle:"Advanced query examples",queryLead:"The LittleAPI workspace includes a Google Visualization query editor. It automatically maps your header names to Google column letters before running the query.",queryWhere:"You can use these directly in App → Project → Queries.",whereOnly:"WHERE-only examples",queryNote:"For public REST URLs, use the filter examples above. The full SELECT query editor is currently a workspace tool.",aggregationTitle:"Counts, totals, averages, minimums and maximums",groupBy:"Group and calculate",filterAggregate:"Filter first, then aggregate",
+      insertTitle:"Different ways to insert data",writeKey:"All write examples require the header X-API-Key: your apikey.",oneObject:"1. Insert one row using column names",manyObjects:"2. Insert several rows at once",positionRows:"3. Insert rows by column position",insertOtherTab:"4. Insert into another tab",insertTip:"When you send objects, LittleAPI follows the sheet header order automatically.",updateTitle:"Different ways to update data",updateRange:"1. Update an exact A1 range",updateMatch:"2. Update rows that match a value",updateMulti:"3. Match several conditions",updateContains:"4. Update rows whose text contains a word",updateAll:"5. Update every data row explicitly",allWarning:"all:true is intentionally required for whole-sheet changes. LittleAPI will not update every row by accident.",deleteTitle:"Delete rows or only clear cell contents",deleteExact:"1. Delete rows with an exact match",deleteSeveral:"2. Delete rows matching several conditions",deleteContains:"3. Delete when a column contains text",deleteCompare:"4. Delete using a comparison",clearRange:"5. Clear cells without deleting rows",deleteAll:"6. Delete every data row",deleteWarning:"DELETE removes complete sheet rows. /clear keeps the rows and only empties the chosen cells.",formatTitle:"Different ways to format cells",formatSupport:"Supported properties: bold, italic, underline, strikethrough, fontSize, textColor, bgColor, horizontalAlignment, verticalAlignment and wrapStrategy.",formatHeader:"1. Style a header",formatText:"2. Italic, underline and alignment",formatWrap:"3. Wrap text and change colors",formatGrid:"4. Advanced gridRange instead of A1",gridTip:"Use GET /sheets to discover the sheetId before using gridRange.",tabsTitle:"List, create, rename, delete and copy tabs",listTabsTitle:"List tabs",createTab:"Create a tab",renameTab:"Rename a tab",deleteTab:"Delete a tab",copyTab:"Copy a tab to another spreadsheet",batchText:"Send between 1 and 50 native Google Sheets batchUpdate requests in one LittleAPI call. Use this only when the simpler endpoints above do not cover your task.",batchResize:"Example: auto-resize columns A:F",batchFreeze:"Example: freeze the first row",exportTitle:"JSON, CSV and Excel",excelKey:"Excel export requires your API key:",firefoxNote:"If Firefox visually groups a large array as [0…99], [100…199], etc., the API did not split your JSON. That is only Firefox's viewer. Use raw=true or export.json when you want a simpler representation.",
+      driveReadTitle:"Browse and search Drive",driveKeyEvery:"Drive endpoints require X-API-Key.",driveFileInfo:"File or folder information",driveChildren:"List folder children",driveSearchName:"Search by name",driveSearchFolder:"Search inside one folder",drivePage:"Drive pagination and order",driveQuota:"Storage quota",driveUploadTitle:"Create folders and upload files",createFolder:"Create a folder",createFolderInside:"Create inside another folder",uploadBase64:"Upload a file with Base64",base64Note:"API uploads use JSON + content_base64.",base64Text:"Multipart form-data is intentionally not accepted by this endpoint.",driveManageTitle:"Rename or delete Drive items",renameDrive:"Rename",deleteDrive:"Delete",driveExportTitle:"Download normal files or export Google-native files",downloadFile:"Download a normal file",exportGoogle:"Export a Google Docs/Sheets/Slides file",errorTitle:"Common errors",meaning:"Meaning",filterError:"PATCH or DELETE needs where/match, or explicit all:true.",keyError:"The operation needs X-API-Key.",permissionError:"That API permission is disabled.",sheetError:"The requested tab does not exist.",lastSheetError:"Google requires at least one tab to remain.",quotaError:"Monthly LittleAPI requests were exhausted.",securityTitle:"When do I need the API key?",publicRead:"Public Sheets GET: no key when Public Read is enabled.",privateRead:"Private Sheets GET: key required.",writes:"POST, PATCH and DELETE: key required.",driveAll:"Google Drive operations: key required.",neverPublish:"Never publish a real API key in screenshots, public repositories or client-side source code that anyone can inspect."
+    },
+    es: {
+      home:"Inicio",pricing:"Precios",app:"Aplicación",language:"Idioma",startGroup:"Inicio",quickstart:"Primeros pasos",placeholders:"Valores a reemplazar",tryIt:"Probar una petición",readData:"Leer datos",filters:"Filtros y búsqueda",queries:"Consultas",aggregations:"Agregaciones",insertData:"Insertar datos",updateData:"Actualizar datos",deleteData:"Eliminar / vaciar",formatData:"Formato",tabs:"Pestañas",exports:"Exportaciones",driveBrowse:"Explorar y buscar",driveUpload:"Crear y subir",driveManage:"Renombrar / eliminar",driveExport:"Descargar / exportar",reference:"Referencia",errors:"Errores",security:"Clave API y seguridad",
+      docsTitleA:"Todo lo que puedes hacer,",docsTitleB:"con ejemplos reales.",docsLead:"Esta guía usa URLs completas y ejemplos listos para copiar. No necesitas entender variables de programación para empezar.",basicRead:"Lectura básica",basicReadText:"Reemplaza YOUR_API_ID por el ID que aparece en tu panel de LittleAPI.",beforeCopy:"ANTES DE COPIAR UN EJEMPLO",replaceThese:"Reemplaza únicamente estos valores",apiIdHelp:"El identificador de la API que aparece en tu panel.",keyHelp:"Tu clave privada de administración. Es obligatoria para escrituras y operaciones de Drive.",sheetHelp:"Reemplaza Archive por el nombre exacto de la pestaña de Google Sheets.",driveIdHelp:"El identificador del archivo o carpeta de Google Drive devuelto por Drive.",keyRule:"No pongas tu clave API real en una página web pública.",keyRuleText:"Úsala desde tu aplicación, servidor o automatización privada. Las lecturas públicas pueden funcionar sin clave cuando Public Read está activado.",tryTitle:"Prueba una petición GET desde la documentación",url:"URL",optional:"(opcional)",send:"Enviar petición",
+      readTitle:"Lee datos de distintas maneras",defaultTab:"Pestaña predeterminada",defaultTabText:"Devuelve las filas de la pestaña seleccionada como predeterminada en LittleAPI.",specificTab:"Una pestaña específica",specificTabText:"Usa el nombre exacto de la pestaña.",rawArray:"Sólo el array",rawArrayText:"Quita total, limit y meta. Es útil cuando tu aplicación sólo necesita las filas.",selectColumns:"Sólo determinadas columnas",utilityReads:"Endpoints de lectura útiles",purpose:"Para qué sirve",keyRequired:"¿Clave?",apiName:"Nombre de la API",metadata:"Metadatos",columns:"Nombres de columnas",rowCount:"Número de filas",cells:"Celdas específicas",listTabs:"Listar pestañas",privateNote:"* Si Public Read está desactivado, esas mismas lecturas requieren X-API-Key.",pagination:"Paginación para hojas grandes",paginationText:"LittleAPI devuelve como máximo 1.000 filas por página. Usa limit y offset si quieres páginas más pequeñas.",paginationMeta:"La respuesta incluye returned, has_more y next_offset para saber si existe otra página.",sortTypes:"Orden y tipos de datos",
+      filterTitle:"Busca y filtra sin escribir SQL",filterLead:"Estos ejemplos funcionan directamente en la URL. Los nombres de columna no distinguen mayúsculas/minúsculas salvo que uses casesensitive=true.",globalSearch:"Buscar en cualquier columna",exactFilter:"Valor exacto",andFilter:"Dos condiciones: AND",orFilter:"Columnas distintas: OR",contains:"El texto contiene",notEqual:"Distinto de",comparisons:"Comparaciones numéricas / texto",wildcard:"Comodín",caseSensitive:"Coincidencia sensible a mayúsculas",combineRead:"Combina filtro + pestaña + columnas + orden + paginación",
+      queryTitle:"Ejemplos de consultas avanzadas",queryLead:"El workspace de LittleAPI incluye un editor Google Visualization Query. Convierte automáticamente los nombres de tus encabezados a las letras que Google necesita.",queryWhere:"Puedes usar estos ejemplos directamente en Aplicación → Proyecto → Consultas.",whereOnly:"Ejemplos sólo para WHERE",queryNote:"Para URLs REST públicas usa los filtros de la sección anterior. El editor SELECT completo actualmente es una herramienta del workspace.",aggregationTitle:"Conteos, totales, promedios, mínimos y máximos",groupBy:"Agrupar y calcular",filterAggregate:"Filtrar primero y después agregar",
+      insertTitle:"Distintas maneras de insertar datos",writeKey:"Todos los ejemplos de escritura requieren X-API-Key: your apikey.",oneObject:"1. Insertar una fila usando nombres de columnas",manyObjects:"2. Insertar varias filas de una vez",positionRows:"3. Insertar filas por posición de columna",insertOtherTab:"4. Insertar en otra pestaña",insertTip:"Cuando envías objetos, LittleAPI respeta automáticamente el orden de los encabezados de la hoja.",updateTitle:"Distintas maneras de actualizar datos",updateRange:"1. Actualizar un rango A1 exacto",updateMatch:"2. Actualizar filas que coincidan con un valor",updateMulti:"3. Coincidir con varias condiciones",updateContains:"4. Actualizar filas cuyo texto contiene una palabra",updateAll:"5. Actualizar explícitamente todas las filas",allWarning:"all:true se exige intencionalmente para cambios masivos. LittleAPI no actualizará todas las filas por accidente.",deleteTitle:"Elimina filas o sólo vacía el contenido de celdas",deleteExact:"1. Eliminar filas con coincidencia exacta",deleteSeveral:"2. Eliminar filas con varias condiciones",deleteContains:"3. Eliminar cuando una columna contiene texto",deleteCompare:"4. Eliminar usando una comparación",clearRange:"5. Vaciar celdas sin eliminar filas",deleteAll:"6. Eliminar todas las filas de datos",deleteWarning:"DELETE elimina filas completas de la hoja. /clear conserva las filas y sólo vacía las celdas elegidas.",formatTitle:"Distintas maneras de dar formato a celdas",formatSupport:"Propiedades soportadas: bold, italic, underline, strikethrough, fontSize, textColor, bgColor, horizontalAlignment, verticalAlignment y wrapStrategy.",formatHeader:"1. Dar estilo al encabezado",formatText:"2. Cursiva, subrayado y alineación",formatWrap:"3. Ajustar texto y cambiar colores",formatGrid:"4. gridRange avanzado en lugar de A1",gridTip:"Usa GET /sheets para conocer el sheetId antes de usar gridRange.",tabsTitle:"Lista, crea, renombra, elimina y copia pestañas",listTabsTitle:"Listar pestañas",createTab:"Crear una pestaña",renameTab:"Renombrar una pestaña",deleteTab:"Eliminar una pestaña",copyTab:"Copiar una pestaña a otro libro",batchText:"Envía entre 1 y 50 solicitudes nativas de Google Sheets batchUpdate en una sola llamada LittleAPI. Úsalo sólo cuando los endpoints sencillos no cubran tu necesidad.",batchResize:"Ejemplo: ajustar automáticamente columnas A:F",batchFreeze:"Ejemplo: congelar la primera fila",exportTitle:"JSON, CSV y Excel",excelKey:"La exportación Excel requiere tu clave API:",firefoxNote:"Si Firefox agrupa visualmente un array grande como [0…99], [100…199], etc., la API no dividió el JSON. Es sólo el visor de Firefox. Usa raw=true o export.json si quieres una representación más simple.",
+      driveReadTitle:"Explora y busca en Drive",driveKeyEvery:"Los endpoints de Drive requieren X-API-Key.",driveFileInfo:"Información de archivo o carpeta",driveChildren:"Listar contenido de una carpeta",driveSearchName:"Buscar por nombre",driveSearchFolder:"Buscar dentro de una carpeta",drivePage:"Paginación y orden de Drive",driveQuota:"Cuota de almacenamiento",driveUploadTitle:"Crea carpetas y sube archivos",createFolder:"Crear una carpeta",createFolderInside:"Crear dentro de otra carpeta",uploadBase64:"Subir un archivo con Base64",base64Note:"Las subidas por API usan JSON + content_base64.",base64Text:"Este endpoint no acepta multipart form-data intencionalmente.",driveManageTitle:"Renombra o elimina elementos de Drive",renameDrive:"Renombrar",deleteDrive:"Eliminar",driveExportTitle:"Descarga archivos normales o exporta archivos nativos de Google",downloadFile:"Descargar un archivo normal",exportGoogle:"Exportar un archivo de Google Docs/Sheets/Slides",errorTitle:"Errores comunes",meaning:"Significado",filterError:"PATCH o DELETE necesita where/match, o all:true explícito.",keyError:"La operación necesita X-API-Key.",permissionError:"Ese permiso está desactivado en la API.",sheetError:"La pestaña solicitada no existe.",lastSheetError:"Google exige que quede al menos una pestaña.",quotaError:"Se agotaron las consultas mensuales de LittleAPI.",securityTitle:"¿Cuándo necesito la clave API?",publicRead:"GET público de Sheets: sin clave si Public Read está activado.",privateRead:"GET privado de Sheets: requiere clave.",writes:"POST, PATCH y DELETE: requieren clave.",driveAll:"Operaciones de Google Drive: requieren clave.",neverPublish:"Nunca publiques una clave API real en capturas, repositorios públicos o código del lado del cliente que cualquiera pueda inspeccionar."
+    }
+  };
+  const select = document.getElementById('language-select');
+  const stored = localStorage.getItem('littleapi:language');
+  const initial = stored === 'es' || stored === 'en' ? stored : 'en';
+  function apply(lang){ document.documentElement.lang=lang; select.value=lang; localStorage.setItem('littleapi:language',lang); document.querySelectorAll('[data-t]').forEach(node=>{ const value=translations[lang]?.[node.dataset.t]; if(value) node.textContent=value; }); }
+  select.addEventListener('change',()=>apply(select.value)); apply(initial);
+  document.querySelectorAll('pre').forEach(pre=>{ if(pre.closest('.tester-lite')) return; const wrap=document.createElement('div'); wrap.className='copy-row'; pre.parentNode.insertBefore(wrap,pre); wrap.appendChild(pre); const b=document.createElement('button'); b.className='copy-code'; b.type='button'; b.textContent='Copy'; b.onclick=async()=>{ await navigator.clipboard.writeText(pre.innerText); b.textContent='✓'; setTimeout(()=>b.textContent='Copy',900); }; wrap.appendChild(b); });
+  const button=document.getElementById('test-button'); button.addEventListener('click',async()=>{ const url=document.getElementById('test-url').value.trim(), key=document.getElementById('test-key').value.trim(), status=document.getElementById('test-status'), output=document.getElementById('test-output'); if(!url||url.includes('YOUR_API_ID')){ status.textContent=initial==='es'?'Reemplaza YOUR_API_ID primero.':'Replace YOUR_API_ID first.'; return; } status.textContent=initial==='es'?'Consultando…':'Loading…'; try{ const headers={}; if(key) headers['X-API-Key']=key; const r=await fetch(url,{headers}); const t=await r.text(); let pretty=t; try{pretty=JSON.stringify(JSON.parse(t),null,2)}catch(_){} output.textContent=pretty; status.textContent=`HTTP ${r.status}`; }catch(e){ status.textContent=String(e.message||e); }});
+})();
+</script>
+</body>
+</html>
