@@ -2,103 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Planes mensuales y renovación manual de LittleAPI para convertir Google Sheets en APIs REST.">
-  <title>LittleAPI · Planes mensuales</title>
-  <style>
-    :root{--ink:#102c2b;--muted:#617673;--paper:#f7f8f4;--line:#d9e1dc;--teal:#087a70;--dark:#064f4a;--lime:#d8ff7d;--orange:#c77b16;--white:#fff}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--teal)}.top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:18px clamp(20px,6vw,90px);background:#f7f8f4ee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{font-weight:850;letter-spacing:-.04em;text-decoration:none;color:var(--ink);font-size:1.2rem}.mark{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:8px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#7657f6);color:#fff}.top nav{display:flex;align-items:center;gap:22px;font-size:.9rem}.top nav a{text-decoration:none;color:var(--muted)}.top nav a:hover{color:var(--teal)}main{max-width:1160px;margin:0 auto;padding:70px 24px 110px}.hero{text-align:center;max-width:770px;margin:0 auto 44px}.eyebrow{color:var(--teal);font-weight:850;letter-spacing:.13em;font-size:.72rem;margin:0 0 12px}.hero h1{font-size:clamp(2.7rem,6vw,5rem);line-height:.98;letter-spacing:-.07em;margin:0}.hero p{color:var(--muted);font-size:1.15rem;margin:23px auto 26px}.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch}.plan{display:flex;flex-direction:column;padding:25px 21px;border:1px solid var(--line);border-radius:13px;background:#fff;min-height:440px}.plan.featured{border:2px solid var(--teal);box-shadow:0 12px 0 var(--lime);transform:translateY(-8px)}.plan-label{font-size:.72rem;color:var(--teal);font-weight:850;letter-spacing:.1em;text-transform:uppercase}.plan h2{font-size:1.35rem;margin:7px 0 10px;letter-spacing:-.04em}.price{display:flex;align-items:baseline;gap:5px;min-height:70px}.price strong{font-size:2.55rem;letter-spacing:-.06em}.price span{color:var(--muted);font-size:.85rem}.plan>p{color:var(--muted);font-size:.88rem;min-height:55px}.plan ul{list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;color:var(--muted);font-size:.88rem}.plan li::before{content:"✓";color:var(--teal);font-weight:900;margin-right:8px}.cta{margin-top:auto;display:block;text-align:center;text-decoration:none;padding:11px 14px;border-radius:8px;border:1px solid var(--teal);color:var(--teal);font-weight:800}.cta.primary{background:var(--teal);color:#fff}.cta:hover{background:#e7f4ef}.cta.primary:hover{background:var(--dark)}.section{margin:90px auto 0;max-width:900px}.section h2{text-align:center;font-size:2rem;letter-spacing:-.05em;margin:0 0 25px}.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.benefit{padding:20px;border:1px solid var(--line);border-radius:10px;background:#fff}.benefit strong{display:block;margin-bottom:6px}.benefit p{margin:0;color:var(--muted);font-size:.9rem}.faq{border-top:1px solid var(--line)}details{padding:17px 0;border-bottom:1px solid var(--line)}summary{cursor:pointer;font-weight:800}details p{color:var(--muted);margin:10px 0 0}.bottom{text-align:center;margin:80px auto 0;padding:30px;background:var(--ink);color:#fff;border-radius:13px}.bottom h2{margin:0;font-size:1.8rem}.bottom p{color:#c2d7d3}.bottom a{display:inline-block;background:var(--lime);color:var(--dark);padding:11px 18px;border-radius:8px;font-weight:850;text-decoration:none}footer{border-top:1px solid var(--line);padding:25px clamp(20px,6vw,90px);color:var(--muted);font-size:.85rem;text-align:center}.billing-banner{max-width:900px;margin:34px auto 0;padding:20px 22px;border:1px solid #e5c98c;border-left:5px solid var(--orange);border-radius:12px;background:#fff8e9;color:var(--ink)}.billing-banner>strong{display:block;font-size:1.05rem;margin-bottom:6px}.billing-banner p{margin:4px 0;color:var(--muted);font-size:.93rem}.billing-banner p strong{display:inline;font-size:inherit;margin:0}.plan .manual{color:var(--orange);font-weight:800}.paypal-option{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.paypal-label{min-height:0;margin:0 0 8px;color:var(--muted);font-size:.78rem;font-weight:800;text-align:center}.paypal-note{display:block;margin-top:7px;color:var(--muted);font-size:.75rem;text-align:center}.paypal-button-container{min-height:44px}.language-control{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.84rem;font-weight:750}.language-control select{padding:7px 28px 7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit;cursor:pointer}@media(max-width:900px){.plans{grid-template-columns:repeat(2,1fr)}.plan.featured{transform:none}}@media(max-width:620px){.top{align-items:flex-start}.top nav{flex-wrap:wrap;justify-content:end;gap:10px;font-size:.82rem}.language-control{width:100%;justify-content:end}.plans,.benefits{grid-template-columns:1fr}.plan.featured{box-shadow:none}.hero{margin-bottom:30px}main{padding-top:45px}}
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="LittleAPI monthly plans for turning Google Sheets into REST APIs with clear quotas and manual renewal.">
+  <meta name="theme-color" content="#071512">
+  <title>LittleAPI · Monthly plans</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <header class="top">
-    <a class="brand" href="index.html"><span class="mark">↗</span>Little<span style="color:var(--teal)">API</span></a>
-    <nav>
-      <a href="app.html" data-i18n="navApp">Aplicación</a>
-      <a href="docs/" data-i18n="navDocs">Documentación</a>
-      <label class="language-control" for="language-select"><span data-i18n="languageLabel">Idioma</span><select id="language-select" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option></select></label>
+<body class="pricing-page">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="LittleAPI home"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
+    <nav aria-label="Primary navigation">
+      <a href="index.html#como-funciona" data-i18n="navHow">How it works</a>
+      <a href="docs/" data-i18n="navDocs">Documentation</a>
+      <a href="app.html" data-i18n="navApp">App</a>
     </nav>
+    <div class="header-actions">
+      <label class="language-control" for="language-select"><span data-i18n="languageLabel">Language</span><select id="language-select" aria-label="Language"><option value="en">English</option><option value="es">Español</option></select></label>
+      <a class="button small" href="app.html" data-i18n="startFree">Start free</a>
+    </div>
   </header>
-  <main>
-    <section class="hero">
-      <p class="eyebrow" data-i18n="heroEyebrow">PLANES MENSUALES · RENOVACIÓN MANUAL</p>
-      <h1 data-i18n="heroTitle">Empieza con $3. Crece por $7.</h1>
-      <p data-i18n="heroText">Elige la capacidad que necesitas. Los planes pagos se renuevan manualmente cada mes: tú decides cuándo continuar y nunca se realiza un cobro automático.</p>
+
+  <main class="pricing-main">
+    <section class="pricing-hero">
+      <p class="eyebrow" data-i18n="heroEyebrow">SIMPLE PRICING · MANUAL RENEWAL</p>
+      <h1 data-i18n="heroTitle">Start small. <span>Scale when your API does.</span></h1>
+      <p data-i18n="heroText">Choose the capacity you need. Paid plans renew manually each month, so you decide when to continue and there are no automatic charges.</p>
     </section>
-    <section class="plans" aria-label="Planes de LittleAPI">
-      <article class="plan">
-        <span class="plan-label" data-i18n="freeLabel">Para probar</span><h2 data-i18n="freeName">Gratis</h2>
-        <div class="price"><strong>$0</strong><span data-i18n="perAlways">/ siempre</span></div>
-        <p data-i18n="freeDescription">Una forma sencilla de publicar tu primera hoja.</p>
-        <ul><li data-i18n="freeFeature1">2 APIs activas</li><li data-i18n="freeFeature2">5.000 consultas por API/mes</li><li data-i18n="freeFeature3">Lectura pública JSON</li><li data-i18n="freeFeature4">Documentación y OpenAPI</li></ul>
-        <a class="cta" href="app.html" data-i18n="freeCta">Empezar gratis</a>
+
+    <section class="pricing-plans" aria-label="LittleAPI plans">
+      <article class="pricing-plan">
+        <span class="plan-label" data-i18n="freeLabel">Explore</span>
+        <h2 data-i18n="freeName">Free</h2>
+        <div class="price"><strong>$0</strong><span data-i18n="forever">/ forever</span></div>
+        <p data-i18n="freeDesc">Publish your first sheets and learn the workflow.</p>
+        <ul><li data-i18n="free1">2 active APIs</li><li data-i18n="free2">5,000 requests per API/month</li><li data-i18n="free3">Public JSON reads</li><li data-i18n="free4">Documentation and OpenAPI</li></ul>
+        <a class="cta" href="app.html" data-i18n="freeCta">Start for free</a>
       </article>
-      <article class="plan">
-        <span class="plan-label" data-i18n="initialLabel">Para empezar</span><h2 data-i18n="initialName">Inicial</h2>
-        <div class="price"><strong>$3</strong><span data-i18n="perMonth">/ mes</span></div>
-        <p data-i18n="initialDescription">Para sitios pequeños, prototipos y automatizaciones.</p>
-        <ul><li data-i18n="initialFeature1">10 APIs activas</li><li data-i18n="initialFeature2">50.000 consultas por API/mes</li><li data-i18n="initialFeature3">CRUD con X-API-Key</li><li data-i18n="initialFeature4">CSV y caché</li><li class="manual" data-i18n="initialFeature5">Renovación manual</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pagar con PayPal</p><div id="paypal-container-T7VT2GJLWSAAQ" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">Pago único · renovación manual</span></div>
+
+      <article class="pricing-plan">
+        <span class="plan-label" data-i18n="initialLabel">Launch</span>
+        <h2 data-i18n="initialName">Initial</h2>
+        <div class="price"><strong>$3</strong><span data-i18n="month">/ month</span></div>
+        <p data-i18n="initialDesc">For small sites, prototypes and useful automations.</p>
+        <ul><li data-i18n="initial1">10 active APIs</li><li data-i18n="initial2">50,000 requests per API/month</li><li data-i18n="initial3">CRUD with X-API-Key</li><li data-i18n="initial4">CSV and cache</li><li class="manual" data-i18n="manualRenewal">Manual renewal</li></ul>
+        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-T7VT2GJLWSAAQ" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
       </article>
-      <article class="plan featured">
-        <span class="plan-label" data-i18n="proLabel">Más elegido</span><h2 data-i18n="proName">Pro</h2>
-        <div class="price"><strong>$7</strong><span data-i18n="perMonth">/ mes</span></div>
-        <p data-i18n="proDescription">Más capacidad para productos que ya están creciendo.</p>
-        <ul><li data-i18n="proFeature1">50 APIs activas</li><li data-i18n="proFeature2">250.000 consultas por API/mes</li><li data-i18n="proFeature3">Drive, pestañas y lotes</li><li data-i18n="proFeature4">Exportación Excel</li><li class="manual" data-i18n="proFeature5">Renovación manual + 24 h de gracia</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pagar con PayPal</p><div id="paypal-container-74J9AVSMN8W2S" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">Pago único · renovación manual</span></div>
+
+      <article class="pricing-plan featured">
+        <span class="plan-label" data-i18n="proLabel">Most popular</span>
+        <h2>Pro</h2>
+        <div class="price"><strong>$7</strong><span data-i18n="month">/ month</span></div>
+        <p data-i18n="proDesc">More room for products that are already gaining traction.</p>
+        <ul><li data-i18n="pro1">50 active APIs</li><li data-i18n="pro2">250,000 requests per API/month</li><li data-i18n="pro3">Drive, sheets and batches</li><li data-i18n="pro4">Excel export</li><li class="manual" data-i18n="pro5">Manual renewal + 24-hour grace</li></ul>
+        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-74J9AVSMN8W2S" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
       </article>
-      <article class="plan">
-        <span class="plan-label" data-i18n="businessLabel">Para equipos</span><h2 data-i18n="businessName">Business</h2>
-        <div class="price"><strong>$25</strong><span data-i18n="perMonth">/ mes</span></div>
-        <p data-i18n="businessDescription">Para equipos que necesitan límites altos y acompañamiento.</p>
-        <ul><li data-i18n="businessFeature1">200 APIs activas</li><li data-i18n="businessFeature2">1 millón de consultas por API/mes</li><li data-i18n="businessFeature3">Cuotas personalizadas</li><li data-i18n="businessFeature4">Soporte prioritario</li><li class="manual" data-i18n="businessFeature5">Renovación manual</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pagar con PayPal</p><div id="paypal-container-X24DMRW7A9G9Y" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">Pago único · renovación manual</span></div>
+
+      <article class="pricing-plan">
+        <span class="plan-label" data-i18n="businessLabel">Teams</span>
+        <h2>Business</h2>
+        <div class="price"><strong>$25</strong><span data-i18n="month">/ month</span></div>
+        <p data-i18n="businessDesc">For teams that need higher limits and priority help.</p>
+        <ul><li data-i18n="business1">200 active APIs</li><li data-i18n="business2">1 million requests per API/month</li><li data-i18n="business3">Custom quotas</li><li data-i18n="business4">Priority support</li><li class="manual" data-i18n="manualRenewal">Manual renewal</li></ul>
+        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-X24DMRW7A9G9Y" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
       </article>
     </section>
-    <div class="billing-banner" role="note"><strong data-i18n="billingTitle">Renovación manual, sin sorpresas.</strong><p data-i18n="billingText1">LittleAPI no realiza cobros automáticos. Durante este lanzamiento, la activación se coordina manualmente y cada mes debes renovar tu plan desde el enlace de pago que te enviemos o solicites.</p><p><span data-i18n="billingText2Prefix">Si tu fecha vence, conservamos el plan durante </span><strong data-i18n="billingText2Grace">24 horas de gracia</strong><span data-i18n="billingText2Suffix"> para que puedas renovarlo. Después, el plan de pago se pausa hasta confirmar la renovación; tu API no cambia de URL.</span></p></div>
-    <section class="section"><h2 data-i18n="benefitsTitle">Lo que recibes en todos los planes</h2><div class="benefits"><div class="benefit"><strong data-i18n="benefit1Title">Una URL estable</strong><p><span data-i18n="benefit1Prefix">Tu aplicación consume </span><code>littleapi.online/api/v1/{API_ID}</code><span data-i18n="benefit1Suffix"> desde cualquier lenguaje.</span></p></div><div class="benefit"><strong data-i18n="benefit2Title">Tu hoja, siempre tuya</strong><p data-i18n="benefit2Text">Los datos permanecen en tu Google Drive y tú controlas los permisos.</p></div><div class="benefit"><strong data-i18n="benefit3Title">Límites claros</strong><p><span data-i18n="benefit3Prefix">Cuando se agota la cuota, la API devuelve </span><code>429 quota_exceeded</code><span data-i18n="benefit3Suffix"> y la fecha de reinicio.</span></p></div></div></section>
-    <section class="section"><h2 data-i18n="faqTitle">Preguntas frecuentes</h2><div class="faq"><details open><summary data-i18n="faq1Q">¿Se cobra automáticamente?</summary><p data-i18n="faq1A">No. Los planes pagos se renuevan manualmente cada mes. Tú solicitas o recibes el enlace, realizas el pago y confirmamos la renovación.</p></details><details><summary data-i18n="faq2Q">¿Qué ocurre si me atraso?</summary><p data-i18n="faq2A">Tienes 24 horas de gracia después de la fecha de vencimiento. Si no se confirma el pago al terminar ese plazo, el plan de pago se pausa hasta renovarlo.</p></details><details><summary data-i18n="faq3Q">¿Qué cuenta como una consulta?</summary><p data-i18n="faq3A">Cada request a una API publicada cuenta una vez. Las opciones CORS no consumen cuota. El contador se reinicia al comenzar cada mes UTC.</p></details><details><summary data-i18n="faq4Q">¿Qué ocurre al alcanzar el límite?</summary><p><span data-i18n="faq4Prefix">La API responde HTTP </span><code>429 quota_exceeded</code><span data-i18n="faq4Suffix"> con used, limit, remaining y reset_at. Así nunca hay cobros inesperados.</span></p></details><details><summary data-i18n="faq5Q">¿Puedo cambiar de plan?</summary><p data-i18n="faq5A">Sí. La migración sólo aumenta o reduce el límite configurado; no cambia la URL de tu API.</p></details><details><summary data-i18n="faq6Q">¿Necesito iniciar sesión para consumir una API?</summary><p data-i18n="faq6A">No. Las lecturas públicas funcionan sin cuenta. Sólo el propietario entra a LittleAPI para administrar la API y consultar su consumo.</p></details></div></section>
-    <section class="bottom"><h2 data-i18n="bottomTitle">Tu primera API puede estar lista hoy.</h2><p data-i18n="bottomText">Conecta una hoja, copia la URL y empieza a integrar.</p><a href="app.html" data-i18n="bottomCta">Crear una API gratis →</a></section>
+
+    <aside class="billing-banner" role="note">
+      <strong data-i18n="billingTitle">Manual renewal. No surprise charges.</strong>
+      <p data-i18n="billingText">LittleAPI does not charge automatically. During launch, paid access is activated manually after payment and renewed manually each month.</p>
+      <p data-i18n="graceText">If a paid plan reaches its due date, a 24-hour grace period gives you time to renew. Your API URL remains unchanged.</p>
+    </aside>
+
+    <section class="pricing-section">
+      <h2 data-i18n="includedTitle">Every plan keeps the important parts simple.</h2>
+      <div class="benefits">
+        <article class="benefit"><strong data-i18n="benefit1Title">A stable endpoint</strong><p data-i18n="benefit1Text">Use littleapi.online/api/v1/{API_ID} from any language or platform.</p></article>
+        <article class="benefit"><strong data-i18n="benefit2Title">Your data stays in Google</strong><p data-i18n="benefit2Text">Sheets and Drive remain your source of truth and you control their permissions.</p></article>
+        <article class="benefit"><strong data-i18n="benefit3Title">Predictable limits</strong><p data-i18n="benefit3Text">When a quota is exhausted, the API returns 429 quota_exceeded and a reset date.</p></article>
+      </div>
+    </section>
+
+    <section class="pricing-section">
+      <h2 data-i18n="faqTitle">Frequently asked questions</h2>
+      <div class="faq">
+        <details open><summary data-i18n="faq1q">Are payments automatic?</summary><p data-i18n="faq1a">No. Paid plans renew manually each month. You make the payment and the renewal is confirmed.</p></details>
+        <details><summary data-i18n="faq2q">What happens if I renew late?</summary><p data-i18n="faq2a">You have a 24-hour grace period after the due date. After that, paid capacity may pause until renewal is confirmed.</p></details>
+        <details><summary data-i18n="faq3q">What counts as a request?</summary><p data-i18n="faq3a">Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.</p></details>
+        <details><summary data-i18n="faq4q">Can I change plans later?</summary><p data-i18n="faq4a">Yes. Changing a plan changes the configured capacity, not the URL of your API.</p></details>
+        <details><summary data-i18n="faq5q">Do API consumers need a LittleAPI account?</summary><p data-i18n="faq5a">No. Public reads work without a LittleAPI account. Only the owner signs in to manage APIs and usage.</p></details>
+      </div>
+    </section>
+
+    <section class="pricing-bottom">
+      <p class="eyebrow" data-i18n="bottomEyebrow">BUILD SOMETHING USEFUL</p>
+      <h2 data-i18n="bottomTitle">Your first API can be live today.</h2>
+      <p data-i18n="bottomText">Connect a sheet, publish an endpoint and start integrating.</p>
+      <a href="app.html" data-i18n="bottomCta">Create a free API →</a>
+    </section>
   </main>
-  <footer>© 2026 LittleAPI · <a href="privacy.html" data-i18n="footerPrivacy">Privacidad</a> · <a href="terms.html" data-i18n="footerTerms">Términos</a> · <a href="docs/" data-i18n="footerDocs">Documentación</a></footer>
+
+  <footer><span>© 2026 LittleAPI</span><span><a href="docs/" data-i18n="navDocs">Documentation</a> · <a href="privacy.html" data-i18n="privacy">Privacy</a> · <a href="terms.html" data-i18n="terms">Terms</a></span></footer>
+
   <script>
-    (() => {
-      const paypalClient = "BAAywmESI_Yz_zjx8qtPYEnv56FiwUQGxgCWEcbP-e4fTtWeAgFoQc3tdh2doev_qf_dvV8LqRPAPLcvKg";
-      const paypalButtons = ["T7VT2GJLWSAAQ", "74J9AVSMN8W2S", "X24DMRW7A9G9Y"];
-      const translations = {
-        es: {
-          navApp:"Aplicación", navDocs:"Documentación", languageLabel:"Idioma", heroEyebrow:"PLANES MENSUALES · RENOVACIÓN MANUAL", heroTitle:"Empieza con $3. Crece por $7.", heroText:"Elige la capacidad que necesitas. Los planes pagos se renuevan manualmente cada mes: tú decides cuándo continuar y nunca se realiza un cobro automático.", perAlways:"/ siempre", perMonth:"/ mes", freeLabel:"Para probar", freeName:"Gratis", freeDescription:"Una forma sencilla de publicar tu primera hoja.", freeFeature1:"2 APIs activas", freeFeature2:"5.000 consultas por API/mes", freeFeature3:"Lectura pública JSON", freeFeature4:"Documentación y OpenAPI", freeCta:"Empezar gratis", initialLabel:"Para empezar", initialName:"Inicial", initialDescription:"Para sitios pequeños, prototipos y automatizaciones.", initialFeature1:"10 APIs activas", initialFeature2:"50.000 consultas por API/mes", initialFeature3:"CRUD con X-API-Key", initialFeature4:"CSV y caché", initialFeature5:"Renovación manual", proLabel:"Más elegido", proName:"Pro", proDescription:"Más capacidad para productos que ya están creciendo.", proFeature1:"50 APIs activas", proFeature2:"250.000 consultas por API/mes", proFeature3:"Drive, pestañas y lotes", proFeature4:"Exportación Excel", proFeature5:"Renovación manual + 24 h de gracia", businessLabel:"Para equipos", businessName:"Business", businessDescription:"Para equipos que necesitan límites altos y acompañamiento.", businessFeature1:"200 APIs activas", businessFeature2:"1 millón de consultas por API/mes", businessFeature3:"Cuotas personalizadas", businessFeature4:"Soporte prioritario", businessFeature5:"Renovación manual", paypalLabel:"Pagar con PayPal", paypalNote:"Pago único · renovación manual", billingTitle:"Renovación manual, sin sorpresas.", billingText1:"LittleAPI no realiza cobros automáticos. Durante este lanzamiento, la activación se coordina manualmente y cada mes debes renovar tu plan desde el enlace de pago que te enviemos o solicites.", billingText2Prefix:"Si tu fecha vence, conservamos el plan durante ", billingText2Grace:"24 horas de gracia", billingText2Suffix:" para que puedas renovarlo. Después, el plan de pago se pausa hasta confirmar la renovación; tu API no cambia de URL.", benefitsTitle:"Lo que recibes en todos los planes", benefit1Title:"Una URL estable", benefit1Prefix:"Tu aplicación consume ", benefit1Suffix:" desde cualquier lenguaje.", benefit2Title:"Tu hoja, siempre tuya", benefit2Text:"Los datos permanecen en tu Google Drive y tú controlas los permisos.", benefit3Title:"Límites claros", benefit3Prefix:"Cuando se agota la cuota, la API devuelve ", benefit3Suffix:" y la fecha de reinicio.", faqTitle:"Preguntas frecuentes", faq1Q:"¿Se cobra automáticamente?", faq1A:"No. Los planes pagos se renuevan manualmente cada mes. Tú solicitas o recibes el enlace, realizas el pago y confirmamos la renovación.", faq2Q:"¿Qué ocurre si me atraso?", faq2A:"Tienes 24 horas de gracia después de la fecha de vencimiento. Si no se confirma el pago al terminar ese plazo, el plan de pago se pausa hasta renovarlo.", faq3Q:"¿Qué cuenta como una consulta?", faq3A:"Cada request a una API publicada cuenta una vez. Las opciones CORS no consumen cuota. El contador se reinicia al comenzar cada mes UTC.", faq4Q:"¿Qué ocurre al alcanzar el límite?", faq4Prefix:"La API responde HTTP ", faq4Suffix:" con used, limit, remaining y reset_at. Así nunca hay cobros inesperados.", faq5Q:"¿Puedo cambiar de plan?", faq5A:"Sí. La migración sólo aumenta o reduce el límite configurado; no cambia la URL de tu API.", faq6Q:"¿Necesito iniciar sesión para consumir una API?", faq6A:"No. Las lecturas públicas funcionan sin cuenta. Sólo el propietario entra a LittleAPI para administrar la API y consultar su consumo.", bottomTitle:"Tu primera API puede estar lista hoy.", bottomText:"Conecta una hoja, copia la URL y empieza a integrar.", bottomCta:"Crear una API gratis →", footerPrivacy:"Privacidad", footerTerms:"Términos", footerDocs:"Documentación"
-        },
-        en: {
-          navApp:"App", navDocs:"Documentation", languageLabel:"Language", heroEyebrow:"MONTHLY PLANS · MANUAL RENEWAL", heroTitle:"Start at $3. Grow to $7.", heroText:"Choose the capacity you need. Paid plans renew manually each month: you decide when to continue and there are never automatic charges.", perAlways:"/ forever", perMonth:"/ month", freeLabel:"To try", freeName:"Free", freeDescription:"A simple way to publish your first sheet.", freeFeature1:"2 active APIs", freeFeature2:"5,000 requests per API/month", freeFeature3:"Public JSON reads", freeFeature4:"Documentation and OpenAPI", freeCta:"Start for free", initialLabel:"To get started", initialName:"Initial", initialDescription:"For small sites, prototypes, and automations.", initialFeature1:"10 active APIs", initialFeature2:"50,000 requests per API/month", initialFeature3:"CRUD with X-API-Key", initialFeature4:"CSV and cache", initialFeature5:"Manual renewal", proLabel:"Most popular", proName:"Pro", proDescription:"More capacity for products that are already growing.", proFeature1:"50 active APIs", proFeature2:"250,000 requests per API/month", proFeature3:"Drive, sheets, and batches", proFeature4:"Excel export", proFeature5:"Manual renewal + 24-hour grace", businessLabel:"For teams", businessName:"Business", businessDescription:"For teams that need high limits and support.", businessFeature1:"200 active APIs", businessFeature2:"1 million requests per API/month", businessFeature3:"Custom quotas", businessFeature4:"Priority support", businessFeature5:"Manual renewal", paypalLabel:"Pay with PayPal", paypalNote:"One-time payment · manual renewal", billingTitle:"Manual renewal, no surprises.", billingText1:"LittleAPI never makes automatic charges. During this launch, activation is coordinated manually and each month you renew your plan from the payment link we send or you request.", billingText2Prefix:"If your plan expires, we keep it active for ", billingText2Grace:"24 hours of grace", billingText2Suffix:" so you can renew. After that, the paid plan pauses until renewal is confirmed; your API URL does not change.", benefitsTitle:"What every plan includes", benefit1Title:"A stable URL", benefit1Prefix:"Your application consumes ", benefit1Suffix:" from any language.", benefit2Title:"Your sheet stays yours", benefit2Text:"Data remains in your Google Drive and you control permissions.", benefit3Title:"Clear limits", benefit3Prefix:"When the quota is exhausted, the API returns ", benefit3Suffix:" and the reset date.", faqTitle:"Frequently asked questions", faq1Q:"Are there automatic charges?", faq1A:"No. Paid plans renew manually each month. You request or receive the link, make the payment, and we confirm the renewal.", faq2Q:"What if I am late?", faq2A:"You have 24 hours of grace after the due date. If payment is not confirmed, the paid plan pauses until renewal.", faq3Q:"What counts as a request?", faq3A:"Each request to a published API counts once. CORS options do not consume quota. The counter resets at the beginning of each UTC month.", faq4Q:"What happens when I reach the limit?", faq4Prefix:"The API returns HTTP ", faq4Suffix:" with used, limit, remaining, and reset_at. There are never unexpected charges.", faq5Q:"Can I change plans?", faq5A:"Yes. Changing plans only increases or reduces the configured limit; your API URL does not change.", faq6Q:"Do I need to sign in to consume an API?", faq6A:"No. Public reads work without an account. Only the owner signs in to LittleAPI to manage the API and view usage.", bottomTitle:"Your first API can be ready today.", bottomText:"Connect a sheet, copy the URL, and start integrating.", bottomCta:"Create a free API →", footerPrivacy:"Privacy", footerTerms:"Terms", footerDocs:"Documentation"
-        }
-      };
-      const selector = document.querySelector("#language-select");
-      const saved = localStorage.getItem("littleapi:language");
-      const current = saved === "en" || saved === "es" ? saved : "en";
-      const applyLanguage = language => {
-        const dictionary = translations[language];
-        document.documentElement.lang = language;
-        document.title = language === "en" ? "LittleAPI · Monthly plans" : "LittleAPI · Planes mensuales";
-        document.querySelectorAll("[data-i18n]").forEach(element => {
-          const value = dictionary[element.dataset.i18n];
-          if (value !== undefined) element.textContent = value;
-        });
-        if (selector) selector.value = language;
-      };
-      applyLanguage(current);
-      selector?.addEventListener("change", event => {
-        localStorage.setItem("littleapi:language", event.target.value);
-        location.reload();
-      });
-      const sdk = document.createElement("script");
-      sdk.src = "https://www.paypal.com/sdk/js?client-id=" + paypalClient + "&components=hosted-buttons&disable-funding=venmo&currency=USD";
-      sdk.async = true;
-      sdk.onload = () => paypalButtons.forEach(hostedButtonId => {
-        const container = document.querySelector("#paypal-container-" + hostedButtonId);
-        if (container && window.paypal?.HostedButtons) window.paypal.HostedButtons({ hostedButtonId }).render("#paypal-container-" + hostedButtonId);
-      });
-      document.head.appendChild(sdk);
-    })();
+  (()=>{
+    const paypalClient="BAAywmESI_Yz_zjx8qtPYEnv56FiwUQGxgCWEcbP-e4fTtWeAgFoQc3tdh2doev_qf_dvV8LqRPAPLcvKg";
+    const paypalButtons=["T7VT2GJLWSAAQ","74J9AVSMN8W2S","X24DMRW7A9G9Y"];
+    const t={
+      en:{navHow:"How it works",navDocs:"Documentation",navApp:"App",languageLabel:"Language",startFree:"Start free",heroEyebrow:"SIMPLE PRICING · MANUAL RENEWAL",heroTitle:"Start small. Scale when your API does.",heroText:"Choose the capacity you need. Paid plans renew manually each month, so you decide when to continue and there are no automatic charges.",freeLabel:"Explore",freeName:"Free",forever:"/ forever",freeDesc:"Publish your first sheets and learn the workflow.",free1:"2 active APIs",free2:"5,000 requests per API/month",free3:"Public JSON reads",free4:"Documentation and OpenAPI",freeCta:"Start for free",initialLabel:"Launch",initialName:"Initial",month:"/ month",initialDesc:"For small sites, prototypes and useful automations.",initial1:"10 active APIs",initial2:"50,000 requests per API/month",initial3:"CRUD with X-API-Key",initial4:"CSV and cache",manualRenewal:"Manual renewal",paypalLabel:"Pay with PayPal",paypalNote:"One-time payment · manual renewal",proLabel:"Most popular",proDesc:"More room for products that are already gaining traction.",pro1:"50 active APIs",pro2:"250,000 requests per API/month",pro3:"Drive, sheets and batches",pro4:"Excel export",pro5:"Manual renewal + 24-hour grace",businessLabel:"Teams",businessDesc:"For teams that need higher limits and priority help.",business1:"200 active APIs",business2:"1 million requests per API/month",business3:"Custom quotas",business4:"Priority support",billingTitle:"Manual renewal. No surprise charges.",billingText:"LittleAPI does not charge automatically. During launch, paid access is activated manually after payment and renewed manually each month.",graceText:"If a paid plan reaches its due date, a 24-hour grace period gives you time to renew. Your API URL remains unchanged.",includedTitle:"Every plan keeps the important parts simple.",benefit1Title:"A stable endpoint",benefit1Text:"Use littleapi.online/api/v1/{API_ID} from any language or platform.",benefit2Title:"Your data stays in Google",benefit2Text:"Sheets and Drive remain your source of truth and you control their permissions.",benefit3Title:"Predictable limits",benefit3Text:"When a quota is exhausted, the API returns 429 quota_exceeded and a reset date.",faqTitle:"Frequently asked questions",faq1q:"Are payments automatic?",faq1a:"No. Paid plans renew manually each month. You make the payment and the renewal is confirmed.",faq2q:"What happens if I renew late?",faq2a:"You have a 24-hour grace period after the due date. After that, paid capacity may pause until renewal is confirmed.",faq3q:"What counts as a request?",faq3a:"Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.",faq4q:"Can I change plans later?",faq4a:"Yes. Changing a plan changes the configured capacity, not the URL of your API.",faq5q:"Do API consumers need a LittleAPI account?",faq5a:"No. Public reads work without a LittleAPI account. Only the owner signs in to manage APIs and usage.",bottomEyebrow:"BUILD SOMETHING USEFUL",bottomTitle:"Your first API can be live today.",bottomText:"Connect a sheet, publish an endpoint and start integrating.",bottomCta:"Create a free API →",privacy:"Privacy",terms:"Terms"},
+      es:{navHow:"Cómo funciona",navDocs:"Documentación",navApp:"Aplicación",languageLabel:"Idioma",startFree:"Empezar gratis",heroEyebrow:"PRECIOS SIMPLES · RENOVACIÓN MANUAL",heroTitle:"Empieza pequeño. Crece cuando tu API lo haga.",heroText:"Elige la capacidad que necesitas. Los planes pagos se renuevan manualmente cada mes: tú decides cuándo continuar y no existen cobros automáticos.",freeLabel:"Explorar",freeName:"Gratis",forever:"/ siempre",freeDesc:"Publica tus primeras hojas y aprende el flujo.",free1:"2 APIs activas",free2:"5.000 consultas por API/mes",free3:"Lecturas JSON públicas",free4:"Documentación y OpenAPI",freeCta:"Empezar gratis",initialLabel:"Lanzar",initialName:"Inicial",month:"/ mes",initialDesc:"Para sitios pequeños, prototipos y automatizaciones útiles.",initial1:"10 APIs activas",initial2:"50.000 consultas por API/mes",initial3:"CRUD con X-API-Key",initial4:"CSV y caché",manualRenewal:"Renovación manual",paypalLabel:"Pagar con PayPal",paypalNote:"Pago único · renovación manual",proLabel:"Más elegido",proDesc:"Más espacio para productos que ya están creciendo.",pro1:"50 APIs activas",pro2:"250.000 consultas por API/mes",pro3:"Drive, pestañas y lotes",pro4:"Exportación Excel",pro5:"Renovación manual + 24 h de gracia",businessLabel:"Equipos",businessDesc:"Para equipos que necesitan límites altos y ayuda prioritaria.",business1:"200 APIs activas",business2:"1 millón de consultas por API/mes",business3:"Cuotas personalizadas",business4:"Soporte prioritario",billingTitle:"Renovación manual. Sin cobros sorpresa.",billingText:"LittleAPI no cobra automáticamente. Durante el lanzamiento, el acceso de pago se activa manualmente después del pago y se renueva manualmente cada mes.",graceText:"Si un plan de pago llega a su vencimiento, tienes 24 horas de gracia para renovarlo. La URL de tu API no cambia.",includedTitle:"Todos los planes mantienen simple lo importante.",benefit1Title:"Un endpoint estable",benefit1Text:"Usa littleapi.online/api/v1/{API_ID} desde cualquier lenguaje o plataforma.",benefit2Title:"Tus datos siguen en Google",benefit2Text:"Sheets y Drive siguen siendo tu fuente de datos y tú controlas sus permisos.",benefit3Title:"Límites predecibles",benefit3Text:"Cuando la cuota se agota, la API devuelve 429 quota_exceeded y una fecha de reinicio.",faqTitle:"Preguntas frecuentes",faq1q:"¿Los pagos son automáticos?",faq1a:"No. Los planes pagos se renuevan manualmente cada mes. Realizas el pago y se confirma la renovación.",faq2q:"¿Qué ocurre si renuevo tarde?",faq2a:"Tienes 24 horas de gracia después del vencimiento. Luego la capacidad de pago puede pausarse hasta confirmar la renovación.",faq3q:"¿Qué cuenta como una consulta?",faq3a:"Cada request a una API publicada cuenta una vez. Las solicitudes CORS de preflight no consumen cuota. Los contadores se reinician al comenzar cada mes UTC.",faq4q:"¿Puedo cambiar de plan después?",faq4a:"Sí. Cambiar de plan modifica la capacidad configurada, no la URL de tu API.",faq5q:"¿Los consumidores de mi API necesitan cuenta?",faq5a:"No. Las lecturas públicas funcionan sin cuenta de LittleAPI. Solo el propietario inicia sesión para administrar APIs y consumo.",bottomEyebrow:"CREA ALGO ÚTIL",bottomTitle:"Tu primera API puede estar disponible hoy.",bottomText:"Conecta una hoja, publica un endpoint y empieza a integrar.",bottomCta:"Crear una API gratis →",privacy:"Privacidad",terms:"Términos"}
+    };
+    const selector=document.querySelector('#language-select');
+    const apply=lang=>{const language=lang==='es'?'es':'en';document.documentElement.lang=language;document.title=language==='en'?'LittleAPI · Monthly plans':'LittleAPI · Planes mensuales';document.querySelectorAll('[data-i18n]').forEach(node=>{const v=t[language][node.dataset.i18n];if(v!==undefined)node.textContent=v});selector.value=language;localStorage.setItem('littleapi:language',language)};
+    apply(localStorage.getItem('littleapi:language')||'en');
+    selector.addEventListener('change',()=>apply(selector.value));
+    const sdk=document.createElement('script');sdk.src='https://www.paypal.com/sdk/js?client-id='+paypalClient+'&components=hosted-buttons&disable-funding=venmo&currency=USD';sdk.async=true;sdk.onload=()=>paypalButtons.forEach(id=>{const c=document.querySelector('#paypal-container-'+id);if(c&&window.paypal?.HostedButtons)window.paypal.HostedButtons({hostedButtonId:id}).render('#paypal-container-'+id)});document.head.appendChild(sdk);
+  })();
   </script>
 </body>
 </html>
