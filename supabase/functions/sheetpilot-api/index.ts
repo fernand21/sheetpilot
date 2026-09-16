@@ -937,7 +937,7 @@ Deno.serve(async (request) => {
       headers.set("X-LittleAPI-Version", API_VERSION);
       headers.set("X-LittleAPI-Request-Id", requestId);
       const secured = new Response(blocked.body, { status: blocked.status, headers });
-      scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });
+      await scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });
       return withDynamicCors(secured, request, settings);
     }
   }
@@ -952,6 +952,6 @@ Deno.serve(async (request) => {
   const headers = new Headers(result.headers);
   headers.set("X-LittleAPI-Request-Id", requestId);
   result = new Response(result.body, { status: result.status, statusText: result.statusText, headers });
-  if (apiId) scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });
+  if (apiId) await scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });
   return withDynamicCors(result, request, settings);
 });

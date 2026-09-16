@@ -315,10 +315,14 @@ async function fireWebhooks(input: TelemetryInput, event: string) {
   await Promise.all(hooks.map((hook: any) => deliverWebhook(hook, event, payload)));
 }
 
-export function scheduleTelemetry(input: TelemetryInput) {
+export async function scheduleTelemetry(input: TelemetryInput) {
   const event = mutationEvent(input.request);
+  try {
+    await insertRequestLog(input);
+  } catch (error) {
+    console.error("LittleAPI request log failed", error);
+  }
   background(Promise.all([
-    insertRequestLog(input),
     insertAudit(input, event),
     input.response.status < 400 ? fireWebhooks(input, event) : Promise.resolve(),
   ]));
