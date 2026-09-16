@@ -67,12 +67,19 @@
 
           await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
           await loadScript("config.js");
-          await loadScript("app.js?v=20260916-stable5");
+          await loadScript("app.js?v=20260916-stable6");
 
           document.querySelector(".app-loading")?.remove();
 
           try {
-            await loadScript("create-api-auth.js?v=20260916-api1");
+            await loadScript("https://unpkg.com/@googleworkspace/drive-picker-element@latest/dist/index.iife.min.js");
+            await loadScript("project-picker.js?v=20260916-picker1");
+          } catch (pickerError) {
+            console.error("LittleAPI Google Picker failed", pickerError);
+          }
+
+          try {
+            await loadScript("create-api-auth.js?v=20260916-api2");
           } catch (permissionError) {
             console.error("LittleAPI API authorization flow failed", permissionError);
           }
@@ -85,7 +92,7 @@
             }
           };
           try {
-            await loadScript("app-enhancements.js?v=20260916-stable5");
+            await loadScript("app-enhancements.js?v=20260916-stable6");
           } catch (enhancementError) {
             console.error("LittleAPI enhancements failed", enhancementError);
           } finally {
