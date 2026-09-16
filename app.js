@@ -319,7 +319,7 @@ async function refreshUsage() {
   if (status) { const hasErrors = results.some(([, state]) => state.error); status.textContent = hasErrors ? (window.LittleAPI?.language === "en" ? "Some APIs need their key recovered to show usage." : "Algunas APIs necesitan recuperar su clave para mostrar el consumo.") : (window.LittleAPI?.language === "en" ? "Usage updated from the API counter." : "Consumo actualizado desde el contador de la API."); status.classList.toggle("error", hasErrors); status.classList.toggle("success", !hasErrors); }
 }
 window.addEventListener("littleapi:language-change", () => {
-  if (user) { renderAccountOverview(); renderUsageList(); }
+  if (user) { renderProjects(projectsCache); renderAccountOverview(); renderUsageList(); }
 });
 async function publishSheetForApi(spreadsheetId) {
   const url = "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(spreadsheetId) + "/permissions?supportsAllDrives=true&sendNotificationEmail=false&fields=id,type,role";
