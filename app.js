@@ -16,8 +16,10 @@ const PLAN_LIMITS = {
   free: { name: "Gratis", price: "$0", apiLimit: 2, requestsPerApi: 5000, features: ["2 APIs activas", "5.000 consultas por API/mes", "Lectura pública JSON", "Documentación y OpenAPI"] },
   inicial: { name: "Inicial", price: "$3 / mes", apiLimit: 10, requestsPerApi: 50000, features: ["10 APIs activas", "50.000 consultas por API/mes", "CRUD con X-API-Key", "CSV y caché"] },
   pro: { name: "Pro", price: "$7 / mes", apiLimit: 50, requestsPerApi: 250000, features: ["50 APIs activas", "250.000 consultas por API/mes", "Drive, pestañas y lotes", "Exportación Excel"] },
-  business: { name: "Business", price: "$25 / mes", apiLimit: 200, requestsPerApi: 1000000, features: ["200 APIs activas", "1 millón de consultas por API/mes", "Cuotas personalizadas", "Soporte prioritario"] }
+  business: { name: "Business", price: "$25 / mes", apiLimit: 200, requestsPerApi: 1000000, features: ["200 APIs activas", "1 millón de consultas por API/mes", "Cuotas personalizadas", "Soporte prioritario"] },
+  unlimited: { name: "Ilimitado", price: "Autorizado", apiLimit: Infinity, requestsPerApi: Infinity, databaseLimit: 10000000, unlimited: true, features: ["APIs ilimitadas", "Consultas ilimitadas", "Todas las funciones desbloqueadas", "Acceso prioritario"] }
 };
+const UNLIMITED_EMAILS = new Set(["farevalo210@gmail.com"]);
 let sb = null, user = null, token = null, tokenExpiresAt = 0, providerToken = null, providerConnectionPromise = null, activeProject = null, activeSheet = null, activeSpreadsheet = null, loadedValues = [], loadedRange = "A1:Z200", driveParent = "root", driveParentName = "Mi Drive", projectsCache = [], apisCache = [], usageByApi = Object.create(null), dialogApi = null, dialogProject = null;
 
 function esc(value) {
@@ -217,14 +219,21 @@ function formatCount(value) { return Number(value || 0).toLocaleString(window.Li
 function tx(key, fallback) { return window.LittleAPI?.t ? window.LittleAPI.t(key) : fallback; }
 function normalizePlan(value) {
   const raw = String(value || "").trim().toLowerCase();
+  if (["unlimited", "ilimitado", "owner", "admin"].includes(raw)) return "unlimited";
   if (["business", "empresa", "team"].includes(raw)) return "business";
   if (["pro", "professional"].includes(raw)) return "pro";
   if (["inicial", "initial", "starter", "basic"].includes(raw)) return "inicial";
   if (["gratis", "free", "gratuito"].includes(raw)) return "free";
   return "";
 }
+function isUnlimitedAccount(account) {
+  const email = String(account?.email || "").trim().toLowerCase();
+  const metadata = account?.app_metadata || {};
+  return Boolean(metadata.littleapi_unlimited === true || metadata.littleapi_unlimited === "true" || normalizePlan(metadata.littleapi_plan || metadata.plan) === "unlimited" || UNLIMITED_EMAILS.has(email));
+}
 function currentPlanKey(account) {
   // El plan sólo orienta la interfaz. Las cuotas efectivas siempre vienen del servidor por API.
+  if (isUnlimitedAccount(account)) return "unlimited";
   const metadata = account?.app_metadata || {}, profile = account?.user_metadata || {};
   const explicit = normalizePlan(metadata.littleapi_plan || metadata.plan || profile.littleapi_plan || profile.plan);
   if (explicit) return explicit;
@@ -271,17 +280,19 @@ function renderUsageList() {
 function renderPlanLimits() {
   const node = $("#plan-limits"); if (!node) return;
   const selected = currentPlanKey(user);
-  const planNames = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" } };
-  const featureNames = { "Lectura pública JSON": "Public JSON reads", "Documentación y OpenAPI": "Documentation and OpenAPI", "CSV y caché": "CSV and caching", "Drive, pestañas y lotes": "Drive, tabs, and batches", "Exportación Excel": "Excel export", "Cuotas personalizadas": "Custom quotas", "Soporte prioritario": "Priority support" };
+  const planNames = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" }, unlimited: { es: "Ilimitado", en: "Unlimited" } };
+  const planPrices = { unlimited: { es: "Autorizado", en: "Owner access" } };
+  const featureNames = { "Lectura pública JSON": "Public JSON reads", "Documentación y OpenAPI": "Documentation and OpenAPI", "CSV y caché": "CSV and caching", "Drive, pestañas y lotes": "Drive, tabs, and batches", "Exportación Excel": "Excel export", "Cuotas personalizadas": "Custom quotas", "Soporte prioritario": "Priority support", "APIs ilimitadas": "Unlimited APIs", "Consultas ilimitadas": "Unlimited requests", "Todas las funciones desbloqueadas": "All features unlocked", "Acceso prioritario": "Priority access" };
   const locale = window.LittleAPI?.language === "en" ? "en" : "es";
-  node.innerHTML = Object.entries(PLAN_LIMITS).map(([key, plan]) => '<article class="plan-limit-card ' + (key === selected ? "current" : "") + '"><div class="plan-limit-head"><div><span class="plan-limit-label">' + (key === selected ? esc(tx("yourLevel", "Tu nivel")) : esc(tx("level", "Nivel"))) + '</span><h4>' + esc(planNames[key]?.[locale] || plan.name) + '</h4></div><strong>' + esc(plan.price) + '</strong></div><p class="plan-limit-usage"><b>' + formatCount(plan.apiLimit) + '</b> ' + esc(tx("activeApis", "APIs activas").toLowerCase()) + ' · <b>' + formatCount(plan.requestsPerApi) + '</b> ' + esc(tx("requestsPerApi", "consultas por API/mes")) + '</p><ul>' + plan.features.slice(2).map(feature => '<li>' + esc(locale === "en" ? (featureNames[feature] || feature) : feature) + '</li>').join("") + '</ul></article>').join("");
+  node.innerHTML = Object.entries(PLAN_LIMITS).map(([key, plan]) => '<article class="plan-limit-card ' + (key === selected ? "current" : "") + '"><div class="plan-limit-head"><div><span class="plan-limit-label">' + (key === selected ? esc(tx("yourLevel", "Tu nivel")) : esc(tx("level", "Nivel"))) + '</span><h4>' + esc(planNames[key]?.[locale] || plan.name) + '</h4></div><strong>' + esc(planPrices[key]?.[locale] || plan.price) + '</strong></div><p class="plan-limit-usage"><b>' + formatCount(plan.apiLimit) + '</b> ' + esc(tx("activeApis", "APIs activas").toLowerCase()) + ' · <b>' + formatCount(plan.requestsPerApi) + '</b> ' + esc(tx("requestsPerApi", "consultas por API/mes")) + '</p><ul>' + plan.features.slice(2).map(feature => '<li>' + esc(locale === "en" ? (featureNames[feature] || feature) : feature) + '</li>').join("") + '</ul></article>').join("");
 }
 function renderAccountOverview() {
   const summary = $("#account-summary"); if (!summary) return;
   const key = currentPlanKey(user), plan = PLAN_LIMITS[key], activeCount = apisCache.filter(api => api.enabled !== false).length, overLimit = activeCount > plan.apiLimit;
   const locale = window.LittleAPI?.language === "en" ? "en" : "es";
-  const planName = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" } }[key]?.[locale] || plan.name;
-  summary.innerHTML = '<div class="account-stat"><span>' + esc(tx("currentPlan", "Plan actual")) + '</span><strong>' + esc(planName) + '</strong><small>' + esc(plan.price) + '</small></div><div class="account-stat ' + (overLimit ? "over" : "") + '"><span>' + esc(tx("activeApis", "APIs activas")) + '</span><strong>' + formatCount(activeCount) + ' <small>/ ' + formatCount(plan.apiLimit) + '</small></strong><small>' + esc(overLimit ? tx("overLimit", "Superaste el límite del plan") : tx("withinLimit", "Dentro del límite")) + '</small></div><div class="account-stat"><span>' + esc(tx("quotaPerApi", "Cuota por API")) + '</span><strong>' + formatCount(plan.requestsPerApi) + '</strong><small>' + esc(tx("eachMonth", "consultas cada mes")) + '</small></div><div class="account-stat"><span>' + esc(tx("renewal", "Renovación")) + '</span><strong>' + esc(tx("manual", "Manual")) + '</strong><small>' + esc(tx("noAutomaticCharges", "Sin cobros automáticos")) + '</small></div>';
+  const planName = { free: { es: "Gratis", en: "Free" }, inicial: { es: "Inicial", en: "Starter" }, pro: { es: "Pro", en: "Pro" }, business: { es: "Business", en: "Business" }, unlimited: { es: "Ilimitado", en: "Unlimited" } }[key]?.[locale] || plan.name;
+  const unlimited = plan.unlimited === true, planPrice = unlimited ? (locale === "en" ? "Owner access" : "Autorizado") : plan.price;
+  summary.innerHTML = '<div class="account-stat"><span>' + esc(tx("currentPlan", "Plan actual")) + '</span><strong>' + esc(planName) + '</strong><small>' + esc(planPrice) + '</small></div><div class="account-stat ' + (overLimit ? "over" : "") + '"><span>' + esc(tx("activeApis", "APIs activas")) + '</span><strong>' + formatCount(activeCount) + ' <small>/ ' + (unlimited ? "∞" : formatCount(plan.apiLimit)) + '</small></strong><small>' + esc(unlimited ? tx("unlimited", "Sin límite") : (overLimit ? tx("overLimit", "Superaste el límite del plan") : tx("withinLimit", "Dentro del límite"))) + '</small></div><div class="account-stat"><span>' + esc(tx("quotaPerApi", "Cuota por API")) + '</span><strong>' + (unlimited ? "∞" : formatCount(plan.requestsPerApi)) + '</strong><small>' + esc(unlimited ? tx("unlimited", "Sin límite") : tx("eachMonth", "consultas cada mes")) + '</small></div><div class="account-stat"><span>' + esc(tx("renewal", "Renovación")) + '</span><strong>' + esc(unlimited ? tx("authorized", "Autorizado") : tx("manual", "Manual")) + '</strong><small>' + esc(unlimited ? tx("allFeatures", "Todas las funciones desbloqueadas") : tx("noAutomaticCharges", "Sin cobros automáticos")) + '</small></div>';
   renderPlanLimits();
   renderUsageList();
 }
@@ -358,9 +369,9 @@ async function createApi(project) {
   if (name === null) return;
   const apiId = randomToken(15), secret = "sp_live_" + randomToken(24), keyHash = await hashSecret(secret);
   try {
-    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, monthly_request_limit: plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
+    const result = await sb.from("api_endpoints").insert({ user_id: user.id, project_id: project.id, api_id: apiId, name: name.trim() || project.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, api_key_hash: keyHash, api_key_prefix: secret.slice(0, 16), public_read: true, cache_ttl: 60, monthly_request_limit: plan.unlimited ? plan.databaseLimit : plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true } }).select().single();
     if (result.error) throw result.error;
-    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, monthly_request_limit: plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
+    const catalog = await sb.from("api_public_catalog").insert({ api_id: apiId, user_id: user.id, name: result.data.name, resource_type: "sheet", spreadsheet_id: project.spreadsheet_id, default_sheet: project.sheet_name, public_read: true, cache_ttl: 60, monthly_request_limit: plan.unlimited ? plan.databaseLimit : plan.requestsPerApi, permissions: { read: true, search: true, create: true, update: true, delete: true }, enabled: true });
     if (catalog.error) { await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw catalog.error; }
     try { await saveApiKey(result.data, secret); } catch (error) { await sb.from("api_public_catalog").delete().eq("api_id", apiId).eq("user_id", user.id); await sb.from("api_endpoints").delete().eq("id", result.data.id).eq("user_id", user.id); throw new Error("No se pudo guardar la clave cifrada: " + (error.message || error)); }
     let published = false;
@@ -395,7 +406,11 @@ function renderProjects(data) {
   projectsCache = data || [];
   $("#project-empty").classList.toggle("hidden", projectsCache.length > 0);
   const grid = $("#projects-grid"); grid.classList.toggle("hidden", projectsCache.length === 0);
-  grid.innerHTML = projectsCache.map(project => { const api = apiForProject(project); return '<article class="project-card"><p>' + esc(tx("appLabel", "LITTLEAPI · GOOGLE SHEETS")) + '</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || tx("noSheetSelected", "Sin pestaña seleccionada")) + '</p><div class="project-api">' + (api ? '<span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">' + esc(tx("noApiPublished", "○ Sin API publicada")) + '</span>') + '</div><div class="project-actions"><button class="action-button" data-open-project="' + project.id + '">' + esc(tx("openWorkspace", "Abrir espacio")) + '</button><button class="action-button" data-api-project="' + project.id + '">' + esc(api ? tx("viewEndpoint", "Ver endpoint") : tx("createApi", "Crear API")) + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">' + esc(tx("deleteApi", "Eliminar API")) + '</button>' : '') + '<button class="action-button" data-format-project="' + project.id + '">' + esc(tx("format", "Formatear")) + '</button><button class="text-button" data-remove-project="' + project.id + '">' + esc(tx("remove", "Quitar")) + '</button></div></article>'; }).join("");
+  grid.innerHTML = projectsCache.map(project => {
+    const api = apiForProject(project);
+    const sheetUrl = project.spreadsheet_id ? "https://docs.google.com/spreadsheets/d/" + encodeURIComponent(project.spreadsheet_id) + "/edit" : "";
+    return '<article class="project-card"><p>' + esc(tx("appLabel", "LITTLEAPI · GOOGLE SHEETS")) + '</p><h3>' + esc(project.name) + '</h3><p class="project-meta">' + esc(project.sheet_name || tx("noSheetSelected", "Sin pestaña seleccionada")) + '</p><div class="project-api">' + (api ? '<span class="api-status">' + esc(tx("apiActive", "● API activa")) + '</span><code>' + esc(apiUrl(api)) + '</code>' : '<span class="api-status muted">' + esc(tx("noApiPublished", "○ Sin API publicada")) + '</span>') + '</div><div class="project-actions">' + (sheetUrl ? '<a class="action-button" href="' + esc(sheetUrl) + '" target="_blank" rel="noreferrer">' + esc(tx("openOriginalSheet", "Abrir hoja original")) + ' ↗</a>' : '') + '<button class="action-button" data-api-project="' + project.id + '">' + esc(api ? tx("viewEndpoint", "Ver endpoint") : tx("createApi", "Crear API")) + '</button>' + (api ? '<button class="text-button" data-remove-api="' + project.id + '">' + esc(tx("deleteApi", "Eliminar API")) + '</button>' : '') + '<button class="text-button" data-remove-project="' + project.id + '">' + esc(tx("remove", "Quitar")) + '</button></div></article>';
+  }).join("");
 }
 async function projects() {
   if (!sb || !user) return;
@@ -428,11 +443,14 @@ async function syncProviderRefreshToken(session) {
 }
 async function signOut() {
   token = null; providerToken = null; tokenExpiresAt = 0; if (sb) await sb.auth.signOut();
-  user = null; usageByApi = Object.create(null); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
+  user = null; usageByApi = Object.create(null); togglePublicContent(true); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden");
   $("#header-actions").innerHTML = '<button class="button small" data-open-auth="google">Continuar con Google</button>'; bindAuthButtons();
 }
+function togglePublicContent(show) {
+  $("main").querySelectorAll(":scope > section:not(#dashboard)").forEach(section => section.classList.toggle("hidden", !show));
+}
 function dashboard(account) {
-  if (!account) return; user = account; $("#public-home").classList.add("hidden"); $("#dashboard").classList.remove("hidden");
+  if (!account) return; user = account; togglePublicContent(false); $("#public-home").classList.add("hidden"); $("#dashboard").classList.remove("hidden");
   const display = account.user_metadata?.full_name || account.user_metadata?.name || account.email?.split("@")[0] || "usuario";
   $("#user-name").textContent = display; $("#header-actions").innerHTML = '<span class="account-chip">' + esc(account.email || "") + '</span><button class="text-button" id="header-sign-out">Salir</button>'; $("#header-sign-out").onclick = signOut; projects();
 }
@@ -599,5 +617,5 @@ bindEvents();
 if (ready()) {
   sb = window.supabase.createClient(cfg.url, cfg.publishableKey);
   sb.auth.getSession().then(result => { if (result.data.session?.user) { providerToken = result.data.session.provider_token || null; token = providerToken; tokenExpiresAt = providerToken ? Date.now() + 3300000 : 0; dashboard(result.data.session.user); void syncProviderRefreshToken(result.data.session); } });
-  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
+  sb.auth.onAuthStateChange((event, session) => { if (event === "SIGNED_OUT") { user = null; usageByApi = Object.create(null); providerToken = null; token = null; tokenExpiresAt = 0; togglePublicContent(true); $("#public-home").classList.remove("hidden"); $("#dashboard").classList.add("hidden"); } else if (session?.user) { providerToken = session.provider_token || providerToken; token = providerToken || token; if (providerToken) tokenExpiresAt = Date.now() + 3300000; dashboard(session.user); void syncProviderRefreshToken(session); } });
 }
