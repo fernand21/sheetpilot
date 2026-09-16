@@ -1,0 +1,39 @@
+name: LittleAPI Telemetry Persistence Fix
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-telemetry-persistence.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make request logging durable
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('supabase/functions/sheetpilot-api/platform.ts')
+          s=p.read_text(encoding='utf-8')
+          old='''export function scheduleTelemetry(input: TelemetryInput) {\n  const event = mutationEvent(input.request);\n  background(Promise.all([\n    insertRequestLog(input),\n    insertAudit(input, event),\n    input.response.status < 400 ? fireWebhooks(input, event) : Promise.resolve(),\n  ]));\n}'''
+          new='''export async function scheduleTelemetry(input: TelemetryInput) {\n  const event = mutationEvent(input.request);\n  try {\n    await insertRequestLog(input);\n  } catch (error) {\n    console.error("LittleAPI request log failed", error);\n  }\n  background(Promise.all([\n    insertAudit(input, event),\n    input.response.status < 400 ? fireWebhooks(input, event) : Promise.resolve(),\n  ]));\n}'''
+          if old not in s:
+              raise SystemExit('scheduleTelemetry block not found')
+          p.write_text(s.replace(old,new),encoding='utf-8')
+
+          p=Path('supabase/functions/sheetpilot-api/index.ts')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('      scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });','      await scheduleTelemetry({ apiId, request, response: secured.clone(), durationMs: Date.now() - started, requestId, settings });')
+          s=s.replace('  if (apiId) scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });','  if (apiId) await scheduleTelemetry({ apiId, request, response: result.clone(), durationMs: Date.now() - started, requestId, settings });')
+          p.write_text(s,encoding='utf-8')
+      - name: Commit fix
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add supabase/functions/sheetpilot-api/platform.ts supabase/functions/sheetpilot-api/index.ts
+          git commit -m "Guarantee LittleAPI request log persistence"
+          git push
