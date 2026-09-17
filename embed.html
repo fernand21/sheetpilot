@@ -16,7 +16,7 @@
     .state{padding:34px 18px;text-align:center;color:var(--muted)}.state strong{display:block;margin-bottom:7px;color:var(--text)}.state.error strong{color:var(--danger)}
     .table-wrap{width:100%;overflow:auto}.table{width:100%;border-collapse:collapse;font-size:.8rem}.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.table th{position:sticky;top:0;background:var(--panel);z-index:1;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}.table tbody tr:last-child td{border-bottom:0}.table tbody tr:hover{background:color-mix(in srgb,var(--accent2) 8%,transparent)}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:12px}.card{padding:12px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel) 92%,var(--accent2) 8%)}.field{display:grid;grid-template-columns:minmax(70px,.45fr) minmax(0,1fr);gap:9px;padding:6px 0;border-bottom:1px dashed color-mix(in srgb,var(--line) 72%,transparent)}.field:last-child{border-bottom:0}.field b{color:var(--muted);font-size:.68rem;overflow:hidden;text-overflow:ellipsis}.field span{font-size:.76rem;overflow-wrap:anywhere}
-    .foot{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 13px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem;flex-wrap:wrap}.foot a{color:var(--accent);text-decoration:none;font-weight:800}.foot-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pagination{display:flex;align-items:center;gap:7px}.page-button{appearance:none;border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:transparent;color:var(--text);font:inherit;font-weight:800;cursor:pointer}.page-button:hover:not(:disabled){border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 9%,transparent)}.page-button:disabled{opacity:.38;cursor:not-allowed}.page-label{min-width:72px;text-align:center;font-weight:800;color:var(--text)}.hidden{display:none!important}
+    .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 13px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem}.foot-right{display:flex;align-items:center;gap:13px;flex-wrap:wrap}.foot a{color:var(--accent);text-decoration:none;font-weight:800}.pagination{display:flex;align-items:center;gap:7px}.page-button{appearance:none;border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:transparent;color:var(--text);font:inherit;font-weight:800;cursor:pointer}.page-button:hover:not(:disabled){border-color:var(--accent2)}.page-button:disabled{opacity:.4;cursor:not-allowed}.page-label{min-width:62px;text-align:center}.hidden{display:none!important}
     @media(max-width:620px){.head{align-items:stretch;flex-direction:column}.search{width:100%}.widget{padding:8px}.shell{border-radius:12px}.table th,.table td{padding:9px 10px}.cards{grid-template-columns:1fr}.foot{align-items:stretch;flex-direction:column}.foot-right{justify-content:space-between}.pagination{justify-content:flex-start}}
   </style>
 </head>
@@ -25,7 +25,7 @@
     <section class="shell" aria-live="polite">
       <header class="head">
         <div class="brand"><span class="mark">↗</span><div class="title-wrap"><h1 class="title" id="widget-title">LittleAPI</h1><p class="sub" id="widget-subtitle">Datos en vivo</p></div></div>
-        <input class="search hidden" id="widget-search" type="search" autocomplete="off" placeholder="Buscar…" aria-label="Buscar en los datos" />
+        <input class="search hidden" id="widget-search" type="search" autocomplete="off" placeholder="Buscar en toda la hoja…" aria-label="Buscar en toda la hoja" />
       </header>
       <div class="state" id="widget-state"><strong>Cargando datos…</strong><span>Conectando con LittleAPI.</span></div>
       <div class="table-wrap hidden" id="table-view"><table class="table"><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
@@ -47,9 +47,8 @@
   (() => {
     const p = new URLSearchParams(location.search);
     const apiId = (p.get('api') || '').trim();
-    // New widgets use page_size=25. Keep limit as a backward-compatible alias
-    // so already-copied iframe codes continue to work.
     const pageSize = Math.max(1, Math.min(100, Number(p.get('page_size') || p.get('limit') || 25) || 25));
+    const searchBatchSize = 200;
     const view = p.get('view') === 'cards' ? 'cards' : 'table';
     const theme = ['light','dark','auto'].includes(p.get('theme')) ? p.get('theme') : 'auto';
     const language = p.get('lang') === 'en' ? 'en' : (p.get('lang') === 'es' ? 'es' : ((navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en'));
@@ -57,8 +56,8 @@
     const sheet = (p.get('sheet') || '').trim();
     const columns = p.getAll('col').map(value => String(value || '').trim().toUpperCase()).filter(value => /^[A-Z]+$/.test(value));
     const labels = language === 'es'
-      ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila en esta página' : `${n} filas en esta página`, page:n => `Página ${n}`, previous:'Anterior', next:'Siguiente', error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
-      : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search…', empty:'No rows to display.', rows:n => n === 1 ? '1 row on this page' : `${n} rows on this page`, page:n => `Page ${n}`, previous:'Previous', next:'Next', error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
+      ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar en toda la hoja…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila en esta página' : `${n} filas en esta página`, results:n => n === 1 ? '1 resultado en esta página' : `${n} resultados en esta página`, page:n => `Página ${n}`, previous:'Anterior', next:'Siguiente', error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
+      : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search the entire sheet…', empty:'No rows to display.', rows:n => n === 1 ? '1 row on this page' : `${n} rows on this page`, results:n => n === 1 ? '1 result on this page' : `${n} results on this page`, page:n => `Page ${n}`, previous:'Previous', next:'Next', error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
 
     document.documentElement.lang = language;
     document.body.dataset.theme = theme;
@@ -84,7 +83,11 @@
     let currentPage = 1;
     let hasNext = false;
     let loading = false;
+    let loadToken = 0;
+    let searchTimer = 0;
+    let searchState = { term:'', matches:[], scanOffset:0, ended:false };
     const text = value => value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+    const selection = columns.length ? columns.join(', ') : '*';
 
     function fail(message) {
       state.className = 'state error';
@@ -92,13 +95,7 @@
       const strong = document.createElement('strong'); strong.textContent = labels.error;
       const span = document.createElement('span'); span.textContent = message || labels.public;
       state.append(strong, span);
-      search.classList.add('hidden'); tableView.classList.add('hidden'); cardView.classList.add('hidden'); foot.classList.add('hidden');
-    }
-
-    function filteredRows() {
-      const q = search.value.trim().toLowerCase();
-      if (!q) return rows;
-      return rows.filter(row => Object.values(row || {}).some(value => text(value).toLowerCase().includes(q)));
+      tableView.classList.add('hidden'); cardView.classList.add('hidden'); foot.classList.add('hidden');
     }
 
     function updatePagination() {
@@ -108,23 +105,23 @@
     }
 
     function render() {
-      const visible = filteredRows();
       state.classList.add('hidden');
-      search.classList.toggle('hidden', rows.length < 2);
+      search.classList.remove('hidden');
       foot.classList.remove('hidden');
-      count.textContent = labels.rows(visible.length);
+      const term = search.value.trim();
+      count.textContent = term ? labels.results(rows.length) : labels.rows(rows.length);
       updatePagination();
-      if (!visible.length) {
+      if (!rows.length) {
         tableView.classList.add('hidden'); cardView.classList.add('hidden');
         state.className = 'state'; state.replaceChildren();
         const strong = document.createElement('strong'); strong.textContent = labels.empty;
         state.append(strong); return;
       }
       state.classList.add('hidden');
-      const keys = Array.from(visible.reduce((set,row) => { Object.keys(row || {}).forEach(k => set.add(k)); return set; }, new Set()));
+      const keys = Array.from(rows.reduce((set,row) => { Object.keys(row || {}).forEach(k => set.add(k)); return set; }, new Set()));
       if (view === 'cards') {
         tableView.classList.add('hidden'); cardView.classList.remove('hidden'); cardView.replaceChildren();
-        visible.forEach(row => {
+        rows.forEach(row => {
           const article = document.createElement('article'); article.className = 'card';
           keys.forEach(key => {
             const field = document.createElement('div'); field.className = 'field';
@@ -139,15 +136,11 @@
         const head = document.querySelector('#table-head'); const body = document.querySelector('#table-body');
         head.replaceChildren(); body.replaceChildren();
         const trh = document.createElement('tr'); keys.forEach(key => { const th = document.createElement('th'); th.textContent = key; trh.append(th); }); head.append(trh);
-        visible.forEach(row => { const tr = document.createElement('tr'); keys.forEach(key => { const td = document.createElement('td'); td.textContent = text(row?.[key]); td.title = text(row?.[key]); tr.append(td); }); body.append(tr); });
+        rows.forEach(row => { const tr = document.createElement('tr'); keys.forEach(key => { const td = document.createElement('td'); td.textContent = text(row?.[key]); td.title = text(row?.[key]); tr.append(td); }); body.append(tr); });
       }
     }
 
-    async function loadPage(page) {
-      if (loading) return;
-      loading = true;
-      currentPage = Math.max(1, Number(page) || 1);
-      updatePagination();
+    function setLoading() {
       state.className = 'state';
       state.replaceChildren();
       const strong = document.createElement('strong'); strong.textContent = labels.loading;
@@ -156,43 +149,95 @@
       state.classList.remove('hidden');
       tableView.classList.add('hidden');
       cardView.classList.add('hidden');
-      search.value = '';
+    }
+
+    async function queryRows(query, token) {
+      const params = new URLSearchParams({ columns: 'letters', headers: '1', q: query });
+      if (sheet) params.set('sheet', sheet);
+      const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?${params.toString()}`;
+      const response = await fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' });
+      const body = await response.json().catch(() => ({}));
+      if (token !== loadToken) return null;
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) throw new Error(labels.public);
+        throw new Error(body?.message || body?.error || `HTTP ${response.status}`);
+      }
+      if (!customTitle && body?.meta?.name) title.textContent = body.meta.name;
+      if (!sheet && body?.meta?.sheet) subtitle.textContent = `${labels.live} · ${body.meta.sheet}`;
+      return Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
+    }
+
+    function resetSearch(term) {
+      searchState = { term, matches:[], scanOffset:0, ended:false };
+    }
+
+    async function ensureSearchMatches(target, token) {
+      const needle = searchState.term.toLowerCase();
+      while (searchState.matches.length < target && !searchState.ended) {
+        const query = `select ${selection} limit ${searchBatchSize} offset ${searchState.scanOffset}`;
+        const fetched = await queryRows(query, token);
+        if (fetched === null || token !== loadToken) return false;
+        for (const row of fetched) {
+          const found = Object.values(row || {}).some(value => text(value).toLowerCase().includes(needle));
+          if (found) searchState.matches.push(row);
+        }
+        searchState.scanOffset += fetched.length;
+        if (fetched.length < searchBatchSize) searchState.ended = true;
+      }
+      return token === loadToken;
+    }
+
+    async function loadPage(page) {
+      const token = ++loadToken;
+      loading = true;
+      currentPage = Math.max(1, Number(page) || 1);
+      updatePagination();
+      setLoading();
+      const term = search.value.trim();
 
       try {
-        // Ask Google for one extra row. That lets us know whether a next page
-        // exists without counting or loading the whole workbook.
-        const selection = columns.length ? columns.join(', ') : '*';
-        const offset = (currentPage - 1) * pageSize;
-        const query = `select ${selection} limit ${pageSize + 1} offset ${offset}`;
-        const params = new URLSearchParams({ columns: 'letters', headers: '1', q: query });
-        if (sheet) params.set('sheet', sheet);
-        const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?${params.toString()}`;
-        const response = await fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) throw new Error(labels.public);
-          throw new Error(body?.message || body?.error || `HTTP ${response.status}`);
+        if (term) {
+          if (searchState.term !== term) resetSearch(term);
+          const needed = currentPage * pageSize + 1;
+          if (!(await ensureSearchMatches(needed, token))) return;
+          const start = (currentPage - 1) * pageSize;
+          rows = searchState.matches.slice(start, start + pageSize);
+          hasNext = searchState.matches.length > start + pageSize;
+          if (!rows.length && currentPage > 1 && searchState.ended) {
+            loading = false;
+            return loadPage(currentPage - 1);
+          }
+        } else {
+          resetSearch('');
+          const offset = (currentPage - 1) * pageSize;
+          const query = `select ${selection} limit ${pageSize + 1} offset ${offset}`;
+          const fetched = await queryRows(query, token);
+          if (fetched === null || token !== loadToken) return;
+          hasNext = fetched.length > pageSize;
+          rows = fetched.slice(0, pageSize);
+          if (!rows.length && currentPage > 1) {
+            loading = false;
+            return loadPage(currentPage - 1);
+          }
         }
-        const fetched = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
-        hasNext = fetched.length > pageSize;
-        rows = fetched.slice(0, pageSize);
-        if (!rows.length && currentPage > 1) {
-          currentPage -= 1;
-          loading = false;
-          return loadPage(currentPage);
-        }
-        if (!customTitle && body?.meta?.name) title.textContent = body.meta.name;
-        if (!sheet && body?.meta?.sheet) subtitle.textContent = `${labels.live} · ${body.meta.sheet}`;
-        render();
+        if (token === loadToken) render();
       } catch (error) {
-        fail(error?.message || String(error));
+        if (token === loadToken) fail(error?.message || String(error));
       } finally {
-        loading = false;
-        updatePagination();
+        if (token === loadToken) {
+          loading = false;
+          updatePagination();
+        }
       }
     }
 
-    search.addEventListener('input', render);
+    search.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        resetSearch(search.value.trim());
+        void loadPage(1);
+      }, 320);
+    });
     prev.addEventListener('click', () => void loadPage(currentPage - 1));
     next.addEventListener('click', () => void loadPage(currentPage + 1));
     if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
