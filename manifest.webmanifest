@@ -1,0 +1,39 @@
+{
+  "id": "/app.html",
+  "name": "LittleAPI",
+  "short_name": "LittleAPI",
+  "description": "Convierte Google Sheets y recursos de Google Drive en APIs reutilizables.",
+  "start_url": "/app.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071712",
+  "theme_color": "#0b766e",
+  "lang": "es",
+  "categories": ["developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/littleapi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi espacio",
+      "short_name": "Panel",
+      "url": "/app.html"
+    },
+    {
+      "name": "Documentación",
+      "short_name": "Docs",
+      "url": "/docs/"
+    },
+    {
+      "name": "Precios",
+      "short_name": "Precios",
+      "url": "/pricing.html"
+    }
+  ]
+}
