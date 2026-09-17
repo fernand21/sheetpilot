@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">LittleAPI</title>
+  <desc id="desc">LittleAPI application icon</desc>
+  <rect width="512" height="512" rx="128" fill="#0b766e"/>
+  <path d="M136 144h240v224H136z" fill="none" stroke="#fff" stroke-width="30" stroke-linejoin="round"/>
+  <path d="M136 232h240M224 144v224" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round"/>
+  <path d="M286 282h80v80" fill="none" stroke="#d8ff7d" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M366 282l-94 94" fill="none" stroke="#d8ff7d" stroke-width="24" stroke-linecap="round"/>
+</svg>
