@@ -2,7 +2,7 @@ import { accountRequest, getSecuritySettings, enforceRequestSecurity, withDynami
 import { handleMcp } from "./mcp.ts";
 
 /*
- * LittleAPI API v1.4
+ * LittleAPI API v1.5
  * Public REST API for Google Sheets and Google Drive.
  *
  * Published APIs do not require a Supabase login. Public GETs can be anonymous;
@@ -39,7 +39,7 @@ type PageResult = {
 };
 type QuotaState = { allowed: boolean; used: number; limit: number; reset_at: string };
 
-const API_VERSION = "1.4.0";
+const API_VERSION = "1.5.0";
 const MAX_PAGE_SIZE = 1000;
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "";
@@ -106,15 +106,53 @@ async function getApi(apiId: string): Promise<ApiRecord | null> {
   const catalog = await dbFetch(`api_public_catalog?select=${publicFields}&api_id=eq.${encodeURIComponent(apiId)}&enabled=eq.true&limit=1`);
   return catalog?.[0] ? { ...catalog[0], api_key_hash: "", cache_ttl: 60, monthly_request_limit: catalog[0].monthly_request_limit || 5000 } : null;
 }
-async function hasApiKey(api: ApiRecord, request: Request) {
+type ApiKeyContext = {
+  kind: "primary" | "additional";
+  id: string | null;
+  permissions: Record<string, boolean> | null;
+};
+const apiKeyContexts = new WeakMap<Request, ApiKeyContext | false>();
+
+function suppliedApiKey(request: Request) {
   const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1] || "";
-  const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";
-  if (!supplied || !api.api_key_hash) return false;
-  return sameSecret(await sha256(supplied), api.api_key_hash);
+  return request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";
 }
-function allowed(api: ApiRecord, action: string) { return api.permissions?.[action] !== false; }
-function requirePermission(api: ApiRecord, action: string) {
-  return allowed(api, action) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`);
+
+async function hasApiKey(api: ApiRecord, request: Request) {
+  if (apiKeyContexts.has(request)) return apiKeyContexts.get(request) !== false;
+  const supplied = suppliedApiKey(request);
+  if (!supplied) { apiKeyContexts.set(request, false); return false; }
+  const hash = await sha256(supplied);
+  if (api.api_key_hash && sameSecret(hash, api.api_key_hash)) {
+    apiKeyContexts.set(request, { kind: "primary", id: null, permissions: null });
+    return true;
+  }
+  const rows = await dbFetch(`api_access_keys?select=id,permissions,expires_at,last_used_at&api_id=eq.${encodeURIComponent(api.api_id)}&key_hash=eq.${encodeURIComponent(hash)}&enabled=eq.true&limit=1`);
+  const row = rows?.[0];
+  if (!row) { apiKeyContexts.set(request, false); return false; }
+  if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) { apiKeyContexts.set(request, false); return false; }
+  apiKeyContexts.set(request, { kind: "additional", id: row.id, permissions: row.permissions || {} });
+  const lastUsed = row.last_used_at ? Date.parse(row.last_used_at) : 0;
+  if (!lastUsed || Date.now() - lastUsed > 300000) {
+    try {
+      await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(row.id)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ last_used_at: new Date().toISOString(), updated_at: new Date().toISOString() }),
+      });
+    } catch (_) { /* last_used_at is best-effort */ }
+  }
+  return true;
+}
+
+function allowed(api: ApiRecord, action: string, request?: Request) {
+  if (api.permissions?.[action] === false) return false;
+  const context = request ? apiKeyContexts.get(request) : null;
+  if (context && context !== false && context.kind === "additional" && context.permissions?.[action] === false) return false;
+  return true;
+}
+function requirePermission(api: ApiRecord, action: string, request?: Request) {
+  return allowed(api, action, request) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`);
 }
 function columnName(number: number) {
   let result = "", current = Math.max(1, number);
@@ -205,7 +243,7 @@ async function queryHeaders(api: ApiRecord, sheet: string, token: string, header
 }
 async function queryOperation(api: ApiRecord, request: Request) {
   if (api.resource_type !== "sheet" || !api.spreadsheet_id) return failure(400, "not_a_sheet_api", "Las consultas avanzadas sólo están disponibles para APIs de Google Sheets.");
-  const denied = requirePermission(api, "read");
+  const denied = requirePermission(api, "read", request);
   if (denied) return denied;
   if (api.public_read !== true && !(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key.");
 
@@ -478,7 +516,7 @@ async function readOperation(api: ApiRecord, request: Request, path: string[]) {
   if (api.resource_type === "drive") return driveOperation(api, request, path);
   const sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1";
   const isSearch = path[0] === "search" || path[0] === "search_or";
-  const denied = requirePermission(api, isSearch ? "search" : "read");
+  const denied = requirePermission(api, isSearch ? "search" : "read", request);
   if (denied) return denied;
   const cacheable = !["export.json", "keys", "count", "cells"].includes(path[0] || "");
   const cacheKey = `${api.api_id}:${path.join("/") || "root"}:${url.search}`;
@@ -559,6 +597,120 @@ async function apiKeyConnection(request: Request) {
   await dbFetch(`api_endpoints?id=eq.${encodeURIComponent(rows[0].id)}`, { method: "PATCH", body: JSON.stringify({ api_key_hash: await sha256(apiKey), api_key_prefix: apiKey.slice(0, 16), api_key_ciphertext: ciphertext, updated_at: new Date().toISOString() }) });
   return response({ success: true, api_id: apiId, stored: true });
 }
+
+function randomApiAccessKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let raw = "";
+  for (const byte of bytes) raw += String.fromCharCode(byte);
+  return "sp_live_" + btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function normalizedAccessKeyPermissions(value: unknown, apiPermissions: Record<string, boolean> | null | undefined) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const result: Record<string, boolean> = {};
+  for (const key of ["read", "search", "create", "update", "delete"]) {
+    const requested = key in source ? source[key] !== false : (key === "read" || key === "search");
+    result[key] = apiPermissions?.[key] !== false && requested;
+  }
+  return result;
+}
+
+async function apiKeysConnection(request: Request) {
+  const user = await currentUser(request);
+  if (!user?.id) return failure(401, "login_required", "Sign in to manage API keys.");
+  const url = new URL(request.url);
+  const body = request.method === "GET" ? {} : await request.json().catch(() => ({}));
+  const apiId = String((body as any).api_id || url.searchParams.get("api_id") || "").trim();
+  if (!apiId) return failure(400, "api_id_required", "Provide api_id.");
+
+  const owned = await dbFetch(`api_endpoints?select=id,api_id,name,permissions&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`);
+  const api = owned?.[0];
+  if (!api) return failure(404, "api_not_found", "No API owned by this account exists with that identifier.");
+
+  const keyId = String((body as any).id || url.searchParams.get("id") || "").trim();
+  if (request.method === "GET") {
+    const rows = await dbFetch(`api_access_keys?select=id,api_id,name,key_prefix,permissions,enabled,expires_at,last_used_at,created_at,updated_at&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.asc`);
+    return response({ data: rows || [] });
+  }
+
+  if (request.method === "POST") {
+    const existing = await dbFetch(`api_access_keys?select=id&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=21`);
+    if ((existing || []).length >= 20) return failure(409, "api_key_limit", "This API already has the maximum of 20 additional keys.");
+    const name = String((body as any).name || "").trim();
+    if (!name || name.length > 80) return failure(400, "invalid_name", "Key name must contain 1 to 80 characters.");
+    let expiresAt: string | null = null;
+    if ((body as any).expires_at) {
+      const parsed = Date.parse(String((body as any).expires_at));
+      if (!Number.isFinite(parsed) || parsed <= Date.now()) return failure(400, "invalid_expiry", "Expiration must be a future date.");
+      expiresAt = new Date(parsed).toISOString();
+    }
+    const secret = randomApiAccessKey();
+    const permissions = normalizedAccessKeyPermissions((body as any).permissions, api.permissions || {});
+    const rows = await dbFetch("api_access_keys", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        api_id: apiId,
+        user_id: user.id,
+        name,
+        key_hash: await sha256(secret),
+        key_prefix: secret.slice(0, 16),
+        permissions,
+        enabled: true,
+        expires_at: expiresAt,
+      }),
+    });
+    const created = rows?.[0];
+    return response({
+      success: true,
+      key: created ? {
+        id: created.id, api_id: apiId, name: created.name, key_prefix: created.key_prefix,
+        permissions: created.permissions, enabled: created.enabled, expires_at: created.expires_at,
+        created_at: created.created_at,
+      } : null,
+      api_key: secret,
+      message: "Copy this key now. It will not be shown again.",
+    }, 201);
+  }
+
+  if (!keyId) return failure(400, "key_id_required", "Provide the key id.");
+
+  if (request.method === "PATCH") {
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if ((body as any).name !== undefined) {
+      const name = String((body as any).name || "").trim();
+      if (!name || name.length > 80) return failure(400, "invalid_name", "Key name must contain 1 to 80 characters.");
+      patch.name = name;
+    }
+    if ((body as any).permissions !== undefined) patch.permissions = normalizedAccessKeyPermissions((body as any).permissions, api.permissions || {});
+    if ((body as any).enabled !== undefined) patch.enabled = Boolean((body as any).enabled);
+    if ((body as any).expires_at !== undefined) {
+      if (!(body as any).expires_at) patch.expires_at = null;
+      else {
+        const parsed = Date.parse(String((body as any).expires_at));
+        if (!Number.isFinite(parsed) || parsed <= Date.now()) return failure(400, "invalid_expiry", "Expiration must be a future date.");
+        patch.expires_at = new Date(parsed).toISOString();
+      }
+    }
+    await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(keyId)}&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(patch),
+    });
+    return response({ success: true, id: keyId });
+  }
+
+  if (request.method === "DELETE") {
+    await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(keyId)}&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: "DELETE",
+      headers: { Prefer: "return=minimal" },
+    });
+    return response({ success: true, deleted: keyId });
+  }
+
+  return failure(405, "method_not_allowed", "Use GET, POST, PATCH, or DELETE for additional API keys.");
+}
+
 async function refreshGoogleTokenForUser(userId: string) {
   if (!serviceKey) throw new Error("La función necesita SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SECRET_KEYS para leer la conexión privada.");
   const rows = await dbFetch(`google_connections?select=refresh_token_ciphertext&user_id=eq.${encodeURIComponent(userId)}&limit=1`), encrypted = rows?.[0]?.refresh_token_ciphertext;
@@ -604,7 +756,7 @@ async function spreadsheetMetadata(api: ApiRecord, token: string) {
 function nonEmptyObject(value: unknown): value is Record<string, unknown> { return Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value as Record<string, unknown>).length); }
 async function mutationOperation(api: ApiRecord, request: Request, path: string[]) {
   if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Las operaciones de escritura requieren la cabecera X-API-Key.");
-  const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete", denied = requirePermission(api, action);
+  const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete", denied = requirePermission(api, action, request);
   if (denied) return denied;
   if (api.resource_type === "drive") return driveOperation(api, request, path);
   const body = request.method === "DELETE" || request.headers.get("content-length") === "0" ? await request.json().catch(() => ({})) : await request.json().catch(() => ({}));
@@ -876,7 +1028,7 @@ function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
   });
 }
 async function statsOperation(api: ApiRecord, request: Request) {
-  const denied = requirePermission(api, "read"); if (denied) return denied;
+  const denied = requirePermission(api, "read", request); if (denied) return denied;
   const url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1";
   let table: TableData;
   if (api.public_read) table = await readPublicSheet(api, sheet);
@@ -905,6 +1057,7 @@ async function handler(request: Request) {
   if (path[0] === "health" && request.method === "GET") return response({ status: "ok", name: "LittleAPI", version: API_VERSION, time: new Date().toISOString() });
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
+  if (path[0] === "auth" && path[1] === "api-keys") return apiKeysConnection(request);
   if (path[0] === "account") return accountRequest(request, path.slice(1));
   if (!path[0]) return response({ name: "LittleAPI", version: API_VERSION, usage: "/sheetpilot-api/{API_ID}", public_url: "https://littleapi.online/api/v1/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Public GETs can be anonymous; use X-API-Key for writes, private reads, Drive and admin operations." });
   const api = await getApi(path[0]);
