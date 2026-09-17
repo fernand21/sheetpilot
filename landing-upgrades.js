@@ -64,7 +64,7 @@
       ],
       download:'Descargar complemento para Excel',
       docs:'Guía de instalación y botones →',
-      package:'Descarga ZIP · contiene el instalador de Windows · SHA-256 disponible en la documentación.',
+      package:'Instalador para Windows · descarga y ejecuta el setup directamente · SHA-256 disponible en la documentación.',
       demoTitle:'LittleAPI for Excel',demoState:'Libro conectado',
       ribbon:['Configure API','Test Connection','Load Workbook','Refresh Workbook','Save / Synchronize'],
       tabs:['CARTERA','COORDENADAS','CLIENTES'],
@@ -100,7 +100,7 @@
       ],
       download:'Download Excel Add-in',
       docs:'Setup and button guide →',
-      package:'ZIP download · contains the Windows installer · SHA-256 is available in the documentation.',
+      package:'Windows installer · download and run the setup directly · SHA-256 is available in the documentation.',
       demoTitle:'LittleAPI for Excel',demoState:'Workbook connected',
       ribbon:['Configure API','Test Connection','Load Workbook','Refresh Workbook','Save / Synchronize'],
       tabs:['CARTERA','COORDENADAS','CLIENTS'],
@@ -135,7 +135,7 @@
             <div class="excel-badges">${t.badges.map(item=>`<span class="excel-badge">${item}</span>`).join('')}</div>
             <ul class="excel-checks">${t.checks.map(item=>`<li>${item}</li>`).join('')}</ul>
             <div class="excel-actions">
-              <a class="download" href="downloads/LittleAPI_Excel_Addin_Setup.zip" download>${t.download}</a>
+              <a class="download" href="downloads/LittleAPI_Excel_Addin_Setup.exe" download>${t.download}</a>
               <a class="docs" href="docs/excel-addin.html">${t.docs}</a>
             </div>
             <p class="excel-small">${t.package}</p>
