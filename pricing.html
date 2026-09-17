@@ -3,128 +3,121 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="LittleAPI monthly plans for turning Google Sheets into REST APIs with clear quotas and manual renewal.">
+  <meta name="description" content="LittleAPI plans for REST APIs, embeddable Google Sheets widgets, permissions, API keys, Drive automation and higher monthly quotas.">
   <meta name="theme-color" content="#071512">
-  <title>LittleAPI · Monthly plans</title>
+  <title>LittleAPI · Plans</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .pricing-main{max-width:1220px;margin:0 auto;padding:50px 22px 80px}.pricing-hero{max-width:860px;margin:0 auto 34px;text-align:center}.pricing-hero h1{font-size:clamp(2.7rem,5.5vw,5.6rem);line-height:.94;margin:8px 0 18px}.pricing-hero h1 span{color:var(--lime)}.pricing-hero>p:last-child{max-width:760px;margin:0 auto;color:var(--muted);font-size:1.03rem;line-height:1.7}.pricing-plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;align-items:stretch}.pricing-plan{display:flex;flex-direction:column;padding:20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#0b211c,#081914)}.pricing-plan.featured{border-color:#68c7aa;box-shadow:0 20px 60px rgba(51,185,151,.1);transform:translateY(-7px)}.plan-label{display:inline-flex;align-self:flex-start;padding:5px 8px;border-radius:999px;background:#123a31;color:var(--lime);font-size:.67rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.pricing-plan h2{margin:13px 0 3px;font-size:1.45rem}.price{display:flex;align-items:baseline;gap:6px}.price strong{font-size:2.35rem}.price span{color:var(--muted);font-size:.78rem}.pricing-plan>p{min-height:62px;color:var(--muted);font-size:.82rem;line-height:1.55}.pricing-plan ul{display:grid;gap:8px;padding:0;margin:6px 0 18px;list-style:none}.pricing-plan li{position:relative;padding-left:20px;color:#d7ebe4;font-size:.78rem;line-height:1.45}.pricing-plan li:before{content:'✓';position:absolute;left:0;color:var(--lime);font-weight:900}.pricing-plan li.manual:before{content:'↻'}.pricing-plan .cta{display:block;margin-top:auto;padding:10px 12px;border:1px solid #356b5e;border-radius:10px;text-align:center;text-decoration:none;color:#e9f6f2;font-weight:850}.pricing-plan.featured .cta{background:var(--lime);border-color:var(--lime);color:#0a211b}.paypal-option{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}.paypal-label{margin:0 0 8px!important;min-height:0!important;color:#d8ebe4!important;font-weight:850}.paypal-note{display:block;margin-top:8px;color:var(--muted);font-size:.68rem}.feature-band{margin:28px 0;padding:22px;border:1px solid #2d5e52;border-radius:18px;background:linear-gradient(135deg,#0c281f,#0a1f1a)}.feature-band-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:22px;align-items:end}.feature-band h2{margin:6px 0 0;font-size:clamp(1.8rem,3.5vw,3rem)}.feature-band p{margin:0;color:var(--muted);line-height:1.65}.feature-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}.feature{padding:15px;border:1px solid #285248;border-radius:13px;background:#081a16}.feature strong{display:block;margin-bottom:5px}.feature span{color:var(--muted);font-size:.76rem;line-height:1.45}.compare-section,.pricing-section{margin-top:54px}.compare-section h2,.pricing-section h2{font-size:clamp(1.8rem,3vw,2.8rem);margin:0 0 14px}.compare-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px}.compare{width:100%;border-collapse:collapse;min-width:820px;background:#0a201a}.compare th,.compare td{padding:12px 13px;border-bottom:1px solid var(--line);text-align:center;font-size:.78rem}.compare th:first-child,.compare td:first-child{text-align:left}.compare thead th{color:#fff;background:#0d2922}.compare tbody td:first-child{font-weight:800;color:#dbeee8}.yes{color:var(--lime);font-weight:900}.muted{color:var(--muted)}.billing-banner{margin-top:26px;padding:18px;border:1px solid #745b31;border-radius:14px;background:#241d10}.billing-banner strong{display:block;color:#ffe0a5;margin-bottom:5px}.billing-banner p{margin:5px 0;color:#e2cfa5;line-height:1.55;font-size:.82rem}.benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.benefit{padding:17px;border:1px solid var(--line);border-radius:14px;background:#0a201a}.benefit strong{display:block;margin-bottom:6px}.benefit p{margin:0;color:var(--muted);font-size:.8rem;line-height:1.5}.faq{display:grid;gap:8px}.faq details{padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:#0a201a}.faq summary{font-weight:850;cursor:pointer}.faq p{color:var(--muted);line-height:1.55;font-size:.82rem}.pricing-bottom{text-align:center;margin-top:58px;padding:34px;border:1px solid #2d6154;border-radius:20px;background:linear-gradient(135deg,#0e2b23,#0a1d18)}.pricing-bottom h2{margin:7px 0 8px}.pricing-bottom p{color:var(--muted)}.pricing-bottom a{display:inline-block;margin-top:8px;padding:11px 14px;border-radius:10px;background:var(--lime);color:#0a211b;text-decoration:none;font-weight:900}
+    @media(max-width:1050px){.pricing-plans{grid-template-columns:1fr 1fr}.pricing-plan.featured{transform:none}.feature-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){.pricing-plans,.feature-grid,.benefits,.feature-band-head{grid-template-columns:1fr}.pricing-plan>p{min-height:0}}
+  </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18453708146"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'AW-18453708146');
-  </script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','AW-18453708146');</script>
 </head>
 <body class="pricing-page">
-  <header class="topbar">
-    <a class="brand" href="index.html" aria-label="LittleAPI home"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
-    <nav aria-label="Primary navigation">
-      <a href="index.html#como-funciona" data-i18n="navHow">How it works</a>
-      <a href="docs/" data-i18n="navDocs">Documentation</a>
-      <a href="app.html" data-i18n="navApp">App</a>
-    </nav>
-    <div class="header-actions">
-      <label class="language-control" for="language-select"><span data-i18n="languageLabel">Language</span><select id="language-select" aria-label="Language"><option value="en">English</option><option value="es">Español</option></select></label>
-      <a class="button small" href="app.html" data-i18n="startFree">Start free</a>
+<header class="topbar">
+  <a class="brand" href="index.html" aria-label="LittleAPI home"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
+  <nav><a href="index.html#como-funciona" data-t="navHow">How it works</a><a href="docs/" data-t="navDocs">Documentation</a><a href="docs/widgets.html" data-t="navWidgets">Widgets</a><a href="app.html" data-t="navApp">App</a></nav>
+  <div class="header-actions"><label class="language-control"><span data-t="language">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label><a class="button small" href="app.html" data-t="startFree">Start free</a></div>
+</header>
+
+<main class="pricing-main">
+  <section class="pricing-hero">
+    <p class="eyebrow" data-t="heroEye">REST API + LIVE WIDGETS</p>
+    <h1 data-html="heroTitle">Start free. <span>Pay when your API grows.</span></h1>
+    <p data-t="heroText">Every plan starts with the same simple workflow: connect Google Sheets, publish data and embed it. Paid plans add substantially more capacity and advanced operations.</p>
+  </section>
+
+  <section class="feature-band">
+    <div class="feature-band-head"><div><p class="eyebrow" data-t="includedEye">INCLUDED FROM THE START</p><h2 data-t="includedTitle">The new widget experience is part of LittleAPI.</h2></div><p data-t="includedText">Choose a workbook tab, visible columns and their order, set rows per page, jump directly to a page and search the whole sheet without exposing an API key in the iframe.</p></div>
+    <div class="feature-grid">
+      <div class="feature"><strong data-t="f1t">Embeddable widgets</strong><span data-t="f1p">Table or cards, light/dark/auto theme and generated iframe code.</span></div>
+      <div class="feature"><strong data-t="f2t">Column control</strong><span data-t="f2p">Select exactly which columns appear and rearrange their visible order.</span></div>
+      <div class="feature"><strong data-t="f3t">Smart pagination</strong><span data-t="f3p">Numeric rows per page, total pages, Previous/Next and direct page jump.</span></div>
+      <div class="feature"><strong data-t="f4t">Whole-sheet search</strong><span data-t="f4p">Search beyond the current page while keeping results paginated.</span></div>
     </div>
-  </header>
+  </section>
 
-  <main class="pricing-main">
-    <section class="pricing-hero">
-      <p class="eyebrow" data-i18n="heroEyebrow">SIMPLE PRICING · MANUAL RENEWAL</p>
-      <h1 data-i18n="heroTitle">Start small. <span>Scale when your API does.</span></h1>
-      <p data-i18n="heroText">Choose the capacity you need. Paid plans renew manually each month, so you decide when to continue and there are no automatic charges.</p>
-    </section>
+  <section class="pricing-plans" aria-label="LittleAPI plans">
+    <article class="pricing-plan">
+      <span class="plan-label" data-t="freeLabel">Explore</span><h2 data-t="freeName">Free</h2><div class="price"><strong>$0</strong><span data-t="forever">/ forever</span></div><p data-t="freeDesc">For learning the workflow, publishing small datasets and testing embeds.</p>
+      <ul><li data-t="free1">2 active APIs</li><li data-t="free2">5,000 requests per API/month</li><li data-t="free3">Public JSON reads + query endpoint</li><li data-t="free4">Embeddable widget + pagination + whole-sheet search</li><li data-t="free5">OpenAPI and documentation</li></ul>
+      <a class="cta" href="app.html" data-t="freeCta">Start for free</a>
+    </article>
 
-    <section class="pricing-plans" aria-label="LittleAPI plans">
-      <article class="pricing-plan">
-        <span class="plan-label" data-i18n="freeLabel">Explore</span>
-        <h2 data-i18n="freeName">Free</h2>
-        <div class="price"><strong>$0</strong><span data-i18n="forever">/ forever</span></div>
-        <p data-i18n="freeDesc">Publish your first sheets and learn the workflow.</p>
-        <ul><li data-i18n="free1">2 active APIs</li><li data-i18n="free2">5,000 requests per API/month</li><li data-i18n="free3">Public JSON reads</li><li data-i18n="free4">Documentation and OpenAPI</li></ul>
-        <a class="cta" href="app.html" data-i18n="freeCta">Start for free</a>
-      </article>
+    <article class="pricing-plan">
+      <span class="plan-label" data-t="initialLabel">Launch</span><h2 data-t="initialName">Initial</h2><div class="price"><strong>$3</strong><span data-t="month">/ month</span></div><p data-t="initialDesc">For useful sites, prototypes, forms and small automations that need writes.</p>
+      <ul><li data-t="initial1">10 active APIs</li><li data-t="initial2">50,000 requests per API/month</li><li data-t="initial3">Secure CRUD with X-API-Key</li><li data-t="initial4">Public/private read permissions</li><li data-t="initial5">CSV and cache capabilities</li><li class="manual" data-t="manual">Manual renewal</li></ul>
+      <div class="paypal-option"><p class="paypal-label" data-t="paypal">Pay with PayPal</p><div id="paypal-container-T7VT2GJLWSAAQ" class="paypal-button-container"></div><span class="paypal-note" data-t="paypalNote">One-time payment · manual renewal</span></div>
+    </article>
 
-      <article class="pricing-plan">
-        <span class="plan-label" data-i18n="initialLabel">Launch</span>
-        <h2 data-i18n="initialName">Initial</h2>
-        <div class="price"><strong>$3</strong><span data-i18n="month">/ month</span></div>
-        <p data-i18n="initialDesc">For small sites, prototypes and useful automations.</p>
-        <ul><li data-i18n="initial1">10 active APIs</li><li data-i18n="initial2">50,000 requests per API/month</li><li data-i18n="initial3">CRUD with X-API-Key</li><li data-i18n="initial4">CSV and cache</li><li class="manual" data-i18n="manualRenewal">Manual renewal</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-T7VT2GJLWSAAQ" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
-      </article>
+    <article class="pricing-plan featured">
+      <span class="plan-label" data-t="proLabel">Most popular</span><h2>Pro</h2><div class="price"><strong>$7</strong><span data-t="month">/ month</span></div><p data-t="proDesc">For products and internal tools that need much more traffic and Google workspace automation.</p>
+      <ul><li data-t="pro1">50 active APIs</li><li data-t="pro2">250,000 requests per API/month</li><li data-t="pro3">Google Drive, sheet management and batch operations</li><li data-t="pro4">Excel export</li><li data-t="pro5">Advanced permissions and additional API keys</li><li class="manual" data-t="pro6">Manual renewal + 24-hour grace</li></ul>
+      <div class="paypal-option"><p class="paypal-label" data-t="paypal">Pay with PayPal</p><div id="paypal-container-74J9AVSMN8W2S" class="paypal-button-container"></div><span class="paypal-note" data-t="paypalNote">One-time payment · manual renewal</span></div>
+    </article>
 
-      <article class="pricing-plan featured">
-        <span class="plan-label" data-i18n="proLabel">Most popular</span>
-        <h2>Pro</h2>
-        <div class="price"><strong>$7</strong><span data-i18n="month">/ month</span></div>
-        <p data-i18n="proDesc">More room for products that are already gaining traction.</p>
-        <ul><li data-i18n="pro1">50 active APIs</li><li data-i18n="pro2">250,000 requests per API/month</li><li data-i18n="pro3">Drive, sheets and batches</li><li data-i18n="pro4">Excel export</li><li class="manual" data-i18n="pro5">Manual renewal + 24-hour grace</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-74J9AVSMN8W2S" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
-      </article>
+    <article class="pricing-plan">
+      <span class="plan-label" data-t="businessLabel">Teams</span><h2>Business</h2><div class="price"><strong>$25</strong><span data-t="month">/ month</span></div><p data-t="businessDesc">For teams with many endpoints, high monthly traffic and support needs.</p>
+      <ul><li data-t="business1">200 active APIs</li><li data-t="business2">1,000,000 requests per API/month</li><li data-t="business3">Everything in Pro</li><li data-t="business4">Custom quota configuration</li><li data-t="business5">Priority support</li><li class="manual" data-t="manual">Manual renewal</li></ul>
+      <div class="paypal-option"><p class="paypal-label" data-t="paypal">Pay with PayPal</p><div id="paypal-container-X24DMRW7A9G9Y" class="paypal-button-container"></div><span class="paypal-note" data-t="paypalNote">One-time payment · manual renewal</span></div>
+    </article>
+  </section>
 
-      <article class="pricing-plan">
-        <span class="plan-label" data-i18n="businessLabel">Teams</span>
-        <h2>Business</h2>
-        <div class="price"><strong>$25</strong><span data-i18n="month">/ month</span></div>
-        <p data-i18n="businessDesc">For teams that need higher limits and priority help.</p>
-        <ul><li data-i18n="business1">200 active APIs</li><li data-i18n="business2">1 million requests per API/month</li><li data-i18n="business3">Custom quotas</li><li data-i18n="business4">Priority support</li><li class="manual" data-i18n="manualRenewal">Manual renewal</li></ul>
-        <div class="paypal-option"><p class="paypal-label" data-i18n="paypalLabel">Pay with PayPal</p><div id="paypal-container-X24DMRW7A9G9Y" class="paypal-button-container"></div><span class="paypal-note" data-i18n="paypalNote">One-time payment · manual renewal</span></div>
-      </article>
-    </section>
+  <aside class="billing-banner"><strong data-t="billingTitle">Manual renewal. No surprise charges.</strong><p data-t="billingText">LittleAPI does not charge automatically. Paid access is confirmed after payment and renewed manually each month.</p><p data-t="graceText">Paid plans have a 24-hour grace period after the due date. Your API ID and endpoint URL remain unchanged.</p></aside>
 
-    <aside class="billing-banner" role="note">
-      <strong data-i18n="billingTitle">Manual renewal. No surprise charges.</strong>
-      <p data-i18n="billingText">LittleAPI does not charge automatically. During launch, paid access is activated manually after payment and renewed manually each month.</p>
-      <p data-i18n="graceText">If a paid plan reaches its due date, a 24-hour grace period gives you time to renew. Your API URL remains unchanged.</p>
-    </aside>
+  <section class="compare-section">
+    <p class="eyebrow" data-t="compareEye">PLAN COMPARISON</p><h2 data-t="compareTitle">Capacity grows without changing how you build.</h2>
+    <div class="compare-wrap"><table class="compare"><thead><tr><th data-t="feature">Feature</th><th data-t="freeName">Free</th><th data-t="initialName">Initial</th><th>Pro</th><th>Business</th></tr></thead><tbody>
+      <tr><td data-t="cmpApis">Active APIs</td><td>2</td><td>10</td><td>50</td><td>200</td></tr>
+      <tr><td data-t="cmpReq">Requests / API / month</td><td>5K</td><td>50K</td><td>250K</td><td>1M</td></tr>
+      <tr><td data-t="cmpWidget">Embeddable widget</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpColumns">Sheet + visible columns + order</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpPagination">Pagination, total pages and page jump</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpSearch">Whole-sheet widget search</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpCrud">Protected POST / PATCH / DELETE</td><td class="muted">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpDrive">Drive + sheet admin + batch</td><td class="muted">—</td><td class="muted">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpExcel">Excel export</td><td class="muted">—</td><td class="muted">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td data-t="cmpPriority">Priority support</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="yes">✓</td></tr>
+    </tbody></table></div>
+  </section>
 
-    <section class="pricing-section">
-      <h2 data-i18n="includedTitle">Every plan keeps the important parts simple.</h2>
-      <div class="benefits">
-        <article class="benefit"><strong data-i18n="benefit1Title">A stable endpoint</strong><p data-i18n="benefit1Text">Use littleapi.online/api/v1/{API_ID} from any language or platform.</p></article>
-        <article class="benefit"><strong data-i18n="benefit2Title">Your data stays in Google</strong><p data-i18n="benefit2Text">Sheets and Drive remain your source of truth and you control their permissions.</p></article>
-        <article class="benefit"><strong data-i18n="benefit3Title">Predictable limits</strong><p data-i18n="benefit3Text">When a quota is exhausted, the API returns 429 quota_exceeded and a reset date.</p></article>
-      </div>
-    </section>
+  <section class="pricing-section">
+    <h2 data-t="whyTitle">Built to keep the important parts simple.</h2>
+    <div class="benefits"><article class="benefit"><strong data-t="b1t">Stable endpoint</strong><p data-t="b1p">Your app keeps using littleapi.online/api/v1/{API_ID} as you grow or change plans.</p></article><article class="benefit"><strong data-t="b2t">Your data stays in Google</strong><p data-t="b2p">Sheets and Drive remain the source of truth. LittleAPI provides the API and presentation layer.</p></article><article class="benefit"><strong data-t="b3t">Permissions you can reason about</strong><p data-t="b3p">Separate public read, read/search and write operations, and use different API keys for different consumers.</p></article></div>
+  </section>
 
-    <section class="pricing-section">
-      <h2 data-i18n="faqTitle">Frequently asked questions</h2>
-      <div class="faq">
-        <details open><summary data-i18n="faq1q">Are payments automatic?</summary><p data-i18n="faq1a">No. Paid plans renew manually each month. You make the payment and the renewal is confirmed.</p></details>
-        <details><summary data-i18n="faq2q">What happens if I renew late?</summary><p data-i18n="faq2a">You have a 24-hour grace period after the due date. After that, paid capacity may pause until renewal is confirmed.</p></details>
-        <details><summary data-i18n="faq3q">What counts as a request?</summary><p data-i18n="faq3a">Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.</p></details>
-        <details><summary data-i18n="faq4q">Can I change plans later?</summary><p data-i18n="faq4a">Yes. Changing a plan changes the configured capacity, not the URL of your API.</p></details>
-        <details><summary data-i18n="faq5q">Do API consumers need a LittleAPI account?</summary><p data-i18n="faq5a">No. Public reads work without a LittleAPI account. Only the owner signs in to manage APIs and usage.</p></details>
-      </div>
-    </section>
+  <section class="pricing-section">
+    <h2 data-t="faqTitle">Frequently asked questions</h2>
+    <div class="faq">
+      <details open><summary data-t="q1">Are the widget features paid-only?</summary><p data-t="a1">No. The embeddable widget, sheet/column selection, pagination and whole-sheet search are part of the LittleAPI workflow. Paid tiers primarily increase capacity and unlock advanced write/Drive features as shown above.</p></details>
+      <details><summary data-t="q2">Does the iframe expose my API key?</summary><p data-t="a2">No. Public widgets never include X-API-Key. Use them only for data you intentionally expose through Public read.</p></details>
+      <details><summary data-t="q3">What counts as a request?</summary><p data-t="a3">Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.</p></details>
+      <details><summary data-t="q4">Are payments automatic?</summary><p data-t="a4">No. Paid plans renew manually each month, so there are no automatic renewal charges.</p></details>
+      <details><summary data-t="q5">Can I change plans without changing my API URL?</summary><p data-t="a5">Yes. Plan changes affect configured capacity, not your API ID or endpoint URL.</p></details>
+    </div>
+  </section>
 
-    <section class="pricing-bottom">
-      <p class="eyebrow" data-i18n="bottomEyebrow">BUILD SOMETHING USEFUL</p>
-      <h2 data-i18n="bottomTitle">Your first API can be live today.</h2>
-      <p data-i18n="bottomText">Connect a sheet, publish an endpoint and start integrating.</p>
-      <a href="app.html" data-i18n="bottomCta">Create a free API →</a>
-    </section>
-  </main>
+  <section class="pricing-bottom"><p class="eyebrow" data-t="bottomEye">BUILD WITH YOUR DATA</p><h2 data-t="bottomTitle">Publish an API and a live widget from the same sheet.</h2><p data-t="bottomText">Start free, validate the workflow, then move up when your traffic or automation needs grow.</p><a href="app.html" data-t="bottomCta">Create a free API →</a></section>
+</main>
 
-  <footer><span>© 2026 LittleAPI</span><span><a href="docs/" data-i18n="navDocs">Documentation</a> · <a href="privacy.html" data-i18n="privacy">Privacy</a> · <a href="terms.html" data-i18n="terms">Terms</a></span></footer>
+<footer><span>© 2026 LittleAPI</span><span><a href="docs/" data-t="navDocs">Documentation</a> · <a href="docs/widgets.html" data-t="navWidgets">Widgets</a> · <a href="privacy.html" data-t="privacy">Privacy</a> · <a href="terms.html" data-t="terms">Terms</a></span></footer>
 
-  <script>
-  (()=>{
-    const paypalClient="BAAywmESI_Yz_zjx8qtPYEnv56FiwUQGxgCWEcbP-e4fTtWeAgFoQc3tdh2doev_qf_dvV8LqRPAPLcvKg";
-    const paypalButtons=["T7VT2GJLWSAAQ","74J9AVSMN8W2S","X24DMRW7A9G9Y"];
-    const t={
-      en:{navHow:"How it works",navDocs:"Documentation",navApp:"App",languageLabel:"Language",startFree:"Start free",heroEyebrow:"SIMPLE PRICING · MANUAL RENEWAL",heroTitle:"Start small. Scale when your API does.",heroText:"Choose the capacity you need. Paid plans renew manually each month, so you decide when to continue and there are no automatic charges.",freeLabel:"Explore",freeName:"Free",forever:"/ forever",freeDesc:"Publish your first sheets and learn the workflow.",free1:"2 active APIs",free2:"5,000 requests per API/month",free3:"Public JSON reads",free4:"Documentation and OpenAPI",freeCta:"Start for free",initialLabel:"Launch",initialName:"Initial",month:"/ month",initialDesc:"For small sites, prototypes and useful automations.",initial1:"10 active APIs",initial2:"50,000 requests per API/month",initial3:"CRUD with X-API-Key",initial4:"CSV and cache",manualRenewal:"Manual renewal",paypalLabel:"Pay with PayPal",paypalNote:"One-time payment · manual renewal",proLabel:"Most popular",proDesc:"More room for products that are already gaining traction.",pro1:"50 active APIs",pro2:"250,000 requests per API/month",pro3:"Drive, sheets and batches",pro4:"Excel export",pro5:"Manual renewal + 24-hour grace",businessLabel:"Teams",businessDesc:"For teams that need higher limits and priority help.",business1:"200 active APIs",business2:"1 million requests per API/month",business3:"Custom quotas",business4:"Priority support",billingTitle:"Manual renewal. No surprise charges.",billingText:"LittleAPI does not charge automatically. During launch, paid access is activated manually after payment and renewed manually each month.",graceText:"If a paid plan reaches its due date, a 24-hour grace period gives you time to renew. Your API URL remains unchanged.",includedTitle:"Every plan keeps the important parts simple.",benefit1Title:"A stable endpoint",benefit1Text:"Use littleapi.online/api/v1/{API_ID} from any language or platform.",benefit2Title:"Your data stays in Google",benefit2Text:"Sheets and Drive remain your source of truth and you control their permissions.",benefit3Title:"Predictable limits",benefit3Text:"When a quota is exhausted, the API returns 429 quota_exceeded and a reset date.",faqTitle:"Frequently asked questions",faq1q:"Are payments automatic?",faq1a:"No. Paid plans renew manually each month. You make the payment and the renewal is confirmed.",faq2q:"What happens if I renew late?",faq2a:"You have a 24-hour grace period after the due date. After that, paid capacity may pause until renewal is confirmed.",faq3q:"What counts as a request?",faq3a:"Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.",faq4q:"Can I change plans later?",faq4a:"Yes. Changing a plan changes the configured capacity, not the URL of your API.",faq5q:"Do API consumers need a LittleAPI account?",faq5a:"No. Public reads work without a LittleAPI account. Only the owner signs in to manage APIs and usage.",bottomEyebrow:"BUILD SOMETHING USEFUL",bottomTitle:"Your first API can be live today.",bottomText:"Connect a sheet, publish an endpoint and start integrating.",bottomCta:"Create a free API →",privacy:"Privacy",terms:"Terms"},
-      es:{navHow:"Cómo funciona",navDocs:"Documentación",navApp:"Aplicación",languageLabel:"Idioma",startFree:"Empezar gratis",heroEyebrow:"PRECIOS SIMPLES · RENOVACIÓN MANUAL",heroTitle:"Empieza pequeño. Crece cuando tu API lo haga.",heroText:"Elige la capacidad que necesitas. Los planes pagos se renuevan manualmente cada mes: tú decides cuándo continuar y no existen cobros automáticos.",freeLabel:"Explorar",freeName:"Gratis",forever:"/ siempre",freeDesc:"Publica tus primeras hojas y aprende el flujo.",free1:"2 APIs activas",free2:"5.000 consultas por API/mes",free3:"Lecturas JSON públicas",free4:"Documentación y OpenAPI",freeCta:"Empezar gratis",initialLabel:"Lanzar",initialName:"Inicial",month:"/ mes",initialDesc:"Para sitios pequeños, prototipos y automatizaciones útiles.",initial1:"10 APIs activas",initial2:"50.000 consultas por API/mes",initial3:"CRUD con X-API-Key",initial4:"CSV y caché",manualRenewal:"Renovación manual",paypalLabel:"Pagar con PayPal",paypalNote:"Pago único · renovación manual",proLabel:"Más elegido",proDesc:"Más espacio para productos que ya están creciendo.",pro1:"50 APIs activas",pro2:"250.000 consultas por API/mes",pro3:"Drive, pestañas y lotes",pro4:"Exportación Excel",pro5:"Renovación manual + 24 h de gracia",businessLabel:"Equipos",businessDesc:"Para equipos que necesitan límites altos y ayuda prioritaria.",business1:"200 APIs activas",business2:"1 millón de consultas por API/mes",business3:"Cuotas personalizadas",business4:"Soporte prioritario",billingTitle:"Renovación manual. Sin cobros sorpresa.",billingText:"LittleAPI no cobra automáticamente. Durante el lanzamiento, el acceso de pago se activa manualmente después del pago y se renueva manualmente cada mes.",graceText:"Si un plan de pago llega a su vencimiento, tienes 24 horas de gracia para renovarlo. La URL de tu API no cambia.",includedTitle:"Todos los planes mantienen simple lo importante.",benefit1Title:"Un endpoint estable",benefit1Text:"Usa littleapi.online/api/v1/{API_ID} desde cualquier lenguaje o plataforma.",benefit2Title:"Tus datos siguen en Google",benefit2Text:"Sheets y Drive siguen siendo tu fuente de datos y tú controlas sus permisos.",benefit3Title:"Límites predecibles",benefit3Text:"Cuando la cuota se agota, la API devuelve 429 quota_exceeded y una fecha de reinicio.",faqTitle:"Preguntas frecuentes",faq1q:"¿Los pagos son automáticos?",faq1a:"No. Los planes pagos se renuevan manualmente cada mes. Realizas el pago y se confirma la renovación.",faq2q:"¿Qué ocurre si renuevo tarde?",faq2a:"Tienes 24 horas de gracia después del vencimiento. Luego la capacidad de pago puede pausarse hasta confirmar la renovación.",faq3q:"¿Qué cuenta como una consulta?",faq3a:"Cada request a una API publicada cuenta una vez. Las solicitudes CORS de preflight no consumen cuota. Los contadores se reinician al comenzar cada mes UTC.",faq4q:"¿Puedo cambiar de plan después?",faq4a:"Sí. Cambiar de plan modifica la capacidad configurada, no la URL de tu API.",faq5q:"¿Los consumidores de mi API necesitan cuenta?",faq5a:"No. Las lecturas públicas funcionan sin cuenta de LittleAPI. Solo el propietario inicia sesión para administrar APIs y consumo.",bottomEyebrow:"CREA ALGO ÚTIL",bottomTitle:"Tu primera API puede estar disponible hoy.",bottomText:"Conecta una hoja, publica un endpoint y empieza a integrar.",bottomCta:"Crear una API gratis →",privacy:"Privacidad",terms:"Términos"}
-    };
-    const selector=document.querySelector('#language-select');
-    const apply=lang=>{const language=lang==='es'?'es':'en';document.documentElement.lang=language;document.title=language==='en'?'LittleAPI · Monthly plans':'LittleAPI · Planes mensuales';document.querySelectorAll('[data-i18n]').forEach(node=>{const v=t[language][node.dataset.i18n];if(v!==undefined)node.textContent=v});selector.value=language;localStorage.setItem('littleapi:language',language)};
-    apply(localStorage.getItem('littleapi:language')||'en');
-    selector.addEventListener('change',()=>apply(selector.value));
-    const sdk=document.createElement('script');sdk.src='https://www.paypal.com/sdk/js?client-id='+paypalClient+'&components=hosted-buttons&disable-funding=venmo&currency=USD';sdk.async=true;sdk.onload=()=>paypalButtons.forEach(id=>{const c=document.querySelector('#paypal-container-'+id);if(c&&window.paypal?.HostedButtons)window.paypal.HostedButtons({hostedButtonId:id}).render('#paypal-container-'+id)});document.head.appendChild(sdk);
-  })();
-  </script>
+<script>
+(()=>{
+  const paypalClient="BAAywmESI_Yz_zjx8qtPYEnv56FiwUQGxgCWEcbP-e4fTtWeAgFoQc3tdh2doev_qf_dvV8LqRPAPLcvKg";
+  const paypalButtons=["T7VT2GJLWSAAQ","74J9AVSMN8W2S","X24DMRW7A9G9Y"];
+  const t={
+    en:{navHow:'How it works',navDocs:'Documentation',navWidgets:'Widgets',navApp:'App',language:'Language',startFree:'Start free',heroEye:'REST API + LIVE WIDGETS',heroTitle:'Start free. <span>Pay when your API grows.</span>',heroText:'Every plan starts with the same simple workflow: connect Google Sheets, publish data and embed it. Paid plans add substantially more capacity and advanced operations.',includedEye:'INCLUDED FROM THE START',includedTitle:'The new widget experience is part of LittleAPI.',includedText:'Choose a workbook tab, visible columns and their order, set rows per page, jump directly to a page and search the whole sheet without exposing an API key in the iframe.',f1t:'Embeddable widgets',f1p:'Table or cards, light/dark/auto theme and generated iframe code.',f2t:'Column control',f2p:'Select exactly which columns appear and rearrange their visible order.',f3t:'Smart pagination',f3p:'Numeric rows per page, total pages, Previous/Next and direct page jump.',f4t:'Whole-sheet search',f4p:'Search beyond the current page while keeping results paginated.',freeLabel:'Explore',freeName:'Free',forever:'/ forever',freeDesc:'For learning the workflow, publishing small datasets and testing embeds.',free1:'2 active APIs',free2:'5,000 requests per API/month',free3:'Public JSON reads + query endpoint',free4:'Embeddable widget + pagination + whole-sheet search',free5:'OpenAPI and documentation',freeCta:'Start for free',initialLabel:'Launch',initialName:'Initial',month:'/ month',initialDesc:'For useful sites, prototypes, forms and small automations that need writes.',initial1:'10 active APIs',initial2:'50,000 requests per API/month',initial3:'Secure CRUD with X-API-Key',initial4:'Public/private read permissions',initial5:'CSV and cache capabilities',manual:'Manual renewal',paypal:'Pay with PayPal',paypalNote:'One-time payment · manual renewal',proLabel:'Most popular',proDesc:'For products and internal tools that need much more traffic and Google workspace automation.',pro1:'50 active APIs',pro2:'250,000 requests per API/month',pro3:'Google Drive, sheet management and batch operations',pro4:'Excel export',pro5:'Advanced permissions and additional API keys',pro6:'Manual renewal + 24-hour grace',businessLabel:'Teams',businessDesc:'For teams with many endpoints, high monthly traffic and support needs.',business1:'200 active APIs',business2:'1,000,000 requests per API/month',business3:'Everything in Pro',business4:'Custom quota configuration',business5:'Priority support',billingTitle:'Manual renewal. No surprise charges.',billingText:'LittleAPI does not charge automatically. Paid access is confirmed after payment and renewed manually each month.',graceText:'Paid plans have a 24-hour grace period after the due date. Your API ID and endpoint URL remain unchanged.',compareEye:'PLAN COMPARISON',compareTitle:'Capacity grows without changing how you build.',feature:'Feature',cmpApis:'Active APIs',cmpReq:'Requests / API / month',cmpWidget:'Embeddable widget',cmpColumns:'Sheet + visible columns + order',cmpPagination:'Pagination, total pages and page jump',cmpSearch:'Whole-sheet widget search',cmpCrud:'Protected POST / PATCH / DELETE',cmpDrive:'Drive + sheet admin + batch',cmpExcel:'Excel export',cmpPriority:'Priority support',whyTitle:'Built to keep the important parts simple.',b1t:'Stable endpoint',b1p:'Your app keeps using littleapi.online/api/v1/{API_ID} as you grow or change plans.',b2t:'Your data stays in Google',b2p:'Sheets and Drive remain the source of truth. LittleAPI provides the API and presentation layer.',b3t:'Permissions you can reason about',b3p:'Separate public read, read/search and write operations, and use different API keys for different consumers.',faqTitle:'Frequently asked questions',q1:'Are the widget features paid-only?',a1:'No. The embeddable widget, sheet/column selection, pagination and whole-sheet search are part of the LittleAPI workflow. Paid tiers primarily increase capacity and unlock advanced write/Drive features as shown above.',q2:'Does the iframe expose my API key?',a2:'No. Public widgets never include X-API-Key. Use them only for data you intentionally expose through Public read.',q3:'What counts as a request?',a3:'Each request to a published API counts once. CORS preflight requests do not consume quota. Counters reset at the start of each UTC month.',q4:'Are payments automatic?',a4:'No. Paid plans renew manually each month, so there are no automatic renewal charges.',q5:'Can I change plans without changing my API URL?',a5:'Yes. Plan changes affect configured capacity, not your API ID or endpoint URL.',bottomEye:'BUILD WITH YOUR DATA',bottomTitle:'Publish an API and a live widget from the same sheet.',bottomText:'Start free, validate the workflow, then move up when your traffic or automation needs grow.',bottomCta:'Create a free API →',privacy:'Privacy',terms:'Terms'},
+    es:{navHow:'Cómo funciona',navDocs:'Documentación',navWidgets:'Widgets',navApp:'Aplicación',language:'Idioma',startFree:'Empezar gratis',heroEye:'API REST + WIDGETS EN VIVO',heroTitle:'Empieza gratis. <span>Paga cuando tu API crezca.</span>',heroText:'Todos los planes parten del mismo flujo sencillo: conecta Google Sheets, publica datos e incrústalos. Los planes pagos añaden mucha más capacidad y operaciones avanzadas.',includedEye:'INCLUIDO DESDE EL INICIO',includedTitle:'La nueva experiencia de widgets forma parte de LittleAPI.',includedText:'Elige una pestaña del libro, columnas visibles y su orden, define filas por página, salta directamente a una página y busca en toda la hoja sin exponer una API key en el iframe.',f1t:'Widgets embebibles',f1p:'Tabla o tarjetas, tema claro/oscuro/automático y código iframe generado.',f2t:'Control de columnas',f2p:'Selecciona exactamente qué columnas aparecen y reorganiza su orden visible.',f3t:'Paginación inteligente',f3p:'Filas por página numéricas, total de páginas, Anterior/Siguiente y salto directo.',f4t:'Búsqueda en toda la hoja',f4p:'Busca más allá de la página actual manteniendo los resultados paginados.',freeLabel:'Explorar',freeName:'Gratis',forever:'/ siempre',freeDesc:'Para aprender el flujo, publicar conjuntos pequeños y probar widgets.',free1:'2 APIs activas',free2:'5.000 consultas por API/mes',free3:'Lecturas JSON públicas + endpoint de consultas',free4:'Widget embebible + paginación + búsqueda en toda la hoja',free5:'OpenAPI y documentación',freeCta:'Empezar gratis',initialLabel:'Lanzar',initialName:'Inicial',month:'/ mes',initialDesc:'Para sitios útiles, prototipos, formularios y automatizaciones pequeñas que necesitan escritura.',initial1:'10 APIs activas',initial2:'50.000 consultas por API/mes',initial3:'CRUD seguro con X-API-Key',initial4:'Permisos de lectura pública/privada',initial5:'Capacidades de CSV y caché',manual:'Renovación manual',paypal:'Pagar con PayPal',paypalNote:'Pago único · renovación manual',proLabel:'Más elegido',proDesc:'Para productos y herramientas internas que necesitan mucho más tráfico y automatización con Google.',pro1:'50 APIs activas',pro2:'250.000 consultas por API/mes',pro3:'Google Drive, administración de pestañas y operaciones batch',pro4:'Exportación Excel',pro5:'Permisos avanzados y claves API adicionales',pro6:'Renovación manual + 24 horas de gracia',businessLabel:'Equipos',businessDesc:'Para equipos con muchos endpoints, alto tráfico mensual y necesidades de soporte.',business1:'200 APIs activas',business2:'1.000.000 de consultas por API/mes',business3:'Todo lo incluido en Pro',business4:'Configuración de cuotas personalizadas',business5:'Soporte prioritario',billingTitle:'Renovación manual. Sin cobros sorpresa.',billingText:'LittleAPI no cobra automáticamente. El acceso de pago se confirma después del pago y se renueva manualmente cada mes.',graceText:'Los planes pagos tienen 24 horas de gracia después del vencimiento. Tu API ID y la URL del endpoint no cambian.',compareEye:'COMPARAR PLANES',compareTitle:'La capacidad crece sin cambiar tu forma de construir.',feature:'Función',cmpApis:'APIs activas',cmpReq:'Consultas / API / mes',cmpWidget:'Widget embebible',cmpColumns:'Pestaña + columnas visibles + orden',cmpPagination:'Paginación, total de páginas y salto directo',cmpSearch:'Búsqueda del widget en toda la hoja',cmpCrud:'POST / PATCH / DELETE protegidos',cmpDrive:'Drive + administración de pestañas + batch',cmpExcel:'Exportación Excel',cmpPriority:'Soporte prioritario',whyTitle:'Diseñado para mantener simple lo importante.',b1t:'Endpoint estable',b1p:'Tu app sigue usando littleapi.online/api/v1/{API_ID} aunque crezcas o cambies de plan.',b2t:'Tus datos siguen en Google',b2p:'Sheets y Drive siguen siendo la fuente de verdad. LittleAPI añade la capa API y de presentación.',b3t:'Permisos fáciles de entender',b3p:'Separa lectura pública, lectura/búsqueda y escritura, y usa claves diferentes para consumidores distintos.',faqTitle:'Preguntas frecuentes',q1:'¿Las funciones del widget son solo de pago?',a1:'No. El widget embebible, la selección de pestaña/columnas, la paginación y la búsqueda en toda la hoja forman parte del flujo de LittleAPI. Los niveles pagos aumentan principalmente la capacidad y desbloquean funciones avanzadas de escritura/Drive según la tabla.',q2:'¿El iframe expone mi API key?',a2:'No. Los widgets públicos nunca incluyen X-API-Key. Úsalos únicamente para datos que quieras exponer mediante Lectura pública.',q3:'¿Qué cuenta como una consulta?',a3:'Cada solicitud a una API publicada cuenta una vez. Las solicitudes CORS de preflight no consumen cuota. Los contadores se reinician al comenzar cada mes UTC.',q4:'¿Los pagos son automáticos?',a4:'No. Los planes pagos se renuevan manualmente cada mes, por lo que no existen cobros automáticos de renovación.',q5:'¿Puedo cambiar de plan sin cambiar la URL de mi API?',a5:'Sí. El cambio de plan modifica la capacidad configurada, no tu API ID ni la URL del endpoint.',bottomEye:'CONSTRUYE CON TUS DATOS',bottomTitle:'Publica una API y un widget en vivo desde la misma hoja.',bottomText:'Empieza gratis, valida el flujo y sube de plan cuando crezcan el tráfico o tus necesidades de automatización.',bottomCta:'Crear una API gratis →',privacy:'Privacidad',terms:'Términos'}
+  };
+  const selector=document.querySelector('#language-select');
+  const apply=lang=>{const language=lang==='es'?'es':'en';document.documentElement.lang=language;document.title=language==='es'?'LittleAPI · Planes':'LittleAPI · Plans';document.querySelectorAll('[data-t]').forEach(n=>{const v=t[language][n.dataset.t];if(v!==undefined)n.textContent=v});document.querySelectorAll('[data-html]').forEach(n=>{const v=t[language][n.dataset.html];if(v!==undefined)n.innerHTML=v});selector.value=language;localStorage.setItem('littleapi:language',language)};
+  apply(localStorage.getItem('littleapi:language')||'en');selector.addEventListener('change',()=>apply(selector.value));
+  const sdk=document.createElement('script');sdk.src='https://www.paypal.com/sdk/js?client-id='+paypalClient+'&components=hosted-buttons&disable-funding=venmo&currency=USD';sdk.async=true;sdk.onload=()=>paypalButtons.forEach(id=>{const c=document.querySelector('#paypal-container-'+id);if(c&&window.paypal?.HostedButtons)window.paypal.HostedButtons({hostedButtonId:id}).render('#paypal-container-'+id)});document.head.appendChild(sdk);
+})();
+</script>
 </body>
 </html>
