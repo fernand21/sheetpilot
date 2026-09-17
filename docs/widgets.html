@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="LittleAPI embeddable widget guide: sheets, columns, pagination, page jump, whole-sheet search and security." />
+  <meta name="theme-color" content="#071512" />
+  <title>LittleAPI — Embeddable widgets</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .widget-doc-main{max-width:1160px;margin:0 auto;padding:48px 22px 80px}.widget-doc-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:26px;align-items:center}.widget-doc-hero h1{font-size:clamp(2.5rem,5vw,5.4rem);line-height:.95;margin:8px 0 18px}.widget-doc-hero h1 span{color:var(--lime)}.widget-doc-hero .lead{font-size:1.06rem;line-height:1.75}.demo-box,.doc-card,.security-box{border:1px solid var(--line);border-radius:18px;background:#0b211c}.demo-box{padding:18px}.demo-box .mini-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.demo-box .mini-table{overflow:auto;border:1px solid #275247;border-radius:12px}.demo-box table{width:100%;border-collapse:collapse;font-size:.8rem}.demo-box th,.demo-box td{padding:9px 10px;border-bottom:1px solid #244a40;text-align:left}.demo-box th{color:var(--muted)}.demo-nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px}.demo-nav span,.demo-nav b{padding:6px 9px;border:1px solid #2d6255;border-radius:8px}.doc-section{margin-top:68px;scroll-margin-top:95px}.doc-section h2{font-size:clamp(1.8rem,3vw,3rem);margin:8px 0 12px}.doc-section>p{color:var(--muted);line-height:1.7}.doc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.doc-card{padding:18px}.doc-card .kicker{color:var(--lime);font-size:.7rem;font-weight:900;letter-spacing:.08em}.doc-card h3{margin:8px 0}.doc-card p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.55}.code{margin:13px 0;padding:14px;border:1px solid #28564a;border-radius:12px;background:#061411;color:#d8ff7d;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}.steps{display:grid;gap:10px}.step{display:grid;grid-template-columns:42px minmax(0,1fr);gap:12px;padding:15px;border:1px solid var(--line);border-radius:14px;background:#0a201a}.step .num{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#123a31;color:var(--lime);font-weight:900}.step strong{display:block;margin-bottom:4px}.step p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.5}.option-table{width:100%;border-collapse:collapse;margin-top:16px}.option-table th,.option-table td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.option-table th{color:var(--muted);font-size:.72rem;text-transform:uppercase}.option-table code{color:var(--lime)}.security-box{padding:18px;border-color:#745b31;background:#241d10}.security-box strong{display:block;margin-bottom:7px;color:#ffe4b0}.security-box p{margin:0;color:#ead7a7;line-height:1.55}.doc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.doc-actions a{padding:10px 13px;border-radius:10px;text-decoration:none;font-weight:850}.doc-actions .primary{background:var(--lime);color:#0b211c}.doc-actions .secondary{border:1px solid var(--line);color:#d9eee8}.top-index{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 0}.top-index a{padding:7px 10px;border:1px solid #2e6154;border-radius:999px;color:#cfe8e1;text-decoration:none;font-size:.75rem;font-weight:800}.small-note{color:var(--muted);font-size:.78rem;line-height:1.5}
+    @media(max-width:850px){.widget-doc-hero,.doc-grid{grid-template-columns:1fr}.doc-grid{gap:10px}}
+  </style>
+</head>
+<body class="docs-page">
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-mark">↗</span><span>Little<span class="brand-accent">API</span></span></a>
+  <nav><a href="./" data-t="docs">Documentation</a><a href="../pricing.html" data-t="pricing">Pricing</a><a href="../app.html" data-t="app">App</a></nav>
+  <div class="header-actions"><label class="language-control"><span data-t="language">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label></div>
+</header>
+
+<main class="widget-doc-main">
+  <section class="widget-doc-hero">
+    <div>
+      <p class="eyebrow" data-t="eyebrow">EMBEDDABLE DATA</p>
+      <h1 data-html="title">Turn a sheet into a <span>live widget.</span></h1>
+      <p class="lead" data-t="lead">Choose a workbook sheet, choose exactly which columns appear and in what order, then paste one iframe into any website.</p>
+      <div class="top-index"><a href="#create" data-t="navCreate">Create</a><a href="#columns" data-t="navColumns">Columns</a><a href="#pagination" data-t="navPagination">Pagination</a><a href="#search" data-t="navSearch">Search</a><a href="#security" data-t="navSecurity">Security</a></div>
+    </div>
+    <div class="demo-box" aria-label="Widget preview">
+      <div class="mini-head"><div><strong>Cartera</strong><div class="small-note" data-t="live">Live data · COORDENADAS</div></div><span>↗</span></div>
+      <div class="mini-table"><table><thead><tr><th>Nombre</th><th>Fecha</th><th>Valor</th></tr></thead><tbody><tr><td>Ana</td><td>2026-09-17</td><td>125.40</td></tr><tr><td>Luis</td><td>2026-09-16</td><td>88.10</td></tr><tr><td>María</td><td>2026-09-15</td><td>210.00</td></tr></tbody></table></div>
+      <div class="demo-nav"><span data-t="prev">Previous</span><b data-t="pageDemo">Page 4 of 12</b><span data-t="next">Next</span></div>
+    </div>
+  </section>
+
+  <section class="doc-section" id="create">
+    <p class="eyebrow" data-t="createEye">CREATE THE WIDGET</p><h2 data-t="createTitle">From View endpoint to iframe</h2>
+    <div class="steps">
+      <div class="step"><span class="num">1</span><div><strong data-t="s1t">Open View endpoint</strong><p data-t="s1p">Open the API you already published from the LittleAPI dashboard.</p></div></div>
+      <div class="step"><span class="num">2</span><div><strong data-t="s2t">Enable public read</strong><p data-t="s2p">The embeddable widget is public by design. Read permission and Public read must be enabled.</p></div></div>
+      <div class="step"><span class="num">3</span><div><strong data-t="s3t">Choose sheet and columns</strong><p data-t="s3p">LittleAPI reads workbook tabs and the first-row headers so you can select fields by name.</p></div></div>
+      <div class="step"><span class="num">4</span><div><strong data-t="s4t">Copy the iframe</strong><p data-t="s4p">Paste the generated code in WordPress, GitHub Pages, WebBuilder or any page that accepts HTML iframes.</p></div></div>
+    </div>
+    <pre class="code">&lt;iframe
+  src="https://littleapi.online/embed.html?api=YOUR_API_ID&sheet=Cartera&col=D&col=B&col=C&page_size=25&lang=es&title=Cartera"
+  title="Cartera"
+  loading="lazy"
+  style="width:100%;height:520px;border:0;border-radius:16px;overflow:hidden"
+  referrerpolicy="strict-origin-when-cross-origin"&gt;
+&lt;/iframe&gt;</pre>
+  </section>
+
+  <section class="doc-section" id="columns">
+    <p class="eyebrow" data-t="columnsEye">SHEET + FIELDS</p><h2 data-t="columnsTitle">Show only what your visitor should see</h2>
+    <div class="doc-grid">
+      <article class="doc-card"><span class="kicker">SHEET</span><h3 data-t="sheetTitle">Choose a workbook tab</h3><p data-t="sheetText">The generator lists the Google Sheets tabs available in the connected workbook.</p></article>
+      <article class="doc-card"><span class="kicker">COLUMNS</span><h3 data-t="visibleTitle">Choose visible columns</h3><p data-t="visibleText">If the sheet contains ID, Date, Value, Name, you can publish only Name, Date and Value.</p></article>
+      <article class="doc-card"><span class="kicker">ORDER</span><h3 data-t="orderTitle">Reorder without changing Sheets</h3><p data-t="orderText">Use the up/down controls to publish Name, Date, Value even if the physical sheet order is ID, Date, Value, Name.</p></article>
+    </div>
+    <pre class="code" data-t="columnExample">Sheet: ID | Date | Value | Name
+Widget: Name | Date | Value</pre>
+    <p class="small-note" data-t="lettersNote">The generated iframe stores Google column letters internally. Visitors do not need to know or use those letters.</p>
+  </section>
+
+  <section class="doc-section" id="pagination">
+    <p class="eyebrow" data-t="pageEye">LARGE SHEETS</p><h2 data-t="pageTitle">Pagination that stays lightweight</h2>
+    <p data-t="pageLead">Rows per page is numeric and defaults to 25. You can choose another value up to 100. The widget requests only the block it needs instead of downloading the entire sheet.</p>
+    <div class="doc-grid">
+      <article class="doc-card"><span class="kicker">25</span><h3 data-t="rowsTitle">Rows per page</h3><p data-t="rowsText">Set 10, 25, 50 or another number. New widgets use 25 by default.</p></article>
+      <article class="doc-card"><span class="kicker">1 / 12</span><h3 data-t="totalTitle">Current page / total pages</h3><p data-t="totalText">The widget calculates the total and shows Page 1 of 12, Page 4 of 12, and so on.</p></article>
+      <article class="doc-card"><span class="kicker">30 ↵</span><h3 data-t="jumpTitle">Jump directly</h3><p data-t="jumpText">Type page 30 and press Enter instead of clicking Next twenty-nine times.</p></article>
+    </div>
+    <pre class="code">page_size=25
+
+Previous   Page [ 4 ] of 12   Next</pre>
+    <p class="small-note" data-t="efficientNote">For normal browsing, LittleAPI uses LIMIT + OFFSET and asks for only one extra row when it needs to know whether another page exists.</p>
+  </section>
+
+  <section class="doc-section" id="search">
+    <p class="eyebrow" data-t="searchEye">WHOLE-SHEET SEARCH</p><h2 data-t="searchTitle">Search beyond the current page</h2>
+    <p data-t="searchLead">The search box is not a browser-only filter. It scans the whole selected sheet progressively, so a match on row 800 or row 5,000 can still appear even when the visitor started on page 1.</p>
+    <div class="doc-grid">
+      <article class="doc-card"><span class="kicker">GLOBAL</span><h3 data-t="scanTitle">Scans the selected sheet</h3><p data-t="scanText">Search checks the fields being queried for the widget, not just the 25 rows currently visible.</p></article>
+      <article class="doc-card"><span class="kicker">200</span><h3 data-t="batchTitle">Progressive batches</h3><p data-t="batchText">Search reads blocks progressively instead of asking the Edge Function to hold the full sheet in memory.</p></article>
+      <article class="doc-card"><span class="kicker">25</span><h3 data-t="resultTitle">Search results stay paginated</h3><p data-t="resultText">If a term has many matches, the results continue in pages using the same navigation.</p></article>
+    </div>
+  </section>
+
+  <section class="doc-section" id="options">
+    <p class="eyebrow">URL PARAMETERS</p><h2 data-t="optionsTitle">What the generated widget URL contains</h2>
+    <div style="overflow:auto"><table class="option-table"><thead><tr><th data-t="parameter">Parameter</th><th data-t="meaning">Meaning</th><th data-t="example">Example</th></tr></thead><tbody>
+      <tr><td><code>api</code></td><td data-t="optApi">Published LittleAPI ID.</td><td><code>api=YOUR_API_ID</code></td></tr>
+      <tr><td><code>sheet</code></td><td data-t="optSheet">Workbook tab to display.</td><td><code>sheet=Cartera</code></td></tr>
+      <tr><td><code>col</code></td><td data-t="optCol">Selected column; repeated in display order.</td><td><code>col=D&col=B&col=C</code></td></tr>
+      <tr><td><code>page_size</code></td><td data-t="optPage">Rows shown on each page.</td><td><code>page_size=25</code></td></tr>
+      <tr><td><code>view</code></td><td data-t="optView">Table or cards.</td><td><code>view=table</code></td></tr>
+      <tr><td><code>theme</code></td><td data-t="optTheme">Auto, dark or light.</td><td><code>theme=auto</code></td></tr>
+      <tr><td><code>lang</code></td><td data-t="optLang">Widget language.</td><td><code>lang=es</code></td></tr>
+      <tr><td><code>title</code></td><td data-t="optTitle">Visible widget title.</td><td><code>title=Cartera</code></td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="doc-section" id="security">
+    <p class="eyebrow" data-t="securityEye">SECURITY</p><h2 data-t="securityTitle">The iframe never contains your private API key</h2>
+    <div class="security-box"><strong data-t="securityStrong">Embeddable widgets require Public read.</strong><p data-t="securityText">LittleAPI does not place X-API-Key inside the iframe. Keep write access, Drive operations and private reads behind API keys and the permission controls in View endpoint.</p></div>
+    <div class="doc-grid" style="margin-top:12px">
+      <article class="doc-card"><span class="kicker">READ</span><h3 data-t="publicTitle">Public widget</h3><p data-t="publicText">Use it for information you intentionally want visitors to read.</p></article>
+      <article class="doc-card"><span class="kicker">KEYS</span><h3 data-t="keysTitle">Additional API keys</h3><p data-t="keysText">Create separate keys for Postman, apps or automations and give each one only the permissions it needs.</p></article>
+      <article class="doc-card"><span class="kicker">403</span><h3 data-t="denyTitle">Permission enforcement</h3><p data-t="denyText">A key without a required operation should receive permission_denied instead of silently gaining access.</p></article>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <p class="eyebrow" data-t="nextEye">NEXT</p><h2 data-t="nextTitle">Use the widget and REST API together</h2><p data-t="nextText">The widget is the fast display layer. The REST API remains available for JavaScript, Python, Postman, mobile apps and automations.</p>
+    <div class="doc-actions"><a class="primary" href="../app.html" data-t="openApp">Open LittleAPI</a><a class="secondary" href="./" data-t="fullDocs">Full API documentation</a><a class="secondary" href="../pricing.html" data-t="plans">Plans</a></div>
+  </section>
+</main>
+
+<footer><span>© 2026 LittleAPI</span><span><a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></span></footer>
+<script>
+(() => {
+  const t={
+    en:{docs:'Documentation',pricing:'Pricing',app:'App',language:'Language',eyebrow:'EMBEDDABLE DATA',title:'Turn a sheet into a <span>live widget.</span>',lead:'Choose a workbook sheet, choose exactly which columns appear and in what order, then paste one iframe into any website.',navCreate:'Create',navColumns:'Columns',navPagination:'Pagination',navSearch:'Search',navSecurity:'Security',live:'Live data · COORDINATES',prev:'Previous',pageDemo:'Page 4 of 12',next:'Next',createEye:'CREATE THE WIDGET',createTitle:'From View endpoint to iframe',s1t:'Open View endpoint',s1p:'Open the API you already published from the LittleAPI dashboard.',s2t:'Enable public read',s2p:'The embeddable widget is public by design. Read permission and Public read must be enabled.',s3t:'Choose sheet and columns',s3p:'LittleAPI reads workbook tabs and the first-row headers so you can select fields by name.',s4t:'Copy the iframe',s4p:'Paste the generated code in WordPress, GitHub Pages, WebBuilder or any page that accepts HTML iframes.',columnsEye:'SHEET + FIELDS',columnsTitle:'Show only what your visitor should see',sheetTitle:'Choose a workbook tab',sheetText:'The generator lists the Google Sheets tabs available in the connected workbook.',visibleTitle:'Choose visible columns',visibleText:'If the sheet contains ID, Date, Value, Name, you can publish only Name, Date and Value.',orderTitle:'Reorder without changing Sheets',orderText:'Use the up/down controls to publish Name, Date, Value even if the physical sheet order is ID, Date, Value, Name.',columnExample:'Sheet: ID | Date | Value | Name\nWidget: Name | Date | Value',lettersNote:'The generated iframe stores Google column letters internally. Visitors do not need to know or use those letters.',pageEye:'LARGE SHEETS',pageTitle:'Pagination that stays lightweight',pageLead:'Rows per page is numeric and defaults to 25. You can choose another value up to 100. The widget requests only the block it needs instead of downloading the entire sheet.',rowsTitle:'Rows per page',rowsText:'Set 10, 25, 50 or another number. New widgets use 25 by default.',totalTitle:'Current page / total pages',totalText:'The widget calculates the total and shows Page 1 of 12, Page 4 of 12, and so on.',jumpTitle:'Jump directly',jumpText:'Type page 30 and press Enter instead of clicking Next twenty-nine times.',efficientNote:'For normal browsing, LittleAPI uses LIMIT + OFFSET and asks for only one extra row when it needs to know whether another page exists.',searchEye:'WHOLE-SHEET SEARCH',searchTitle:'Search beyond the current page',searchLead:'The search box is not a browser-only filter. It scans the whole selected sheet progressively, so a match on row 800 or row 5,000 can still appear even when the visitor started on page 1.',scanTitle:'Scans the selected sheet',scanText:'Search checks the fields being queried for the widget, not just the 25 rows currently visible.',batchTitle:'Progressive batches',batchText:'Search reads blocks progressively instead of asking the Edge Function to hold the full sheet in memory.',resultTitle:'Search results stay paginated',resultText:'If a term has many matches, the results continue in pages using the same navigation.',optionsTitle:'What the generated widget URL contains',parameter:'Parameter',meaning:'Meaning',example:'Example',optApi:'Published LittleAPI ID.',optSheet:'Workbook tab to display.',optCol:'Selected column; repeated in display order.',optPage:'Rows shown on each page.',optView:'Table or cards.',optTheme:'Auto, dark or light.',optLang:'Widget language.',optTitle:'Visible widget title.',securityEye:'SECURITY',securityTitle:'The iframe never contains your private API key',securityStrong:'Embeddable widgets require Public read.',securityText:'LittleAPI does not place X-API-Key inside the iframe. Keep write access, Drive operations and private reads behind API keys and the permission controls in View endpoint.',publicTitle:'Public widget',publicText:'Use it for information you intentionally want visitors to read.',keysTitle:'Additional API keys',keysText:'Create separate keys for Postman, apps or automations and give each one only the permissions it needs.',denyTitle:'Permission enforcement',denyText:'A key without a required operation should receive permission_denied instead of silently gaining access.',nextEye:'NEXT',nextTitle:'Use the widget and REST API together',nextText:'The widget is the fast display layer. The REST API remains available for JavaScript, Python, Postman, mobile apps and automations.',openApp:'Open LittleAPI',fullDocs:'Full API documentation',plans:'Plans'},
+    es:{docs:'Documentación',pricing:'Precios',app:'Aplicación',language:'Idioma',eyebrow:'DATOS EMBEBIBLES',title:'Convierte una hoja en un <span>widget en vivo.</span>',lead:'Elige una pestaña del libro, decide exactamente qué columnas aparecen y en qué orden, y pega un solo iframe en cualquier web.',navCreate:'Crear',navColumns:'Columnas',navPagination:'Paginación',navSearch:'Búsqueda',navSecurity:'Seguridad',live:'Datos en vivo · COORDENADAS',prev:'Anterior',pageDemo:'Página 4 de 12',next:'Siguiente',createEye:'CREAR EL WIDGET',createTitle:'De View endpoint al iframe',s1t:'Abre View endpoint',s1p:'Abre desde el panel de LittleAPI la API que ya publicaste.',s2t:'Activa lectura pública',s2p:'El widget embebible es público por diseño. Deben estar activos el permiso Leer y Lectura pública.',s3t:'Elige pestaña y columnas',s3p:'LittleAPI lee las pestañas del libro y los encabezados de la primera fila para que elijas campos por nombre.',s4t:'Copia el iframe',s4p:'Pega el código generado en WordPress, GitHub Pages, WebBuilder o cualquier página que acepte iframes HTML.',columnsEye:'PESTAÑA + CAMPOS',columnsTitle:'Muestra solo lo que debe ver tu visitante',sheetTitle:'Elige una pestaña del libro',sheetText:'El generador lista las pestañas de Google Sheets disponibles en el libro conectado.',visibleTitle:'Elige columnas visibles',visibleText:'Si la hoja contiene ID, Fecha, Valor, Nombre, puedes publicar solo Nombre, Fecha y Valor.',orderTitle:'Reordena sin cambiar Sheets',orderText:'Usa subir/bajar para publicar Nombre, Fecha, Valor aunque el orden físico de la hoja sea ID, Fecha, Valor, Nombre.',columnExample:'Hoja: ID | Fecha | Valor | Nombre\nWidget: Nombre | Fecha | Valor',lettersNote:'El iframe generado guarda internamente las letras de columna de Google. El visitante no necesita conocerlas ni usarlas.',pageEye:'HOJAS GRANDES',pageTitle:'Paginación ligera y controlable',pageLead:'Filas por página es un número y empieza en 25. Puedes elegir otro valor hasta 100. El widget solicita solo el bloque necesario en vez de descargar toda la hoja.',rowsTitle:'Filas por página',rowsText:'Pon 10, 25, 50 u otro número. Los widgets nuevos usan 25 de forma predeterminada.',totalTitle:'Página actual / páginas totales',totalText:'El widget calcula el total y muestra Página 1 de 12, Página 4 de 12, etc.',jumpTitle:'Salta directamente',jumpText:'Escribe página 30 y pulsa Enter en lugar de presionar Siguiente veintinueve veces.',efficientNote:'En navegación normal, LittleAPI usa LIMIT + OFFSET y solo pide una fila adicional cuando necesita saber si existe una página siguiente.',searchEye:'BÚSQUEDA EN TODA LA HOJA',searchTitle:'Busca más allá de la página actual',searchLead:'El cuadro de búsqueda no es un simple filtro del navegador. Recorre progresivamente toda la pestaña seleccionada, por lo que una coincidencia en la fila 800 o 5.000 puede aparecer aunque el visitante empiece en la página 1.',scanTitle:'Recorre la pestaña seleccionada',scanText:'La búsqueda revisa los campos que consulta el widget, no solo las 25 filas visibles.',batchTitle:'Bloques progresivos',batchText:'La búsqueda lee bloques progresivamente en lugar de pedir a la Edge Function que mantenga toda la hoja en memoria.',resultTitle:'Los resultados siguen paginados',resultText:'Si un término tiene muchas coincidencias, los resultados continúan en páginas usando la misma navegación.',optionsTitle:'Qué contiene la URL generada del widget',parameter:'Parámetro',meaning:'Significado',example:'Ejemplo',optApi:'ID publicado de LittleAPI.',optSheet:'Pestaña del libro que se mostrará.',optCol:'Columna seleccionada; se repite en el orden visual.',optPage:'Filas mostradas por página.',optView:'Tabla o tarjetas.',optTheme:'Automático, oscuro o claro.',optLang:'Idioma del widget.',optTitle:'Título visible del widget.',securityEye:'SEGURIDAD',securityTitle:'El iframe nunca contiene tu API key privada',securityStrong:'Los widgets embebibles requieren Lectura pública.',securityText:'LittleAPI no coloca X-API-Key dentro del iframe. Mantén las escrituras, operaciones de Drive y lecturas privadas detrás de API keys y de los controles de permisos de View endpoint.',publicTitle:'Widget público',publicText:'Úsalo para información que realmente quieras mostrar a visitantes.',keysTitle:'Claves API adicionales',keysText:'Crea claves separadas para Postman, apps o automatizaciones y asigna a cada una solo los permisos necesarios.',denyTitle:'Permisos aplicados',denyText:'Una clave sin la operación necesaria debe recibir permission_denied en vez de obtener acceso silenciosamente.',nextEye:'SIGUIENTE',nextTitle:'Usa el widget y la API REST juntos',nextText:'El widget es la capa rápida de visualización. La API REST sigue disponible para JavaScript, Python, Postman, apps móviles y automatizaciones.',openApp:'Abrir LittleAPI',fullDocs:'Documentación completa de API',plans:'Planes'}
+  };
+  const selector=document.querySelector('#language-select');
+  const apply=lang=>{const language=lang==='es'?'es':'en';document.documentElement.lang=language;document.title=language==='es'?'LittleAPI — Widgets embebibles':'LittleAPI — Embeddable widgets';document.querySelectorAll('[data-t]').forEach(n=>{const v=t[language][n.dataset.t];if(v!==undefined)n.textContent=v});document.querySelectorAll('[data-html]').forEach(n=>{const v=t[language][n.dataset.html];if(v!==undefined)n.innerHTML=v});selector.value=language;localStorage.setItem('littleapi:language',language)};
+  apply(localStorage.getItem('littleapi:language')||'en');
+  selector.addEventListener('change',()=>apply(selector.value));
+})();
+</script>
+</body>
+</html>
