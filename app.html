@@ -104,6 +104,12 @@
             console.error("LittleAPI API permission controls failed", apiPermissionsError);
           }
 
+          try {
+            await loadScript("api-keys.js?v=20260917-1");
+          } catch (apiKeysError) {
+            console.error("LittleAPI additional API key controls failed", apiKeysError);
+          }
+
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
