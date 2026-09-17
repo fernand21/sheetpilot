@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">LittleAPI table widget</title>
+  <desc id="desc">A compact table icon for embeddable data widgets</desc>
+  <defs>
+    <linearGradient id="bg" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#53c8ad"/>
+      <stop offset="1" stop-color="#22a78e"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="32" fill="url(#bg)"/>
+  <rect x="24" y="29" width="80" height="70" rx="10" fill="none" stroke="#fff" stroke-width="8"/>
+  <path d="M24 50h80M50 29v70M77 29v70" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="37" cy="40" r="3.5" fill="#d8ff7d"/>
+</svg>
