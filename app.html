@@ -118,21 +118,6 @@
           } finally {
             window.MutationObserver = NativeMutationObserver;
           }
-
-          const projectsGrid = document.querySelector("#projects-grid");
-          if (projectsGrid) {
-            let refreshQueued = false;
-            new NativeMutationObserver(() => {
-              if (refreshQueued) return;
-              refreshQueued = true;
-              requestAnimationFrame(() => {
-                refreshQueued = false;
-                window.dispatchEvent(new CustomEvent("littleapi:language-change", {
-                  detail: localStorage.getItem("littleapi:language") || "en"
-                }));
-              });
-            }).observe(projectsGrid, { childList: true });
-          }
         } catch (error) {
           console.error("LittleAPI startup failed", error);
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
