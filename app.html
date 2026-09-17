@@ -92,6 +92,18 @@
             console.error("LittleAPI project card actions failed", projectActionError);
           }
 
+          try {
+            await loadScript("sheet-reference-preview.js?v=20260917-1");
+          } catch (sheetPreviewError) {
+            console.error("LittleAPI sheet reference preview failed", sheetPreviewError);
+          }
+
+          try {
+            await loadScript("api-permissions.js?v=20260917-1");
+          } catch (apiPermissionsError) {
+            console.error("LittleAPI API permission controls failed", apiPermissionsError);
+          }
+
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
