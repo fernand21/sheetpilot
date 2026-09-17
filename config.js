@@ -8,7 +8,24 @@ window.SUPABASE_CONFIG = {
 };
 
 (() => {
+  const brandIcon = `
+    <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true" focusable="false">
+      <rect x="3.5" y="5.5" width="14" height="21" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M3.5 11h14M3.5 17h14M9 5.5v21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="m23 10-3.5 6 3.5 6M27 10l3.5 6-3.5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+  const applyBrandIcon = () => {
+    document.querySelectorAll('.brand-mark').forEach(node => {
+      if (node.dataset.littleapiIcon === 'data-code') return;
+      node.innerHTML = brandIcon;
+      node.dataset.littleapiIcon = 'data-code';
+      node.setAttribute('aria-hidden', 'true');
+    });
+  };
+
   const loadLandingUpgrades = () => {
+    applyBrandIcon();
     const home = document.querySelector('#public-home');
     if (!home || document.querySelector('script[data-littleapi-landing-upgrades]')) return;
     const syncVisibility = () => {
