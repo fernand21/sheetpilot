@@ -1,0 +1,239 @@
+name: LittleAPI Multi API Key Upgrade
+
+on:
+  push:
+    paths:
+      - ".github/workflows/one-time-multikey-upgrade.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Edge Function for multiple API keys
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('supabase/functions/sheetpilot-api/index.ts')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace('LittleAPI API v1.4', 'LittleAPI API v1.5')
+          s = s.replace('const API_VERSION = "1.4.0";', 'const API_VERSION = "1.5.0";')
+
+          old = '''async function hasApiKey(api: ApiRecord, request: Request) {
+            const bearer = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1] || "";
+            const supplied = request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";
+            if (!supplied || !api.api_key_hash) return false;
+            return sameSecret(await sha256(supplied), api.api_key_hash);
+          }
+          function allowed(api: ApiRecord, action: string) { return api.permissions?.[action] !== false; }
+          function requirePermission(api: ApiRecord, action: string) {
+            return allowed(api, action) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`);
+          }
+          '''
+
+          new = '''type ApiKeyContext = {
+            kind: "primary" | "additional";
+            id: string | null;
+            permissions: Record<string, boolean> | null;
+          };
+          const apiKeyContexts = new WeakMap<Request, ApiKeyContext | false>();
+
+          function suppliedApiKey(request: Request) {
+            const bearer = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1] || "";
+            return request.headers.get("x-api-key") || request.headers.get("x-littleapi-key") || bearer || "";
+          }
+
+          async function hasApiKey(api: ApiRecord, request: Request) {
+            if (apiKeyContexts.has(request)) return apiKeyContexts.get(request) !== false;
+            const supplied = suppliedApiKey(request);
+            if (!supplied) { apiKeyContexts.set(request, false); return false; }
+            const hash = await sha256(supplied);
+            if (api.api_key_hash && sameSecret(hash, api.api_key_hash)) {
+              apiKeyContexts.set(request, { kind: "primary", id: null, permissions: null });
+              return true;
+            }
+            const rows = await dbFetch(`api_access_keys?select=id,permissions,expires_at,last_used_at&api_id=eq.${encodeURIComponent(api.api_id)}&key_hash=eq.${encodeURIComponent(hash)}&enabled=eq.true&limit=1`);
+            const row = rows?.[0];
+            if (!row) { apiKeyContexts.set(request, false); return false; }
+            if (row.expires_at && Date.parse(row.expires_at) <= Date.now()) { apiKeyContexts.set(request, false); return false; }
+            apiKeyContexts.set(request, { kind: "additional", id: row.id, permissions: row.permissions || {} });
+            const lastUsed = row.last_used_at ? Date.parse(row.last_used_at) : 0;
+            if (!lastUsed || Date.now() - lastUsed > 300000) {
+              try {
+                await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(row.id)}`, {
+                  method: "PATCH",
+                  headers: { Prefer: "return=minimal" },
+                  body: JSON.stringify({ last_used_at: new Date().toISOString(), updated_at: new Date().toISOString() }),
+                });
+              } catch (_) { /* last_used_at is best-effort */ }
+            }
+            return true;
+          }
+
+          function allowed(api: ApiRecord, action: string, request?: Request) {
+            if (api.permissions?.[action] === false) return false;
+            const context = request ? apiKeyContexts.get(request) : null;
+            if (context && context !== false && context.kind === "additional" && context.permissions?.[action] === false) return false;
+            return true;
+          }
+          function requirePermission(api: ApiRecord, action: string, request?: Request) {
+            return allowed(api, action, request) ? null : failure(403, "permission_denied", `La API no tiene habilitado el permiso ${action}.`);
+          }
+          '''
+
+          if old not in s:
+              raise SystemExit('Expected hasApiKey block not found')
+          s = s.replace(old, new)
+
+          s = s.replace('requirePermission(api, "read");', 'requirePermission(api, "read", request);')
+          s = s.replace('requirePermission(api, isSearch ? "search" : "read");', 'requirePermission(api, isSearch ? "search" : "read", request);')
+          s = s.replace('requirePermission(api, action);', 'requirePermission(api, action, request);')
+
+          marker = 'async function refreshGoogleTokenForUser(userId: string) {'
+          if 'async function apiKeysConnection(request: Request)' not in s:
+              addition = r'''
+          function randomApiAccessKey() {
+            const bytes = crypto.getRandomValues(new Uint8Array(32));
+            let raw = "";
+            for (const byte of bytes) raw += String.fromCharCode(byte);
+            return "sp_live_" + btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+          }
+
+          function normalizedAccessKeyPermissions(value: unknown, apiPermissions: Record<string, boolean> | null | undefined) {
+            const source = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+            const result: Record<string, boolean> = {};
+            for (const key of ["read", "search", "create", "update", "delete"]) {
+              const requested = key in source ? source[key] !== false : (key === "read" || key === "search");
+              result[key] = apiPermissions?.[key] !== false && requested;
+            }
+            return result;
+          }
+
+          async function apiKeysConnection(request: Request) {
+            const user = await currentUser(request);
+            if (!user?.id) return failure(401, "login_required", "Sign in to manage API keys.");
+            const url = new URL(request.url);
+            const body = request.method === "GET" ? {} : await request.json().catch(() => ({}));
+            const apiId = String((body as any).api_id || url.searchParams.get("api_id") || "").trim();
+            if (!apiId) return failure(400, "api_id_required", "Provide api_id.");
+
+            const owned = await dbFetch(`api_endpoints?select=id,api_id,name,permissions&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=1`);
+            const api = owned?.[0];
+            if (!api) return failure(404, "api_not_found", "No API owned by this account exists with that identifier.");
+
+            const keyId = String((body as any).id || url.searchParams.get("id") || "").trim();
+            if (request.method === "GET") {
+              const rows = await dbFetch(`api_access_keys?select=id,api_id,name,key_prefix,permissions,enabled,expires_at,last_used_at,created_at,updated_at&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.asc`);
+              return response({ data: rows || [] });
+            }
+
+            if (request.method === "POST") {
+              const existing = await dbFetch(`api_access_keys?select=id&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}&limit=21`);
+              if ((existing || []).length >= 20) return failure(409, "api_key_limit", "This API already has the maximum of 20 additional keys.");
+              const name = String((body as any).name || "").trim();
+              if (!name || name.length > 80) return failure(400, "invalid_name", "Key name must contain 1 to 80 characters.");
+              let expiresAt: string | null = null;
+              if ((body as any).expires_at) {
+                const parsed = Date.parse(String((body as any).expires_at));
+                if (!Number.isFinite(parsed) || parsed <= Date.now()) return failure(400, "invalid_expiry", "Expiration must be a future date.");
+                expiresAt = new Date(parsed).toISOString();
+              }
+              const secret = randomApiAccessKey();
+              const permissions = normalizedAccessKeyPermissions((body as any).permissions, api.permissions || {});
+              const rows = await dbFetch("api_access_keys", {
+                method: "POST",
+                headers: { Prefer: "return=representation" },
+                body: JSON.stringify({
+                  api_id: apiId,
+                  user_id: user.id,
+                  name,
+                  key_hash: await sha256(secret),
+                  key_prefix: secret.slice(0, 16),
+                  permissions,
+                  enabled: true,
+                  expires_at: expiresAt,
+                }),
+              });
+              const created = rows?.[0];
+              return response({
+                success: true,
+                key: created ? {
+                  id: created.id, api_id: apiId, name: created.name, key_prefix: created.key_prefix,
+                  permissions: created.permissions, enabled: created.enabled, expires_at: created.expires_at,
+                  created_at: created.created_at,
+                } : null,
+                api_key: secret,
+                message: "Copy this key now. It will not be shown again.",
+              }, 201);
+            }
+
+            if (!keyId) return failure(400, "key_id_required", "Provide the key id.");
+
+            if (request.method === "PATCH") {
+              const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+              if ((body as any).name !== undefined) {
+                const name = String((body as any).name || "").trim();
+                if (!name || name.length > 80) return failure(400, "invalid_name", "Key name must contain 1 to 80 characters.");
+                patch.name = name;
+              }
+              if ((body as any).permissions !== undefined) patch.permissions = normalizedAccessKeyPermissions((body as any).permissions, api.permissions || {});
+              if ((body as any).enabled !== undefined) patch.enabled = Boolean((body as any).enabled);
+              if ((body as any).expires_at !== undefined) {
+                if (!(body as any).expires_at) patch.expires_at = null;
+                else {
+                  const parsed = Date.parse(String((body as any).expires_at));
+                  if (!Number.isFinite(parsed) || parsed <= Date.now()) return failure(400, "invalid_expiry", "Expiration must be a future date.");
+                  patch.expires_at = new Date(parsed).toISOString();
+                }
+              }
+              await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(keyId)}&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}`, {
+                method: "PATCH",
+                headers: { Prefer: "return=minimal" },
+                body: JSON.stringify(patch),
+              });
+              return response({ success: true, id: keyId });
+            }
+
+            if (request.method === "DELETE") {
+              await dbFetch(`api_access_keys?id=eq.${encodeURIComponent(keyId)}&api_id=eq.${encodeURIComponent(apiId)}&user_id=eq.${encodeURIComponent(user.id)}`, {
+                method: "DELETE",
+                headers: { Prefer: "return=minimal" },
+              });
+              return response({ success: true, deleted: keyId });
+            }
+
+            return failure(405, "method_not_allowed", "Use GET, POST, PATCH, or DELETE for additional API keys.");
+          }
+
+          '''
+              if marker not in s:
+                  raise SystemExit('Expected refreshGoogleTokenForUser marker not found')
+              s = s.replace(marker, addition + marker)
+
+          route = '  if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);\n'
+          if 'path[1] === "api-keys"' not in s:
+              if route not in s:
+                  raise SystemExit('Expected api-key route not found')
+              s = s.replace(route, route + '  if (path[0] === "auth" && path[1] === "api-keys") return apiKeysConnection(request);\n')
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Verify patch markers
+        run: |
+          grep -q 'API_VERSION = "1.5.0"' supabase/functions/sheetpilot-api/index.ts
+          grep -q 'api_access_keys' supabase/functions/sheetpilot-api/index.ts
+          grep -q 'apiKeysConnection' supabase/functions/sheetpilot-api/index.ts
+          grep -q 'requirePermission(api, action, request)' supabase/functions/sheetpilot-api/index.ts
+
+      - name: Commit upgrade
+        run: |
+          git config user.name "fernand21"
+          git config user.email "farevalo210@gmail.com"
+          git add supabase/functions/sheetpilot-api/index.ts
+          git commit -m "Add multiple API keys with per-key permissions" || exit 0
+          git push
