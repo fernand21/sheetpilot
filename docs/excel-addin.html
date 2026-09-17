@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LittleAPI Excel Add-in — Setup & Usage Guide</title>
+  <meta name="description" content="Install, connect, load, edit and synchronize Google Sheets from Microsoft Excel with the LittleAPI Excel add-in." />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .addin-docs{max-width:1180px;margin:0 auto;padding:46px 22px 80px}.addin-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(330px,.9fr);gap:34px;align-items:center;padding:34px;border:1px solid var(--line);border-radius:24px;background:radial-gradient(circle at 92% 8%,rgba(89,214,178,.16),transparent 28%),linear-gradient(145deg,#0d2b23,#081b17)}.addin-hero h1{margin:8px 0 14px;font-size:clamp(2.4rem,5vw,4.8rem);line-height:.96}.addin-hero h1 span{color:var(--lime)}.addin-hero .lead{margin:0;color:#c8e1d8;line-height:1.75}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.hero-actions a{text-decoration:none;font-weight:900}.download-button{padding:12px 16px;border-radius:11px;background:var(--lime);color:#092019}.secondary-button{padding:11px 14px;border:1px solid #3a7565;border-radius:11px;color:#d8eee7}.package-meta{margin-top:14px;color:var(--muted);font-size:.78rem;line-height:1.6}.addin-preview{border:1px solid #326859;border-radius:18px;background:#061612;overflow:hidden}.addin-preview-head{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;background:#0b241d;border-bottom:1px solid #295548}.addin-preview-head span{color:#8fb7ab;font-size:.73rem}.ribbon-row{display:flex;gap:7px;flex-wrap:wrap;padding:12px;background:#0a1c18}.ribbon-row span{padding:7px 9px;border:1px solid #315f53;border-radius:8px;font-size:.68rem;color:#d7eae4}.ribbon-row span:last-child{border-color:#6f9144;color:#e7ffc0}.sheet-tabs{display:flex;gap:5px;padding:10px 12px 0}.sheet-tabs span{padding:6px 9px;border:1px solid #285044;border-bottom:0;border-radius:7px 7px 0 0;background:#102c24;font-size:.7rem;color:#a9c7be}.sheet-tabs span:first-child{background:#174437;color:#fff}.sheet-grid{padding:0 12px 14px}.sheet-grid table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.7rem}.sheet-grid th,.sheet-grid td{border:1px solid #24473d;padding:7px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sheet-grid th{background:#12352c;color:#dff3ed}.sheet-grid td{color:#abc9c0}.toc{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:24px 0 0}.toc a{padding:12px;border:1px solid var(--line);border-radius:10px;background:#0b211c;color:#cfe8e0;text-decoration:none;font-size:.8rem;font-weight:800}.toc a:hover{border-color:var(--teal);color:#fff}.docs-section{scroll-margin-top:96px;margin-top:64px}.docs-section h2{margin:6px 0 16px;font-size:clamp(1.7rem,3vw,2.6rem)}.docs-section>p{color:var(--muted);line-height:1.75}.step-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.step-card,.button-card,.behavior-card,.tip-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:#0b211c}.step-card .step{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#123b31;color:var(--lime);font-weight:950}.step-card h3,.button-card h3,.behavior-card h3,.tip-card h3{margin:14px 0 7px}.step-card p,.button-card p,.behavior-card p,.tip-card p{margin:0;color:var(--muted);line-height:1.65;font-size:.9rem}.button-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.button-card{position:relative}.button-name{display:inline-flex;padding:6px 9px;border:1px solid #3a7565;border-radius:8px;color:#e2f3ed;background:#0d3027;font:800 .76rem ui-monospace,SFMono-Regular,Consolas,monospace}.button-card strong{display:block;margin:14px 0 7px}.behavior-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}.flow div{padding:14px 10px;border:1px solid #356b5d;border-radius:11px;background:#0e3027;text-align:center;font-weight:850;color:#d9eee7}.flow div:not(:last-child):after{content:' →';color:var(--lime)}.callout{padding:16px 18px;border:1px solid #386f60;border-left:4px solid var(--teal);border-radius:12px;background:#0a211b;margin:18px 0}.callout.warning{border-color:#806e3e;border-left-color:#d9b85d;background:#251f11}.callout strong{display:block;margin-bottom:6px}.callout p{margin:0;color:var(--muted);line-height:1.65}.code-line{display:block;padding:12px 14px;border-radius:10px;border:1px solid #285246;background:#061512;color:#d9ff7f;overflow:auto;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.troubleshoot{width:100%;border-collapse:collapse}.troubleshoot th,.troubleshoot td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.troubleshoot th{color:#e1f2ec}.troubleshoot td{color:var(--muted);line-height:1.55}.hash{word-break:break-all}.lang-only{display:none}html[data-guide-lang="en"] [data-lang="en"],html[data-guide-lang="es"] [data-lang="es"]{display:block}html[data-guide-lang="en"] [data-inline-lang="en"],html[data-guide-lang="es"] [data-inline-lang="es"]{display:inline}
+    @media(max-width:900px){.addin-hero,.step-grid,.behavior-grid{grid-template-columns:1fr}.button-grid{grid-template-columns:1fr}.toc{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.addin-docs{padding:28px 14px 60px}.addin-hero{padding:22px;border-radius:18px}.toc,.flow{grid-template-columns:1fr}.hero-actions a{width:100%;text-align:center}.troubleshoot{font-size:.84rem}}
+  </style>
+</head>
+<body class="docs-page">
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-mark"><img src="../littleapi-icon.svg?v=20260917-2" alt="" style="width:100%;height:100%;display:block"></span><span>Little<span class="brand-accent">API</span></span></a>
+  <nav><a href="../">Home</a><a href="./">Documentation</a><a href="../pricing.html">Pricing</a><a href="../app.html">App</a></nav>
+  <div class="header-actions"><label class="language-control"><span id="language-label">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label></div>
+</header>
+
+<main class="addin-docs">
+  <section class="addin-hero">
+    <div>
+      <p class="eyebrow">LITTLEAPI · EXCEL ADD-IN</p>
+      <div class="lang-only" data-lang="en">
+        <h1>Edit Google Sheets <span>from Excel.</span></h1>
+        <p class="lead">Use Microsoft Excel as a familiar desktop editor for an entire Google Sheets workbook. Load every linked tab, work normally in Excel, then synchronize the changes back through LittleAPI.</p>
+      </div>
+      <div class="lang-only" data-lang="es">
+        <h1>Edita Google Sheets <span>desde Excel.</span></h1>
+        <p class="lead">Usa Microsoft Excel como editor de escritorio para un libro completo de Google Sheets. Carga todas las pestañas vinculadas, trabaja normalmente en Excel y luego sincroniza los cambios mediante LittleAPI.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="download-button" href="../downloads/LittleAPI_Excel_Addin_Setup.zip" download><span data-inline-lang="en">Download Excel Add-in</span><span data-inline-lang="es">Descargar complemento para Excel</span></a>
+        <a class="secondary-button" href="#connect"><span data-inline-lang="en">Connection guide ↓</span><span data-inline-lang="es">Guía de conexión ↓</span></a>
+      </div>
+      <p class="package-meta"><span data-inline-lang="en">Windows package · ZIP contains the installer.</span><span data-inline-lang="es">Paquete para Windows · el ZIP contiene el instalador.</span></p>
+    </div>
+    <div class="addin-preview" aria-label="LittleAPI Excel add-in preview">
+      <div class="addin-preview-head"><strong>LittleAPI for Excel</strong><span>● <span data-inline-lang="en">Workbook connected</span><span data-inline-lang="es">Libro conectado</span></span></div>
+      <div class="ribbon-row"><span>Configure API</span><span>Test Connection</span><span>Load Workbook</span><span>Refresh Workbook</span><span>Save / Synchronize</span></div>
+      <div class="sheet-tabs"><span>CARTERA</span><span>COORDENADAS</span><span>CLIENTES</span></div>
+      <div class="sheet-grid"><table><thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Total</th></tr></thead><tbody><tr><td>1001</td><td>Andrea</td><td>ACTIVE</td><td>128.50</td></tr><tr><td>1002</td><td>Daniel</td><td>ACTIVE</td><td>96.20</td></tr><tr><td>1003</td><td>Lucía</td><td>PENDING</td><td>210.00</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <nav class="toc" aria-label="Excel add-in guide">
+    <a href="#what"><span data-inline-lang="en">01 · What it does</span><span data-inline-lang="es">01 · Qué hace</span></a>
+    <a href="#connect"><span data-inline-lang="en">02 · Connect</span><span data-inline-lang="es">02 · Conectar</span></a>
+    <a href="#workflow"><span data-inline-lang="en">03 · Daily workflow</span><span data-inline-lang="es">03 · Flujo diario</span></a>
+    <a href="#buttons"><span data-inline-lang="en">04 · Ribbon buttons</span><span data-inline-lang="es">04 · Botones</span></a>
+    <a href="#sync"><span data-inline-lang="en">05 · Synchronization</span><span data-inline-lang="es">05 · Sincronización</span></a>
+    <a href="#persistence"><span data-inline-lang="en">06 · Reopen later</span><span data-inline-lang="es">06 · Volver a abrir</span></a>
+    <a href="#security"><span data-inline-lang="en">07 · Security</span><span data-inline-lang="es">07 · Seguridad</span></a>
+    <a href="#troubleshooting"><span data-inline-lang="en">08 · Troubleshooting</span><span data-inline-lang="es">08 · Problemas</span></a>
+  </nav>
+
+  <section class="docs-section" id="what">
+    <p class="eyebrow">OVERVIEW</p>
+    <div class="lang-only" data-lang="en"><h2>What the Excel add-in does</h2><p>The add-in connects an Excel workbook to a LittleAPI API backed by Google Sheets. It is designed for people who prefer editing data with native Excel tools instead of sending individual POST, PATCH, or DELETE requests.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Qué hace el complemento para Excel</h2><p>El complemento conecta un libro de Excel a una API de LittleAPI respaldada por Google Sheets. Está pensado para quienes prefieren editar los datos con las herramientas normales de Excel en lugar de enviar manualmente solicitudes POST, PATCH o DELETE.</p></div>
+    <div class="behavior-grid">
+      <article class="behavior-card"><h3><span data-inline-lang="en">Whole workbook</span><span data-inline-lang="es">Libro completo</span></h3><p><span data-inline-lang="en">It discovers every Google Sheets tab and creates or reuses local Excel worksheets.</span><span data-inline-lang="es">Detecta todas las pestañas de Google Sheets y crea o reutiliza hojas locales de Excel.</span></p></article>
+      <article class="behavior-card"><h3><span data-inline-lang="en">All columns</span><span data-inline-lang="es">Todas las columnas</span></h3><p><span data-inline-lang="en">There is no display-column filter in the add-in. The full linked worksheet is loaded.</span><span data-inline-lang="es">No existe filtro de columnas en el complemento. Se carga la hoja vinculada completa.</span></p></article>
+      <article class="behavior-card"><h3><span data-inline-lang="en">Native Excel editing</span><span data-inline-lang="es">Edición nativa de Excel</span></h3><p><span data-inline-lang="en">Edit cells, add rows, or delete rows using normal Excel commands and synchronize afterward.</span><span data-inline-lang="es">Edita celdas, agrega filas o elimina filas con los comandos normales de Excel y luego sincroniza.</span></p></article>
+    </div>
+  </section>
+
+  <section class="docs-section" id="connect">
+    <p class="eyebrow">FIRST CONNECTION</p>
+    <div class="lang-only" data-lang="en"><h2>Connect an Excel workbook to LittleAPI</h2><p>You need the API ID and API key for the LittleAPI API that points to your Google Sheets workbook.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Conecta un libro de Excel a LittleAPI</h2><p>Necesitas el API ID y la API key de la API de LittleAPI que apunta a tu libro de Google Sheets.</p></div>
+    <div class="step-grid">
+      <article class="step-card"><span class="step">1</span><h3><span data-inline-lang="en">Install the add-in</span><span data-inline-lang="es">Instala el complemento</span></h3><p><span data-inline-lang="en">Download the ZIP above, extract it, run the installer, and then open Microsoft Excel.</span><span data-inline-lang="es">Descarga el ZIP, extráelo, ejecuta el instalador y después abre Microsoft Excel.</span></p></article>
+      <article class="step-card"><span class="step">2</span><h3>Configure API</h3><p><span data-inline-lang="en">Open the LittleAPI tab in the Excel Ribbon and choose <strong>Configure API</strong>. Paste the API ID or public endpoint, then paste the API key.</span><span data-inline-lang="es">Abre la pestaña LittleAPI de la cinta de Excel y pulsa <strong>Configure API</strong>. Pega el API ID o endpoint público y después la API key.</span></p></article>
+      <article class="step-card"><span class="step">3</span><h3>Test Connection</h3><p><span data-inline-lang="en">Choose <strong>Test Connection</strong>. A successful response confirms that the API ID and key are valid.</span><span data-inline-lang="es">Pulsa <strong>Test Connection</strong>. Una respuesta correcta confirma que el API ID y la clave son válidos.</span></p></article>
+      <article class="step-card"><span class="step">4</span><h3>Load Workbook</h3><p><span data-inline-lang="en">Choose <strong>Load Workbook</strong>. The add-in obtains the remote tab list and loads every worksheet.</span><span data-inline-lang="es">Pulsa <strong>Load Workbook</strong>. El complemento obtiene la lista de pestañas remotas y carga todas las hojas.</span></p></article>
+      <article class="step-card"><span class="step">5</span><h3><span data-inline-lang="en">Edit normally</span><span data-inline-lang="es">Edita normalmente</span></h3><p><span data-inline-lang="en">Use filters, sorting and normal Excel editing. Synchronization sends cell values, not the Excel formulas themselves.</span><span data-inline-lang="es">Usa filtros, ordenación y edición normal de Excel. La sincronización envía los valores de las celdas, no las fórmulas de Excel.</span></p></article>
+      <article class="step-card"><span class="step">6</span><h3>Save / Synchronize</h3><p><span data-inline-lang="en">When ready, choose <strong>Save / Synchronize</strong> to send the current state of all linked worksheets back to Google Sheets.</span><span data-inline-lang="es">Cuando termines, pulsa <strong>Save / Synchronize</strong> para enviar el estado actual de todas las hojas vinculadas a Google Sheets.</span></p></article>
+    </div>
+    <div class="callout"><strong><span data-inline-lang="en">Public endpoint format</span><span data-inline-lang="es">Formato del endpoint público</span></strong><code class="code-line">https://littleapi.online/api/v1/{API_ID}</code></div>
+  </section>
+
+  <section class="docs-section" id="workflow">
+    <p class="eyebrow">WORKFLOW</p>
+    <div class="lang-only" data-lang="en"><h2>The normal day-to-day workflow</h2><p>After the first connection, you do not need to configure the API every time. Open the workbook, edit the linked sheets, and synchronize when ready.</p></div>
+    <div class="lang-only" data-lang="es"><h2>El flujo normal de trabajo</h2><p>Después de la primera conexión no necesitas configurar la API cada vez. Abre el libro, edita las hojas vinculadas y sincroniza cuando estés listo.</p></div>
+    <div class="flow"><div>Configure API</div><div>Load Workbook</div><div>Edit in Excel</div><div>Save / Synchronize</div></div>
+    <div class="callout warning"><strong><span data-inline-lang="en">Refresh can replace local changes</span><span data-inline-lang="es">Refresh puede reemplazar cambios locales</span></strong><p><span data-inline-lang="en">Use <strong>Refresh Workbook</strong> when you intentionally want the latest Google Sheets data. Unsynchronized local edits can be replaced.</span><span data-inline-lang="es">Usa <strong>Refresh Workbook</strong> cuando quieras recuperar deliberadamente los datos actuales de Google Sheets. Los cambios locales aún no sincronizados pueden reemplazarse.</span></p></div>
+  </section>
+
+  <section class="docs-section" id="buttons">
+    <p class="eyebrow">RIBBON REFERENCE</p>
+    <div class="lang-only" data-lang="en"><h2>What every LittleAPI button does</h2></div>
+    <div class="lang-only" data-lang="es"><h2>Para qué sirve cada botón de LittleAPI</h2></div>
+    <div class="button-grid">
+      <article class="button-card"><span class="button-name">Configure API</span><strong><span data-inline-lang="en">Connect this workbook</span><span data-inline-lang="es">Conecta este libro</span></strong><p><span data-inline-lang="en">Stores the API ID and API key in the current Excel workbook. You do not select a specific remote tab; the add-in works with the complete Google Sheets workbook.</span><span data-inline-lang="es">Guarda el API ID y la API key en el libro actual. No seleccionas una pestaña remota concreta: el complemento trabaja con el libro completo de Google Sheets.</span></p></article>
+      <article class="button-card"><span class="button-name">Test Connection</span><strong><span data-inline-lang="en">Validate credentials</span><span data-inline-lang="es">Valida las credenciales</span></strong><p><span data-inline-lang="en">Checks that the stored API ID and API key are accepted. It does not modify Excel or Google Sheets data.</span><span data-inline-lang="es">Comprueba que el API ID y la API key guardados sean aceptados. No modifica datos de Excel ni de Google Sheets.</span></p></article>
+      <article class="button-card"><span class="button-name">Load Workbook</span><strong><span data-inline-lang="en">Initial full import</span><span data-inline-lang="es">Importación completa inicial</span></strong><p><span data-inline-lang="en">Reads all remote tab names and loads each one into Excel. In an empty workbook, blank default sheets are reused before creating additional sheets.</span><span data-inline-lang="es">Lee todos los nombres de pestañas remotas y carga cada una en Excel. En un libro vacío reutiliza primero las hojas predeterminadas antes de crear nuevas.</span></p></article>
+      <article class="button-card"><span class="button-name">Refresh Workbook</span><strong><span data-inline-lang="en">Reload remote state</span><span data-inline-lang="es">Recarga el estado remoto</span></strong><p><span data-inline-lang="en">Downloads every current linked Google Sheets tab again. New remote tabs can be created locally during refresh.</span><span data-inline-lang="es">Vuelve a descargar todas las pestañas actuales vinculadas. Las pestañas nuevas de Google pueden crearse localmente durante la actualización.</span></p></article>
+      <article class="button-card"><span class="button-name">Save / Synchronize</span><strong><span data-inline-lang="en">Push Excel changes</span><span data-inline-lang="es">Envía los cambios de Excel</span></strong><p><span data-inline-lang="en">Synchronizes all linked Excel worksheets. Edits, added rows and deleted rows are reflected in their corresponding Google Sheets tabs.</span><span data-inline-lang="es">Sincroniza todas las hojas vinculadas. Las ediciones, filas agregadas y filas eliminadas se reflejan en las pestañas correspondientes de Google Sheets.</span></p></article>
+      <article class="button-card"><span class="button-name">View Endpoint</span><strong><span data-inline-lang="en">Open the public API URL</span><span data-inline-lang="es">Abre la URL pública</span></strong><p><span data-inline-lang="en">Opens the public LittleAPI endpoint in your browser using the normal littleapi.online address.</span><span data-inline-lang="es">Abre en el navegador el endpoint público de LittleAPI usando la dirección normal de littleapi.online.</span></p></article>
+      <article class="button-card"><span class="button-name">Open LittleAPI</span><strong><span data-inline-lang="en">Open the website</span><span data-inline-lang="es">Abre el sitio web</span></strong><p><span data-inline-lang="en">Opens the LittleAPI website so you can manage your APIs, permissions and keys.</span><span data-inline-lang="es">Abre el sitio de LittleAPI para administrar APIs, permisos y claves.</span></p></article>
+      <article class="button-card"><span class="button-name">Documentation</span><strong><span data-inline-lang="en">Open the documentation</span><span data-inline-lang="es">Abre la documentación</span></strong><p><span data-inline-lang="en">Opens the LittleAPI documentation for REST endpoints and related features.</span><span data-inline-lang="es">Abre la documentación de LittleAPI para endpoints REST y las demás funciones.</span></p></article>
+    </div>
+  </section>
+
+  <section class="docs-section" id="sync">
+    <p class="eyebrow">SYNCHRONIZATION</p>
+    <div class="lang-only" data-lang="en"><h2>How synchronization behaves</h2><p>The add-in treats each linked Excel worksheet as the current source for the corresponding Google Sheets tab at synchronization time.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Cómo funciona la sincronización</h2><p>Al sincronizar, el complemento toma cada hoja de Excel vinculada como el estado actual de la pestaña correspondiente de Google Sheets.</p></div>
+    <div class="behavior-grid">
+      <article class="behavior-card"><h3><span data-inline-lang="en">Writes first</span><span data-inline-lang="es">Primero escribe</span></h3><p><span data-inline-lang="en">The current Excel values are written before any obsolete remote range is cleared. This reduces the risk of leaving a tab empty if a later cleanup fails.</span><span data-inline-lang="es">Los valores actuales de Excel se escriben antes de limpiar rangos remotos obsoletos. Así se reduce el riesgo de dejar una pestaña vacía si falla una limpieza posterior.</span></p></article>
+      <article class="behavior-card"><h3><span data-inline-lang="en">Only clears what became obsolete</span><span data-inline-lang="es">Solo limpia lo que sobra</span></h3><p><span data-inline-lang="en">The add-in remembers the previous remote row and column bounds. If the worksheet did not become smaller, no CLEAR request is needed.</span><span data-inline-lang="es">El complemento recuerda los límites anteriores de filas y columnas. Si la hoja no se hizo más pequeña, no necesita ninguna operación CLEAR.</span></p></article>
+      <article class="behavior-card"><h3><span data-inline-lang="en">Linked sheets only</span><span data-inline-lang="es">Solo hojas vinculadas</span></h3><p><span data-inline-lang="en">Normal local Excel sheets that were not created or linked by LittleAPI are ignored during synchronization.</span><span data-inline-lang="es">Las hojas locales normales que no fueron creadas o vinculadas por LittleAPI se ignoran durante la sincronización.</span></p></article>
+    </div>
+    <div class="callout"><strong><span data-inline-lang="en">Example of the optimized cleanup</span><span data-inline-lang="es">Ejemplo de limpieza optimizada</span></strong><p><span data-inline-lang="en">If Google previously contained 1,000 rows and 12 columns, but Excel now contains 700 rows and 12 columns, LittleAPI writes the current data and only clears <code>A701:L1000</code>.</span><span data-inline-lang="es">Si Google antes tenía 1.000 filas y 12 columnas, pero Excel ahora tiene 700 filas y 12 columnas, LittleAPI escribe los datos actuales y solo limpia <code>A701:L1000</code>.</span></p></div>
+  </section>
+
+  <section class="docs-section" id="persistence">
+    <p class="eyebrow">PERSISTENCE</p>
+    <div class="lang-only" data-lang="en"><h2>Does the workbook stay connected after closing Excel?</h2><p>Yes. Save the Excel workbook normally and the LittleAPI connection metadata remains with it.</p></div>
+    <div class="lang-only" data-lang="es"><h2>¿El libro sigue conectado después de cerrar Excel?</h2><p>Sí. Guarda el libro de Excel normalmente y los metadatos de conexión de LittleAPI permanecen dentro del archivo.</p></div>
+    <div class="behavior-grid">
+      <article class="behavior-card"><h3>API ID</h3><p><span data-inline-lang="en">The connected LittleAPI API identifier is stored at workbook level.</span><span data-inline-lang="es">El identificador de la API de LittleAPI se guarda a nivel del libro.</span></p></article>
+      <article class="behavior-card"><h3>API key</h3><p><span data-inline-lang="en">The stored key allows the workbook to reconnect without asking again after every restart.</span><span data-inline-lang="es">La clave guardada permite que el libro se reconecte sin pedirla de nuevo en cada inicio.</span></p></article>
+      <article class="behavior-card"><h3><span data-inline-lang="en">Per-sheet link</span><span data-inline-lang="es">Vínculo por hoja</span></h3><p><span data-inline-lang="en">Each imported worksheet remembers its original Google Sheets tab name, even if the local Excel sheet is later renamed.</span><span data-inline-lang="es">Cada hoja importada recuerda el nombre original de su pestaña de Google Sheets incluso si luego renombras la hoja local de Excel.</span></p></article>
+    </div>
+    <div class="callout"><strong><span data-inline-lang="en">Use an Excel workbook format</span><span data-inline-lang="es">Usa un formato de libro de Excel</span></strong><p><span data-inline-lang="en">Save as XLSX or XLSM. A CSV file cannot preserve workbook-level connection metadata or multiple worksheets.</span><span data-inline-lang="es">Guarda como XLSX o XLSM. Un archivo CSV no puede conservar los metadatos de conexión del libro ni múltiples hojas.</span></p></div>
+  </section>
+
+  <section class="docs-section" id="security">
+    <p class="eyebrow">SECURITY</p>
+    <div class="lang-only" data-lang="en"><h2>Important API key note</h2><p>The current add-in stores its API key in the Excel workbook so the connection can survive closing and reopening Excel.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Nota importante sobre la API key</h2><p>La versión actual del complemento guarda la API key dentro del libro de Excel para que la conexión sobreviva al cerrar y volver a abrir Excel.</p></div>
+    <div class="callout warning"><strong><span data-inline-lang="en">Do not treat a connected workbook as a public file.</span><span data-inline-lang="es">No trates un libro conectado como un archivo público.</span></strong><p><span data-inline-lang="en">Anyone who receives a workbook should be considered able to access its stored connection metadata. For workbooks you plan to share, use a dedicated additional LittleAPI key with only the permissions that workbook needs, so it can be revoked independently.</span><span data-inline-lang="es">Debes considerar que quien reciba el libro puede acceder a sus metadatos de conexión. Para libros que vayas a compartir, usa una clave adicional de LittleAPI dedicada y con solo los permisos necesarios, de modo que puedas revocarla de forma independiente.</span></p></div>
+  </section>
+
+  <section class="docs-section" id="troubleshooting">
+    <p class="eyebrow">TROUBLESHOOTING</p>
+    <div class="lang-only" data-lang="en"><h2>Common situations</h2></div>
+    <div class="lang-only" data-lang="es"><h2>Situaciones comunes</h2></div>
+    <div style="overflow:auto"><table class="troubleshoot"><thead><tr><th><span data-inline-lang="en">Situation</span><span data-inline-lang="es">Situación</span></th><th><span data-inline-lang="en">What to do</span><span data-inline-lang="es">Qué hacer</span></th></tr></thead><tbody>
+      <tr><td>HTTP 401</td><td><span data-inline-lang="en">Open <strong>Configure API</strong>, verify the API ID and paste the complete valid API key again, then use <strong>Test Connection</strong>.</span><span data-inline-lang="es">Abre <strong>Configure API</strong>, verifica el API ID y vuelve a pegar la API key completa y válida; después usa <strong>Test Connection</strong>.</span></td></tr>
+      <tr><td><span data-inline-lang="en">A remote tab is missing locally</span><span data-inline-lang="es">Falta una pestaña remota en Excel</span></td><td><span data-inline-lang="en">Use <strong>Refresh Workbook</strong>. Newly detected Google Sheets tabs are created locally when needed.</span><span data-inline-lang="es">Usa <strong>Refresh Workbook</strong>. Las pestañas nuevas detectadas en Google Sheets se crean localmente cuando hace falta.</span></td></tr>
+      <tr><td><span data-inline-lang="en">A local sheet was renamed</span><span data-inline-lang="es">Renombraste una hoja local</span></td><td><span data-inline-lang="en">No action is normally required. The original remote tab name is stored internally with the worksheet.</span><span data-inline-lang="es">Normalmente no necesitas hacer nada. El nombre de la pestaña remota original queda guardado internamente con la hoja.</span></td></tr>
+      <tr><td><span data-inline-lang="en">A Google Sheets tab was deleted remotely</span><span data-inline-lang="es">Se eliminó una pestaña en Google Sheets</span></td><td><span data-inline-lang="en">Save / Synchronize skips the old local link instead of recreating the deleted remote tab automatically.</span><span data-inline-lang="es">Save / Synchronize omite el vínculo local antiguo en lugar de recrear automáticamente la pestaña remota eliminada.</span></td></tr>
+      <tr><td><span data-inline-lang="en">Refresh warning appears</span><span data-inline-lang="es">Aparece advertencia al actualizar</span></td><td><span data-inline-lang="en">Save local changes first if you want to keep them. Refresh intentionally reloads the remote version.</span><span data-inline-lang="es">Sincroniza primero los cambios locales si quieres conservarlos. Refresh vuelve a cargar deliberadamente la versión remota.</span></td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="docs-section" id="download-info">
+    <p class="eyebrow">DOWNLOAD INTEGRITY</p>
+    <h2><span data-inline-lang="en">Package verification</span><span data-inline-lang="es">Verificación del paquete</span></h2>
+    <p><span data-inline-lang="en">Current download:</span><span data-inline-lang="es">Descarga actual:</span> <code>LittleAPI_Excel_Addin_Setup.zip</code></p>
+    <p><strong>ZIP SHA-256</strong><br><code class="code-line hash">3445ce85e7a88456b25092205053e1d23fdd2ca408729423293e96ca99a09497</code></p>
+    <p><strong>Installer EXE SHA-256</strong><br><code class="code-line hash">28d38563b153a67f4e56e2d55a4d9d9cd90f707e427b681b5d9e90d655122811</code></p>
+  </section>
+</main>
+
+<footer><span>© 2026 LittleAPI</span><span><a href="./">Documentation</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></span></footer>
+
+<script>
+(() => {
+  const select = document.querySelector('#language-select');
+  const stored = localStorage.getItem('littleapi:language');
+  let lang = stored === 'es' || stored === 'en' ? stored : (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  const apply = value => {
+    lang = value === 'es' ? 'es' : 'en';
+    document.documentElement.dataset.guideLang = lang;
+    document.documentElement.lang = lang;
+    select.value = lang;
+    document.querySelector('#language-label').textContent = lang === 'es' ? 'Idioma' : 'Language';
+    document.title = lang === 'es' ? 'Complemento LittleAPI para Excel — Instalación y uso' : 'LittleAPI Excel Add-in — Setup & Usage Guide';
+    localStorage.setItem('littleapi:language', lang);
+  };
+  select.addEventListener('change', () => apply(select.value));
+  apply(lang);
+})();
+</script>
+</body>
+</html>
