@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>LittleAPI Widget</title>
+  <style>
+    :root{--bg:#071712;--panel:#0b211b;--line:#275247;--text:#effbf7;--muted:#9bbab1;--accent:#d8ff7d;--accent2:#53c8ad;--danger:#ffb4a8;--shadow:0 18px 50px rgba(0,0,0,.22)}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    body[data-theme="light"]{--bg:#f5faf8;--panel:#fff;--line:#d9e8e3;--text:#123027;--muted:#637d75;--accent:#0b766e;--accent2:#0b766e;--danger:#a4392f;--shadow:0 16px 40px rgba(25,72,61,.10)}
+    @media(prefers-color-scheme:light){body[data-theme="auto"]{--bg:#f5faf8;--panel:#fff;--line:#d9e8e3;--text:#123027;--muted:#637d75;--accent:#0b766e;--accent2:#0b766e;--danger:#a4392f;--shadow:0 16px 40px rgba(25,72,61,.10)}}
+    .widget{min-height:100vh;padding:14px}.shell{width:100%;max-width:1200px;margin:0 auto;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
+    .head{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:9px;min-width:0}.mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--accent2);color:#fff;font-weight:900}.title-wrap{min-width:0}.title{margin:0;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub{margin:2px 0 0;color:var(--muted);font-size:.72rem}.search{width:min(260px,42vw);padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--text);outline:none}.search:focus{border-color:var(--accent2)}
+    .state{padding:34px 18px;text-align:center;color:var(--muted)}.state strong{display:block;margin-bottom:7px;color:var(--text)}.state.error strong{color:var(--danger)}
+    .table-wrap{width:100%;overflow:auto}.table{width:100%;border-collapse:collapse;font-size:.8rem}.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.table th{position:sticky;top:0;background:var(--panel);z-index:1;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}.table tbody tr:last-child td{border-bottom:0}.table tbody tr:hover{background:color-mix(in srgb,var(--accent2) 8%,transparent)}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:12px}.card{padding:12px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel) 92%,var(--accent2) 8%)}.field{display:grid;grid-template-columns:minmax(70px,.45fr) minmax(0,1fr);gap:9px;padding:6px 0;border-bottom:1px dashed color-mix(in srgb,var(--line) 72%,transparent)}.field:last-child{border-bottom:0}.field b{color:var(--muted);font-size:.68rem;overflow:hidden;text-overflow:ellipsis}.field span{font-size:.76rem;overflow-wrap:anywhere}
+    .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 13px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem}.foot a{color:var(--accent);text-decoration:none;font-weight:800}.hidden{display:none!important}
+    @media(max-width:620px){.head{align-items:stretch;flex-direction:column}.search{width:100%}.widget{padding:8px}.shell{border-radius:12px}.table th,.table td{padding:9px 10px}.cards{grid-template-columns:1fr}}
+  </style>
+</head>
+<body data-theme="auto">
+  <main class="widget">
+    <section class="shell" aria-live="polite">
+      <header class="head">
+        <div class="brand"><span class="mark">↗</span><div class="title-wrap"><h1 class="title" id="widget-title">LittleAPI</h1><p class="sub" id="widget-subtitle">Datos en vivo</p></div></div>
+        <input class="search hidden" id="widget-search" type="search" autocomplete="off" placeholder="Buscar…" aria-label="Buscar en los datos" />
+      </header>
+      <div class="state" id="widget-state"><strong>Cargando datos…</strong><span>Conectando con LittleAPI.</span></div>
+      <div class="table-wrap hidden" id="table-view"><table class="table"><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+      <div class="cards hidden" id="card-view"></div>
+      <footer class="foot hidden" id="widget-foot"><span id="widget-count"></span><a href="https://littleapi.online" target="_blank" rel="noopener noreferrer">Powered by LittleAPI ↗</a></footer>
+    </section>
+  </main>
+  <script>
+  (() => {
+    const p = new URLSearchParams(location.search);
+    const apiId = (p.get('api') || '').trim();
+    const limit = Math.max(1, Math.min(100, Number(p.get('limit') || 10) || 10));
+    const view = p.get('view') === 'cards' ? 'cards' : 'table';
+    const theme = ['light','dark','auto'].includes(p.get('theme')) ? p.get('theme') : 'auto';
+    const language = p.get('lang') === 'en' ? 'en' : (p.get('lang') === 'es' ? 'es' : ((navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en'));
+    const customTitle = (p.get('title') || '').trim();
+    const labels = language === 'es'
+      ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila' : `${n} filas`, error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
+      : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search…', empty:'No rows to display.', rows:n => n === 1 ? '1 row' : `${n} rows`, error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
+
+    document.documentElement.lang = language;
+    document.body.dataset.theme = theme;
+    const state = document.querySelector('#widget-state');
+    const search = document.querySelector('#widget-search');
+    const title = document.querySelector('#widget-title');
+    const subtitle = document.querySelector('#widget-subtitle');
+    const tableView = document.querySelector('#table-view');
+    const cardView = document.querySelector('#card-view');
+    const foot = document.querySelector('#widget-foot');
+    const count = document.querySelector('#widget-count');
+    search.placeholder = labels.search;
+    search.setAttribute('aria-label', labels.search);
+    subtitle.textContent = labels.live;
+    if (customTitle) title.textContent = customTitle;
+
+    let rows = [];
+    const text = value => value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+
+    function fail(message) {
+      state.className = 'state error';
+      state.replaceChildren();
+      const strong = document.createElement('strong'); strong.textContent = labels.error;
+      const span = document.createElement('span'); span.textContent = message || labels.public;
+      state.append(strong, span);
+      search.classList.add('hidden'); tableView.classList.add('hidden'); cardView.classList.add('hidden'); foot.classList.add('hidden');
+    }
+
+    function filteredRows() {
+      const q = search.value.trim().toLowerCase();
+      if (!q) return rows;
+      return rows.filter(row => Object.values(row || {}).some(value => text(value).toLowerCase().includes(q)));
+    }
+
+    function render() {
+      const visible = filteredRows();
+      state.classList.add('hidden');
+      search.classList.toggle('hidden', rows.length < 2);
+      foot.classList.remove('hidden');
+      count.textContent = labels.rows(visible.length);
+      if (!visible.length) {
+        tableView.classList.add('hidden'); cardView.classList.add('hidden');
+        state.className = 'state'; state.replaceChildren();
+        const strong = document.createElement('strong'); strong.textContent = labels.empty;
+        state.append(strong); return;
+      }
+      state.classList.add('hidden');
+      const keys = Array.from(visible.reduce((set,row) => { Object.keys(row || {}).forEach(k => set.add(k)); return set; }, new Set()));
+      if (view === 'cards') {
+        tableView.classList.add('hidden'); cardView.classList.remove('hidden'); cardView.replaceChildren();
+        visible.forEach(row => {
+          const article = document.createElement('article'); article.className = 'card';
+          keys.forEach(key => {
+            const field = document.createElement('div'); field.className = 'field';
+            const b = document.createElement('b'); b.textContent = key;
+            const span = document.createElement('span'); span.textContent = text(row?.[key]);
+            field.append(b, span); article.append(field);
+          });
+          cardView.append(article);
+        });
+      } else {
+        cardView.classList.add('hidden'); tableView.classList.remove('hidden');
+        const head = document.querySelector('#table-head'); const body = document.querySelector('#table-body');
+        head.replaceChildren(); body.replaceChildren();
+        const trh = document.createElement('tr'); keys.forEach(key => { const th = document.createElement('th'); th.textContent = key; trh.append(th); }); head.append(trh);
+        visible.forEach(row => { const tr = document.createElement('tr'); keys.forEach(key => { const td = document.createElement('td'); td.textContent = text(row?.[key]); td.title = text(row?.[key]); tr.append(td); }); body.append(tr); });
+      }
+    }
+
+    search.addEventListener('input', render);
+    if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
+
+    fetch(`/api/v1/${encodeURIComponent(apiId)}?limit=${limit}`, { headers: { Accept:'application/json' }, credentials:'omit' })
+      .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) throw new Error(labels.public);
+          throw new Error(body?.message || body?.error || `HTTP ${response.status}`);
+        }
+        return body;
+      })
+      .then(body => {
+        rows = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
+        if (!customTitle && body?.meta?.name) title.textContent = body.meta.name;
+        render();
+      })
+      .catch(error => fail(error?.message || String(error)));
+  })();
+  </script>
+</body>
+</html>
