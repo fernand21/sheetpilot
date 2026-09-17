@@ -1,9 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">LittleAPI</title>
-  <desc id="desc">LittleAPI application icon</desc>
-  <rect width="512" height="512" rx="128" fill="#0b766e"/>
-  <path d="M136 144h240v224H136z" fill="none" stroke="#fff" stroke-width="30" stroke-linejoin="round"/>
-  <path d="M136 232h240M224 144v224" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round"/>
-  <path d="M286 282h80v80" fill="none" stroke="#d8ff7d" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M366 282l-94 94" fill="none" stroke="#d8ff7d" stroke-width="24" stroke-linecap="round"/>
+  <desc id="desc">Table data and programming symbol for LittleAPI</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22c7a8"/>
+      <stop offset="1" stop-color="#8d72ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <rect x="84" y="100" width="238" height="290" rx="26" fill="none" stroke="#fff" stroke-width="24"/>
+  <path d="M84 182h238M164 100v290" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+  <rect x="255" y="252" width="177" height="124" rx="28" fill="#071512" opacity=".96"/>
+  <path d="M311 286l-30 28 30 28M376 286l30 28-30 28M357 276l-28 76" fill="none" stroke="#d8ff7d" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
