@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="LittleAPI user workspace and API management dashboard." />
+    <meta name="theme-color" content="#0b766e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LittleAPI" />
     <title>LittleAPI — App</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b766e'/%3E%3Cpath d='M17 18h30v28H17z' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M17 29h30M28 18v28' stroke='white' stroke-width='4'/%3E%3C/svg%3E" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="littleapi-icon.svg" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="app-enhancements.css" />
     <link rel="stylesheet" href="sheet-dialog.css?v=20260916-1" />
@@ -133,6 +139,56 @@
         } catch (error) {
           console.error("LittleAPI startup failed", error);
           if (content) content.innerHTML = '<p class="form-message error">' + String(error.message || error) + "</p>";
+        }
+      })();
+    </script>
+    <script>
+      (() => {
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(error => console.error('LittleAPI PWA service worker failed', error));
+          });
+        }
+
+        let deferredInstallPrompt = null;
+        const actions = document.querySelector('#header-actions');
+        if (!actions) return;
+        const installButton = document.createElement('button');
+        installButton.type = 'button';
+        installButton.className = 'button small';
+        installButton.id = 'install-littleapi';
+        installButton.hidden = true;
+        const setInstallLabel = () => {
+          const es = localStorage.getItem('littleapi:language') === 'es';
+          installButton.textContent = es ? 'Instalar app' : 'Install app';
+        };
+        setInstallLabel();
+        actions.appendChild(installButton);
+
+        window.addEventListener('littleapi:language-change', setInstallLabel);
+        window.addEventListener('beforeinstallprompt', event => {
+          event.preventDefault();
+          deferredInstallPrompt = event;
+          installButton.hidden = false;
+        });
+        installButton.addEventListener('click', async () => {
+          if (!deferredInstallPrompt) return;
+          installButton.disabled = true;
+          try {
+            await deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+          } finally {
+            deferredInstallPrompt = null;
+            installButton.hidden = true;
+            installButton.disabled = false;
+          }
+        });
+        window.addEventListener('appinstalled', () => {
+          deferredInstallPrompt = null;
+          installButton.hidden = true;
+        });
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+          installButton.hidden = true;
         }
       })();
     </script>
