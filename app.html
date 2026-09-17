@@ -110,6 +110,12 @@
             console.error("LittleAPI additional API key controls failed", apiKeysError);
           }
 
+          try {
+            await loadScript("widget-embed.js?v=20260917-1");
+          } catch (widgetError) {
+            console.error("LittleAPI embeddable widget controls failed", widgetError);
+          }
+
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
