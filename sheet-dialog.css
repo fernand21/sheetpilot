@@ -1,0 +1,141 @@
+/* LittleAPI — New project / Google Sheets dialog */
+#sheet-dialog {
+  width: min(760px, calc(100vw - 48px));
+  max-width: 760px;
+  min-height: 620px;
+  max-height: calc(100dvh - 32px);
+  padding: 44px 48px 40px;
+  border-radius: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#sheet-dialog .dialog-close {
+  top: 16px;
+  right: 20px;
+}
+
+#sheet-dialog h2 {
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  line-height: 1.02;
+  margin-top: 4px;
+}
+
+#sheet-dialog .form-intro {
+  max-width: 610px;
+  margin: 14px 0 34px;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+#sheet-dialog .sheet-list {
+  max-height: none;
+  margin-top: 0;
+  overflow: visible;
+}
+
+#sheet-dialog .sheet-reference-form {
+  display: grid !important;
+  gap: 22px !important;
+  width: 100% !important;
+}
+
+#sheet-dialog .sheet-reference-form label {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+#sheet-dialog .sheet-reference-form label > span {
+  font-size: .94rem;
+  font-weight: 820;
+}
+
+#sheet-dialog .sheet-reference-form input {
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 16px;
+  border-radius: 11px;
+  font-size: 1rem;
+}
+
+#sheet-dialog .sheet-reference-form > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-top: 2px;
+  overflow: visible;
+}
+
+#sheet-dialog #littleapi-connect-reference {
+  min-width: 194px;
+  min-height: 56px;
+  height: auto;
+  padding: 14px 24px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+#sheet-dialog #sheet-message {
+  min-height: 32px;
+  margin: 22px 0 0;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  #sheet-dialog {
+    width: calc(100vw - 20px);
+    max-width: none;
+    min-height: 0;
+    max-height: calc(100dvh - 20px);
+    padding: 34px 24px 30px;
+    border-radius: 20px;
+  }
+
+  #sheet-dialog .dialog-close {
+    top: 10px;
+    right: 12px;
+  }
+
+  #sheet-dialog h2 {
+    font-size: clamp(2rem, 10vw, 2.7rem);
+  }
+
+  #sheet-dialog .form-intro {
+    margin-bottom: 26px;
+    font-size: .98rem;
+  }
+
+  #sheet-dialog .sheet-reference-form {
+    gap: 18px !important;
+  }
+
+  #sheet-dialog .sheet-reference-form input {
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  #sheet-dialog .sheet-reference-form > div {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  #sheet-dialog #littleapi-connect-reference,
+  #sheet-dialog .sheet-reference-form > div .action-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+  }
+}
+
+@media (max-width: 380px) {
+  #sheet-dialog {
+    width: calc(100vw - 12px);
+    padding: 30px 18px 26px;
+    border-radius: 17px;
+  }
+}
