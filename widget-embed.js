@@ -32,7 +32,7 @@
       .api-widget-panel{margin:22px 0 8px;padding:18px;border:1px solid var(--line);border-radius:14px;background:#0a201a}
       .api-widget-panel h3{margin:0 0 6px;font-size:1.05rem}.api-widget-panel>p{margin:0 0 14px;color:var(--muted);font-size:.82rem;line-height:1.5}
       .api-widget-warning{margin:0 0 14px;padding:11px 12px;border:1px solid #745b31;border-radius:9px;background:#241d10;color:#ead7a7;font-size:.75rem;line-height:1.45}.api-widget-warning.hidden{display:none}
-      .api-widget-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.api-widget-grid label{display:block!important;margin:0!important}.api-widget-grid label>span{display:block;margin:0 0 6px;font-size:.74rem;font-weight:800}.api-widget-grid input,.api-widget-grid select{width:100%}
+      .api-widget-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.api-widget-grid label{display:block!important;margin:0!important}.api-widget-grid label>span{display:block;margin:0 0 6px;font-size:.74rem;font-weight:800}.api-widget-grid input,.api-widget-grid select{width:100%}.api-widget-grid input[readonly]{opacity:.9;cursor:default}
       .api-widget-fields{margin-top:13px;padding:13px;border:1px solid #2b5147;border-radius:10px;background:#081b16}.api-widget-fields-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}.api-widget-fields-head strong{font-size:.8rem}.api-widget-fields-head small{display:block;margin-top:3px;color:var(--muted);font-size:.68rem;line-height:1.35}.api-widget-field-actions{display:flex;gap:6px;flex-wrap:wrap}.api-widget-field-actions button{padding:6px 8px;font-size:.66rem}
       .api-widget-columns{display:grid;gap:6px;max-height:270px;overflow:auto}.api-widget-column{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 9px;border:1px solid #23483e;border-radius:8px;background:#071713}.api-widget-column label{display:flex!important;align-items:center;gap:8px;margin:0!important;min-width:0}.api-widget-column input{width:16px;height:16px;accent-color:var(--teal);flex:0 0 auto}.api-widget-column-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.75rem;font-weight:760}.api-widget-column-letter{margin-left:5px;color:var(--muted);font-family:monospace;font-size:.64rem}.api-widget-order{display:flex;gap:4px}.api-widget-order button{min-width:30px;padding:5px 7px;font-size:.68rem}.api-widget-schema-status{margin:8px 0 0;color:var(--muted);font-size:.7rem}.api-widget-schema-status.error{color:#ffb4a8}
       .api-widget-code{margin-top:12px;padding:12px;border:1px solid #2b5147;border-radius:10px;background:#071713}.api-widget-code code{display:block;max-height:135px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;color:#d8ff7d;font-size:.7rem;line-height:1.5}
@@ -176,8 +176,8 @@
     panel.innerHTML = `
       <h3>${text('Widget embebible', 'Embeddable widget')}</h3>
       <p>${text(
-        'Publica los datos de lectura de esta API dentro de otra web sin exponer ninguna clave. También puedes elegir la pestaña, las columnas visibles y el orden en que aparecerán.',
-        'Publish this API read data inside another website without exposing any key. You can also choose the sheet, visible columns and their display order.'
+        'Publica los datos de lectura de esta API dentro de otra web sin exponer ninguna clave. Puedes elegir la pestaña, las columnas visibles y el orden en que aparecerán. El widget navega los datos en páginas de 25 filas.',
+        'Publish this API read data inside another website without exposing any key. You can choose the sheet, visible columns and their display order. The widget browses the data in pages of 25 rows.'
       )}</p>
       <div class="api-widget-warning ${enabled ? 'hidden' : ''}" id="api-widget-warning">${text(
         'Activa Lectura pública y el permiso Leer para utilizar el widget. Nunca insertamos X-API-Key en el código del iframe.',
@@ -188,7 +188,7 @@
         <label><span>${text('Pestaña del libro', 'Workbook sheet')}</span><select id="api-widget-sheet"><option>${text('Cargando…', 'Loading…')}</option></select></label>
         <label><span>${text('Vista', 'View')}</span><select id="api-widget-view"><option value="table">${text('Tabla', 'Table')}</option><option value="cards">${text('Tarjetas', 'Cards')}</option></select></label>
         <label><span>${text('Tema', 'Theme')}</span><select id="api-widget-theme"><option value="auto">${text('Automático', 'Automatic')}</option><option value="dark">${text('Oscuro', 'Dark')}</option><option value="light">${text('Claro', 'Light')}</option></select></label>
-        <label><span>${text('Filas máximas', 'Maximum rows')}</span><input id="api-widget-limit" type="number" min="1" max="100" value="10"></label>
+        <label><span>${text('Paginación', 'Pagination')}</span><input type="text" value="${text('25 filas por página', '25 rows per page')}" readonly></label>
       </div>
       <section class="api-widget-fields">
         <div class="api-widget-fields-head">
@@ -206,7 +206,7 @@
       </div>`;
 
     const update = () => updateCode(api);
-    ['#api-widget-title','#api-widget-view','#api-widget-theme','#api-widget-limit'].forEach(selector => panel.querySelector(selector)?.addEventListener('input', update));
+    ['#api-widget-title','#api-widget-view','#api-widget-theme'].forEach(selector => panel.querySelector(selector)?.addEventListener('input', update));
     panel.querySelector('#api-widget-sheet')?.addEventListener('change', event => void loadColumns(api, event.target.value));
     panel.querySelector('#api-widget-select-all')?.addEventListener('click', () => {
       currentColumns.forEach(column => { column.selected = true; });
@@ -231,12 +231,11 @@
     const view = panel?.querySelector('#api-widget-view')?.value || 'table';
     const theme = panel?.querySelector('#api-widget-theme')?.value || 'auto';
     const sheet = String(panel?.querySelector('#api-widget-sheet')?.value || api.default_sheet || '').trim();
-    const limit = Math.max(1, Math.min(100, Number(panel?.querySelector('#api-widget-limit')?.value || 10) || 10));
     const url = new URL('embed.html', location.href);
     url.searchParams.set('api', api.api_id);
     url.searchParams.set('view', view);
     url.searchParams.set('theme', theme);
-    url.searchParams.set('limit', String(limit));
+    url.searchParams.set('page_size', '25');
     url.searchParams.set('lang', lang());
     if (title) url.searchParams.set('title', title);
     if (sheet) url.searchParams.set('sheet', sheet);
@@ -249,7 +248,7 @@
     if (!panel || !api) return;
     const url = widgetUrl(api);
     const title = String(panel.querySelector('#api-widget-title')?.value || 'LittleAPI').trim() || 'LittleAPI';
-    const iframe = `<iframe src="${url.href}" title="${title.replace(/"/g, '&quot;')}" loading="lazy" style="width:100%;height:420px;border:0;border-radius:16px;overflow:hidden" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    const iframe = `<iframe src="${url.href}" title="${title.replace(/"/g, '&quot;')}" loading="lazy" style="width:100%;height:520px;border:0;border-radius:16px;overflow:hidden" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
     const code = panel.querySelector('#api-widget-code');
     if (code) code.textContent = iframe;
     const preview = panel.querySelector('#preview-api-widget');
