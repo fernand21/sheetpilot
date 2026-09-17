@@ -16,8 +16,8 @@
     .state{padding:34px 18px;text-align:center;color:var(--muted)}.state strong{display:block;margin-bottom:7px;color:var(--text)}.state.error strong{color:var(--danger)}
     .table-wrap{width:100%;overflow:auto}.table{width:100%;border-collapse:collapse;font-size:.8rem}.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.table th{position:sticky;top:0;background:var(--panel);z-index:1;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}.table tbody tr:last-child td{border-bottom:0}.table tbody tr:hover{background:color-mix(in srgb,var(--accent2) 8%,transparent)}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:12px}.card{padding:12px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--panel) 92%,var(--accent2) 8%)}.field{display:grid;grid-template-columns:minmax(70px,.45fr) minmax(0,1fr);gap:9px;padding:6px 0;border-bottom:1px dashed color-mix(in srgb,var(--line) 72%,transparent)}.field:last-child{border-bottom:0}.field b{color:var(--muted);font-size:.68rem;overflow:hidden;text-overflow:ellipsis}.field span{font-size:.76rem;overflow-wrap:anywhere}
-    .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 13px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem}.foot a{color:var(--accent);text-decoration:none;font-weight:800}.hidden{display:none!important}
-    @media(max-width:620px){.head{align-items:stretch;flex-direction:column}.search{width:100%}.widget{padding:8px}.shell{border-radius:12px}.table th,.table td{padding:9px 10px}.cards{grid-template-columns:1fr}}
+    .foot{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 13px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem;flex-wrap:wrap}.foot a{color:var(--accent);text-decoration:none;font-weight:800}.foot-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pagination{display:flex;align-items:center;gap:7px}.page-button{appearance:none;border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:transparent;color:var(--text);font:inherit;font-weight:800;cursor:pointer}.page-button:hover:not(:disabled){border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 9%,transparent)}.page-button:disabled{opacity:.38;cursor:not-allowed}.page-label{min-width:72px;text-align:center;font-weight:800;color:var(--text)}.hidden{display:none!important}
+    @media(max-width:620px){.head{align-items:stretch;flex-direction:column}.search{width:100%}.widget{padding:8px}.shell{border-radius:12px}.table th,.table td{padding:9px 10px}.cards{grid-template-columns:1fr}.foot{align-items:stretch;flex-direction:column}.foot-right{justify-content:space-between}.pagination{justify-content:flex-start}}
   </style>
 </head>
 <body data-theme="auto">
@@ -30,14 +30,26 @@
       <div class="state" id="widget-state"><strong>Cargando datos…</strong><span>Conectando con LittleAPI.</span></div>
       <div class="table-wrap hidden" id="table-view"><table class="table"><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
       <div class="cards hidden" id="card-view"></div>
-      <footer class="foot hidden" id="widget-foot"><span id="widget-count"></span><a href="https://littleapi.online" target="_blank" rel="noopener noreferrer">Powered by LittleAPI ↗</a></footer>
+      <footer class="foot hidden" id="widget-foot">
+        <span id="widget-count"></span>
+        <div class="foot-right">
+          <nav class="pagination" id="widget-pagination" aria-label="Paginación">
+            <button class="page-button" type="button" id="page-prev">Anterior</button>
+            <span class="page-label" id="page-label">Página 1</span>
+            <button class="page-button" type="button" id="page-next">Siguiente</button>
+          </nav>
+          <a href="https://littleapi.online" target="_blank" rel="noopener noreferrer">Powered by LittleAPI ↗</a>
+        </div>
+      </footer>
     </section>
   </main>
   <script>
   (() => {
     const p = new URLSearchParams(location.search);
     const apiId = (p.get('api') || '').trim();
-    const limit = Math.max(1, Math.min(100, Number(p.get('limit') || 10) || 10));
+    // New widgets use page_size=25. Keep limit as a backward-compatible alias
+    // so already-copied iframe codes continue to work.
+    const pageSize = Math.max(1, Math.min(100, Number(p.get('page_size') || p.get('limit') || 25) || 25));
     const view = p.get('view') === 'cards' ? 'cards' : 'table';
     const theme = ['light','dark','auto'].includes(p.get('theme')) ? p.get('theme') : 'auto';
     const language = p.get('lang') === 'en' ? 'en' : (p.get('lang') === 'es' ? 'es' : ((navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en'));
@@ -45,8 +57,8 @@
     const sheet = (p.get('sheet') || '').trim();
     const columns = p.getAll('col').map(value => String(value || '').trim().toUpperCase()).filter(value => /^[A-Z]+$/.test(value));
     const labels = language === 'es'
-      ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila' : `${n} filas`, error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
-      : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search…', empty:'No rows to display.', rows:n => n === 1 ? '1 row' : `${n} rows`, error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
+      ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila en esta página' : `${n} filas en esta página`, page:n => `Página ${n}`, previous:'Anterior', next:'Siguiente', error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
+      : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search…', empty:'No rows to display.', rows:n => n === 1 ? '1 row on this page' : `${n} rows on this page`, page:n => `Page ${n}`, previous:'Previous', next:'Next', error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
 
     document.documentElement.lang = language;
     document.body.dataset.theme = theme;
@@ -58,12 +70,20 @@
     const cardView = document.querySelector('#card-view');
     const foot = document.querySelector('#widget-foot');
     const count = document.querySelector('#widget-count');
+    const prev = document.querySelector('#page-prev');
+    const next = document.querySelector('#page-next');
+    const pageLabel = document.querySelector('#page-label');
     search.placeholder = labels.search;
     search.setAttribute('aria-label', labels.search);
+    prev.textContent = labels.previous;
+    next.textContent = labels.next;
     subtitle.textContent = sheet ? `${labels.live} · ${sheet}` : labels.live;
     if (customTitle) title.textContent = customTitle;
 
     let rows = [];
+    let currentPage = 1;
+    let hasNext = false;
+    let loading = false;
     const text = value => value == null ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
 
     function fail(message) {
@@ -81,12 +101,19 @@
       return rows.filter(row => Object.values(row || {}).some(value => text(value).toLowerCase().includes(q)));
     }
 
+    function updatePagination() {
+      prev.disabled = loading || currentPage <= 1;
+      next.disabled = loading || !hasNext;
+      pageLabel.textContent = labels.page(currentPage);
+    }
+
     function render() {
       const visible = filteredRows();
       state.classList.add('hidden');
       search.classList.toggle('hidden', rows.length < 2);
       foot.classList.remove('hidden');
       count.textContent = labels.rows(visible.length);
+      updatePagination();
       if (!visible.length) {
         tableView.classList.add('hidden'); cardView.classList.add('hidden');
         state.className = 'state'; state.replaceChildren();
@@ -116,33 +143,60 @@
       }
     }
 
-    search.addEventListener('input', render);
-    if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
+    async function loadPage(page) {
+      if (loading) return;
+      loading = true;
+      currentPage = Math.max(1, Number(page) || 1);
+      updatePagination();
+      state.className = 'state';
+      state.replaceChildren();
+      const strong = document.createElement('strong'); strong.textContent = labels.loading;
+      const span = document.createElement('span'); span.textContent = labels.connecting;
+      state.append(strong, span);
+      state.classList.remove('hidden');
+      tableView.classList.add('hidden');
+      cardView.classList.add('hidden');
+      search.value = '';
 
-    // Use the query route so Google applies both column projection and row limit
-    // before the data reaches the Edge Function. The generator stores selected
-    // columns as Google column letters, preserving the user's chosen order.
-    const selection = columns.length ? columns.join(', ') : '*';
-    const query = `select ${selection} limit ${limit}`;
-    const params = new URLSearchParams({ columns: 'letters', headers: '1', q: query });
-    if (sheet) params.set('sheet', sheet);
-    const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?${params.toString()}`;
-    fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' })
-      .then(async response => {
+      try {
+        // Ask Google for one extra row. That lets us know whether a next page
+        // exists without counting or loading the whole workbook.
+        const selection = columns.length ? columns.join(', ') : '*';
+        const offset = (currentPage - 1) * pageSize;
+        const query = `select ${selection} limit ${pageSize + 1} offset ${offset}`;
+        const params = new URLSearchParams({ columns: 'letters', headers: '1', q: query });
+        if (sheet) params.set('sheet', sheet);
+        const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?${params.toString()}`;
+        const response = await fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) throw new Error(labels.public);
           throw new Error(body?.message || body?.error || `HTTP ${response.status}`);
         }
-        return body;
-      })
-      .then(body => {
-        rows = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
+        const fetched = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
+        hasNext = fetched.length > pageSize;
+        rows = fetched.slice(0, pageSize);
+        if (!rows.length && currentPage > 1) {
+          currentPage -= 1;
+          loading = false;
+          return loadPage(currentPage);
+        }
         if (!customTitle && body?.meta?.name) title.textContent = body.meta.name;
         if (!sheet && body?.meta?.sheet) subtitle.textContent = `${labels.live} · ${body.meta.sheet}`;
         render();
-      })
-      .catch(error => fail(error?.message || String(error)));
+      } catch (error) {
+        fail(error?.message || String(error));
+      } finally {
+        loading = false;
+        updatePagination();
+      }
+    }
+
+    search.addEventListener('input', render);
+    prev.addEventListener('click', () => void loadPage(currentPage - 1));
+    next.addEventListener('click', () => void loadPage(currentPage + 1));
+    if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
+    void loadPage(1);
   })();
   </script>
 </body>
