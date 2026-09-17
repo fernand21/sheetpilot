@@ -42,6 +42,8 @@
     const theme = ['light','dark','auto'].includes(p.get('theme')) ? p.get('theme') : 'auto';
     const language = p.get('lang') === 'en' ? 'en' : (p.get('lang') === 'es' ? 'es' : ((navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en'));
     const customTitle = (p.get('title') || '').trim();
+    const sheet = (p.get('sheet') || '').trim();
+    const columns = p.getAll('col').map(value => String(value || '').trim().toUpperCase()).filter(value => /^[A-Z]+$/.test(value));
     const labels = language === 'es'
       ? { live:'Datos en vivo', loading:'Cargando datos…', connecting:'Conectando con LittleAPI.', search:'Buscar…', empty:'No hay filas para mostrar.', rows:n => n === 1 ? '1 fila' : `${n} filas`, error:'No se pudo cargar el widget', public:'Este widget sólo puede mostrar APIs con lectura pública habilitada.' }
       : { live:'Live data', loading:'Loading data…', connecting:'Connecting to LittleAPI.', search:'Search…', empty:'No rows to display.', rows:n => n === 1 ? '1 row' : `${n} rows`, error:'The widget could not be loaded', public:'This widget can only display APIs with public read enabled.' };
@@ -58,7 +60,7 @@
     const count = document.querySelector('#widget-count');
     search.placeholder = labels.search;
     search.setAttribute('aria-label', labels.search);
-    subtitle.textContent = labels.live;
+    subtitle.textContent = sheet ? `${labels.live} · ${sheet}` : labels.live;
     if (customTitle) title.textContent = customTitle;
 
     let rows = [];
@@ -117,13 +119,14 @@
     search.addEventListener('input', render);
     if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
 
-    // The normal REST list route must build the entire sheet before applying
-    // limit/offset. For an embeddable preview that can be unnecessarily heavy
-    // on large workbooks. Use LittleAPI's query route instead so Google applies
-    // the row limit upstream and the Edge Function only receives the rows the
-    // widget actually needs.
-    const query = `select * limit ${limit}`;
-    const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?columns=letters&headers=1&q=${encodeURIComponent(query)}`;
+    // Use the query route so Google applies both column projection and row limit
+    // before the data reaches the Edge Function. The generator stores selected
+    // columns as Google column letters, preserving the user's chosen order.
+    const selection = columns.length ? columns.join(', ') : '*';
+    const query = `select ${selection} limit ${limit}`;
+    const params = new URLSearchParams({ columns: 'letters', headers: '1', q: query });
+    if (sheet) params.set('sheet', sheet);
+    const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?${params.toString()}`;
     fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' })
       .then(async response => {
         const body = await response.json().catch(() => ({}));
@@ -136,6 +139,7 @@
       .then(body => {
         rows = Array.isArray(body) ? body : (Array.isArray(body?.data) ? body.data : []);
         if (!customTitle && body?.meta?.name) title.textContent = body.meta.name;
+        if (!sheet && body?.meta?.sheet) subtitle.textContent = `${labels.live} · ${body.meta.sheet}`;
         render();
       })
       .catch(error => fail(error?.message || String(error)));
