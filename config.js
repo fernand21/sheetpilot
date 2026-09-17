@@ -9,10 +9,19 @@ window.SUPABASE_CONFIG = {
 
 (() => {
   const loadLandingUpgrades = () => {
-    if (!document.querySelector('#public-home') || document.querySelector('script[data-littleapi-landing-upgrades]')) return;
+    const home = document.querySelector('#public-home');
+    if (!home || document.querySelector('script[data-littleapi-landing-upgrades]')) return;
+    const syncVisibility = () => {
+      const section = document.querySelector('#littleapi-modern-features');
+      if (section) section.classList.toggle('hidden', home.classList.contains('hidden'));
+    };
     const script = document.createElement('script');
     script.src = 'landing-upgrades.js?v=20260917-1';
     script.dataset.littleapiLandingUpgrades = 'true';
+    script.onload = () => {
+      syncVisibility();
+      new MutationObserver(syncVisibility).observe(home, { attributes:true, attributeFilter:['class'] });
+    };
     document.body.appendChild(script);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadLandingUpgrades, { once:true });
