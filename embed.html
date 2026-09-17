@@ -117,7 +117,14 @@
     search.addEventListener('input', render);
     if (!apiId || !/^[A-Za-z0-9_-]{8,120}$/.test(apiId)) return fail(language === 'es' ? 'Falta un API ID válido.' : 'A valid API ID is required.');
 
-    fetch(`/api/v1/${encodeURIComponent(apiId)}?limit=${limit}`, { headers: { Accept:'application/json' }, credentials:'omit' })
+    // The normal REST list route must build the entire sheet before applying
+    // limit/offset. For an embeddable preview that can be unnecessarily heavy
+    // on large workbooks. Use LittleAPI's query route instead so Google applies
+    // the row limit upstream and the Edge Function only receives the rows the
+    // widget actually needs.
+    const query = `select * limit ${limit}`;
+    const queryUrl = `/api/v1/${encodeURIComponent(apiId)}/query?columns=letters&headers=1&q=${encodeURIComponent(query)}`;
+    fetch(queryUrl, { headers: { Accept:'application/json' }, credentials:'omit' })
       .then(async response => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) {
