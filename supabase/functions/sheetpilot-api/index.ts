@@ -197,8 +197,17 @@ async function sheetsRequest(api: ApiRecord, token: string, path: string, init: 
   if (!result.ok) throw new Error(`Google Sheets respondió ${result.status}: ${text.slice(0, 500)}`);
   return text ? JSON.parse(text) : {};
 }
-async function readAuthorized(api: ApiRecord, token: string, sheet: string): Promise<TableData> {
-  const data = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A:ZZ"))}?majorDimension=ROWS`);
+async function readAuthorized(
+  api: ApiRecord,
+  token: string,
+  sheet: string,
+  valueRenderOption: "FORMATTED_VALUE" | "FORMULA" = "FORMATTED_VALUE",
+): Promise<TableData> {
+  const data = await sheetsRequest(
+    api,
+    token,
+    `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A:ZZ"))}?majorDimension=ROWS&valueRenderOption=${encodeURIComponent(valueRenderOption)}`,
+  );
   const values = Array.isArray(data.values) ? data.values : [];
   const headers = (values[0] || []).map((value: unknown, index: number) => String(value || columnName(index + 1)));
   return { headers, rows: values.slice(1), values };
@@ -488,6 +497,17 @@ async function exportOperation(api: ApiRecord, request: Request, format: "csv" |
   const url = new URL(request.url), sheet = url.searchParams.get("sheet") || api.default_sheet || "Sheet1";
   if (format === "csv") {
     if (api.resource_type !== "sheet") return failure(400, "not_a_sheet_api", "CSV sólo está disponible para APIs de Sheets.");
+
+    const render = String(url.searchParams.get("render") || "").toUpperCase() === "FORMULA"
+      ? "FORMULA"
+      : "FORMATTED_VALUE";
+
+    if (render === "FORMULA") {
+      if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API requiere la cabecera X-API-Key.");
+      const table = await readAuthorized(api, await googleTokenForUser(api.user_id), sheet, "FORMULA");
+      return csvResponse(api, table, sheet);
+    }
+
     const table = api.public_read ? await readPublicSheet(api, sheet) : (await hasApiKey(api, request) ? await readAuthorized(api, await googleTokenForUser(api.user_id), sheet) : null);
     if (!table) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key.");
     return csvResponse(api, table, sheet);
