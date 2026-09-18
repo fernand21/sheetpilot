@@ -100,7 +100,7 @@
       ],
       download:'Download Excel Add-in',
       docs:'Setup and button guide →',
-      package:'Windows installer · download and run the setup directly · SHA-256 is available in the documentation.',
+      package:'Windows installer · always downloads the latest published GitHub Release · SHA-256 is available in the documentation.',
       demoTitle:'LittleAPI for Excel',demoState:'Workbook connected',
       ribbon:['Configure API','Test Connection','Load Workbook','Refresh Workbook','Save / Synchronize'],
       tabs:['CARTERA','COORDENADAS','CLIENTS'],
@@ -135,7 +135,7 @@
             <div class="excel-badges">${t.badges.map(item=>`<span class="excel-badge">${item}</span>`).join('')}</div>
             <ul class="excel-checks">${t.checks.map(item=>`<li>${item}</li>`).join('')}</ul>
             <div class="excel-actions">
-              <a class="download" href="downloads/LittleAPI_Excel_Addin_Setup.exe" download>${t.download}</a>
+              <a class="download" href="https://github.com/fernand21/sheetpilot/releases/latest/download/LittleAPI_Excel_Addin_Setup.exe" download>${t.download}</a>
               <a class="docs" href="docs/excel-addin.html">${t.docs}</a>
             </div>
             <p class="excel-small">${t.package}</p>
