@@ -33,6 +33,70 @@
   section.className = 'modern-features';
   home.insertAdjacentElement('afterend', section);
 
+  const ADDIN_RELEASES_API = 'https://api.github.com/repos/fernand21/sheetpilot/releases?per_page=100';
+  const ADDIN_RELEASES_PAGE = 'https://github.com/fernand21/sheetpilot/releases';
+  const ADDIN_ASSET_NAME = 'LittleAPI_Excel_Addin_Setup.exe';
+  let addinReleasePromise = null;
+
+  const addinAssetFromRelease = release => {
+    const assets = Array.isArray(release?.assets) ? release.assets : [];
+    return assets.find(asset => asset.name === ADDIN_ASSET_NAME)
+      || assets.find(asset => /little.?api/i.test(asset.name || '') && /(addin|add-in|setup|bundle)/i.test(asset.name || '') && /\.exe$/i.test(asset.name || ''))
+      || (assets.filter(asset => /\.exe$/i.test(asset.name || '')).length === 1
+        ? assets.filter(asset => /\.exe$/i.test(asset.name || ''))[0]
+        : null);
+  };
+
+  function getAddinRelease() {
+    if (addinReleasePromise) return addinReleasePromise;
+    addinReleasePromise = fetch(ADDIN_RELEASES_API, { headers:{ Accept:'application/vnd.github+json' } })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('GitHub release request failed')))
+      .then(list => {
+        const stable = (Array.isArray(list) ? list : [])
+          .filter(release => !release.draft && !release.prerelease)
+          .sort((a,b) => new Date(b.published_at || b.created_at || 0) - new Date(a.published_at || a.created_at || 0));
+        const release = stable[0] || null;
+        return release ? { release, asset:addinAssetFromRelease(release) } : null;
+      })
+      .catch(() => null);
+    return addinReleasePromise;
+  }
+
+  function syncAddinRelease() {
+    const link = section.querySelector('[data-addin-download]');
+    const meta = section.querySelector('[data-addin-meta]');
+    if (!link) return;
+
+    link.href = ADDIN_RELEASES_PAGE;
+    link.removeAttribute('download');
+
+    getAddinRelease().then(data => {
+      if (!link.isConnected) return;
+      const lang = language();
+      if (!data?.release || !data?.asset) {
+        link.href = ADDIN_RELEASES_PAGE;
+        link.textContent = lang === 'es' ? 'Ver GitHub Releases' : 'View GitHub Releases';
+        if (meta) meta.textContent = lang === 'es'
+          ? 'Publica una release estable con el instalador EXE y el botón se enlazará automáticamente.'
+          : 'Publish a stable release with the EXE installer and this button will link to it automatically.';
+        return;
+      }
+
+      const { release, asset } = data;
+      link.href = asset.browser_download_url;
+      link.textContent = lang === 'es' ? 'Descargar complemento para Excel' : 'Download Excel Add-in';
+
+      if (meta) {
+        const mb = asset.size ? (asset.size / 1024 / 1024).toFixed(2) + ' MB' : '';
+        const version = release.tag_name || release.name || '';
+        const downloads = Number(asset.download_count || 0);
+        meta.textContent = lang === 'es'
+          ? `Instalador para Windows · ${version}${mb ? ' · ' + mb : ''} · ↓ ${downloads} descargas · GitHub Releases`
+          : `Windows installer · ${version}${mb ? ' · ' + mb : ''} · ↓ ${downloads} downloads · GitHub Releases`;
+      }
+    });
+  }
+
   const copy = {
     es: {
       eyebrow:'MÁS QUE JSON',
@@ -135,10 +199,10 @@
             <div class="excel-badges">${t.badges.map(item=>`<span class="excel-badge">${item}</span>`).join('')}</div>
             <ul class="excel-checks">${t.checks.map(item=>`<li>${item}</li>`).join('')}</ul>
             <div class="excel-actions">
-              <a class="download" href="https://github.com/fernand21/sheetpilot/releases/latest/download/LittleAPI_Excel_Addin_Setup.exe" download>${t.download}</a>
+              <a class="download" data-addin-download href="https://github.com/fernand21/sheetpilot/releases">${t.download}</a>
               <a class="docs" href="docs/excel-addin.html">${t.docs}</a>
             </div>
-            <p class="excel-small">${t.package}</p>
+            <p class="excel-small" data-addin-meta>${t.package}</p>
           </div>
           <div class="excel-demo" aria-label="LittleAPI Excel add-in workflow preview">
             <div class="excel-demo-head"><strong>${t.demoTitle}</strong><span>● ${t.demoState}</span></div>
@@ -152,5 +216,6 @@
   }
 
   render();
-  window.addEventListener('littleapi:language-change', render);
+  syncAddinRelease();
+  window.addEventListener('littleapi:language-change', () => { render(); syncAddinRelease(); });
 })();
