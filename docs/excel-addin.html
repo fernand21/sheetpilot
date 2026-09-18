@@ -32,10 +32,10 @@
         <p class="lead">Usa Microsoft Excel como editor de escritorio para un libro completo de Google Sheets. Carga todas las pestañas vinculadas, trabaja normalmente en Excel y luego sincroniza los cambios mediante LittleAPI.</p>
       </div>
       <div class="hero-actions">
-        <a class="download-button" href="https://github.com/fernand21/sheetpilot/releases/latest/download/LittleAPI_Excel_Addin_Setup.exe" download><span data-inline-lang="en">Download Excel Add-in</span><span data-inline-lang="es">Descargar complemento para Excel</span></a>
+        <a class="download-button" id="excel-addin-download" href="https://github.com/fernand21/sheetpilot/releases"><span data-inline-lang="en">Download Excel Add-in</span><span data-inline-lang="es">Descargar complemento para Excel</span></a>
         <a class="secondary-button" href="#connect"><span data-inline-lang="en">Connection guide ↓</span><span data-inline-lang="es">Guía de conexión ↓</span></a>
       </div>
-      <p class="package-meta"><span data-inline-lang="en">Windows installer · the download always points to the latest published GitHub Release.</span><span data-inline-lang="es">Instalador para Windows · la descarga siempre apunta a la última versión publicada en GitHub Releases.</span></p>
+      <p class="package-meta" id="excel-addin-release-meta"><span data-inline-lang="en">The installer is synchronized with the latest stable GitHub Release.</span><span data-inline-lang="es">El instalador se sincroniza con la última GitHub Release estable.</span></p>
     </div>
     <div class="addin-preview" aria-label="LittleAPI Excel add-in preview">
       <div class="addin-preview-head"><strong>LittleAPI for Excel</strong><span>● <span data-inline-lang="en">Workbook connected</span><span data-inline-lang="es">Libro conectado</span></span></div>
@@ -154,8 +154,8 @@
     <p class="eyebrow">DOWNLOAD INTEGRITY</p>
     <h2><span data-inline-lang="en">Package verification</span><span data-inline-lang="es">Verificación del paquete</span></h2>
     <p><span data-inline-lang="en">Current download:</span><span data-inline-lang="es">Descarga actual:</span> <code>LittleAPI_Excel_Addin_Setup.exe</code></p>
-    <p><strong>EXE SHA-256</strong><br><code class="code-line hash">28d38563b153a67f4e56e2d55a4d9d9cd90f707e427b681b5d9e90d655122811</code></p>
-    <p><strong>Installer EXE SHA-256</strong><br><code class="code-line hash">28d38563b153a67f4e56e2d55a4d9d9cd90f707e427b681b5d9e90d655122811</code></p>
+    <p><strong>EXE SHA-256</strong><br><code class="code-line hash" id="excel-addin-sha256">Published release SHA-256</code></p>
+    
   </section>
 </main>
 
@@ -179,5 +179,64 @@
   apply(lang);
 })();
 </script>
+
+<script>
+(() => {
+  const API = 'https://api.github.com/repos/fernand21/sheetpilot/releases?per_page=100';
+  const RELEASES = 'https://github.com/fernand21/sheetpilot/releases';
+  const PREFERRED = 'LittleAPI_Excel_Addin_Setup.exe';
+
+  const pickAsset = release => {
+    const assets = Array.isArray(release?.assets) ? release.assets : [];
+    return assets.find(asset => asset.name === PREFERRED)
+      || assets.find(asset => /little.?api/i.test(asset.name || '') && /(addin|add-in|setup|bundle)/i.test(asset.name || '') && /\.exe$/i.test(asset.name || ''))
+      || (assets.filter(asset => /\.exe$/i.test(asset.name || '')).length === 1
+        ? assets.filter(asset => /\.exe$/i.test(asset.name || ''))[0]
+        : null);
+  };
+
+  fetch(API, { headers:{ Accept:'application/vnd.github+json' } })
+    .then(response => response.ok ? response.json() : Promise.reject(new Error('GitHub release request failed')))
+    .then(list => {
+      const stable = (Array.isArray(list) ? list : [])
+        .filter(release => !release.draft && !release.prerelease)
+        .sort((a,b) => new Date(b.published_at || b.created_at || 0) - new Date(a.published_at || a.created_at || 0));
+
+      const release = stable[0] || null;
+      const asset = release ? pickAsset(release) : null;
+      const link = document.querySelector('#excel-addin-download');
+      const meta = document.querySelector('#excel-addin-release-meta');
+      const hash = document.querySelector('#excel-addin-sha256');
+      const lang = () => document.documentElement.dataset.guideLang === 'es' ? 'es' : 'en';
+
+      if (!link) return;
+
+      if (!release || !asset) {
+        link.href = RELEASES;
+        link.querySelectorAll('[data-inline-lang="en"]').forEach(n => n.textContent = 'View GitHub Releases');
+        link.querySelectorAll('[data-inline-lang="es"]').forEach(n => n.textContent = 'Ver GitHub Releases');
+        if (meta) meta.textContent = lang() === 'es'
+          ? 'Todavía no hay una release estable con el instalador EXE publicado.'
+          : 'There is not yet a stable release with the EXE installer published.';
+        if (hash) hash.textContent = '—';
+        return;
+      }
+
+      link.href = asset.browser_download_url;
+      const mb = asset.size ? (asset.size / 1024 / 1024).toFixed(2) + ' MB' : '';
+      const version = release.tag_name || release.name || '';
+      const downloads = Number(asset.download_count || 0);
+      if (meta) meta.textContent = lang() === 'es'
+        ? `GitHub Release ${version}${mb ? ' · ' + mb : ''} · ↓ ${downloads} descargas`
+        : `GitHub Release ${version}${mb ? ' · ' + mb : ''} · ↓ ${downloads} downloads`;
+      if (hash) hash.textContent = String(asset.digest || '').replace(/^sha256:/i,'') || 'SHA-256 not published by GitHub';
+    })
+    .catch(() => {
+      const link = document.querySelector('#excel-addin-download');
+      if (link) link.href = RELEASES;
+    });
+})();
+</script>
+
 </body>
 </html>
