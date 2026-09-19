@@ -33,7 +33,7 @@ window.SUPABASE_CONFIG = {
       if (section) section.classList.toggle('hidden', home.classList.contains('hidden'));
     };
     const script = document.createElement('script');
-    script.src = 'landing-upgrades.js?v=20260918-8';
+    script.src = 'landing-upgrades.js?v=20260918-9';
     script.dataset.littleapiLandingUpgrades = 'true';
     script.onload = () => {
       syncVisibility();
