@@ -85,7 +85,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260919-2"></script>
+<script src="config.js?v=20260919-3"></script>
 <script>
 (() => {
 const cfg=window.SUPABASE_CONFIG||{},apiId=new URLSearchParams(location.search).get("api")||"";
@@ -198,7 +198,7 @@ $("#data-name-en").value=state.screens.data.labelEn;$("#data-name-es").value=sta
 renderIcons("data-icons",state.screens.data);renderIcons("form-icons",state.screens.form);renderIcons("dashboard-icons",state.screens.dashboard);renderIcons("chat-icons",state.screens.chat);$$$("[data-data-view]").forEach(b=>b.classList.toggle("selected",b.dataset.dataView===state.screens.data.view));$$$("[data-data-toggle]").forEach(b=>b.classList.toggle("on",Boolean(state.screens.data[b.dataset.dataToggle])));
 renderFields();renderFormFields();renderTexts();renderDashboardBlocks();renderChatSelects();renderPreview();sensitive();updateUrl();
 }
-function updateUrl(){const slug=slugify($("#slug").value||state.name);$("#public-url").textContent=location.origin+"/littleapp.html?v=20260919-2&app="+slug;$("#open-app").href=location.origin+"/littleapp.html?v=20260919-2&app="+slug}
+function updateUrl(){const slug=slugify($("#slug").value||state.name);$("#public-url").textContent=location.origin+"/littleapp-v3.html?app="+slug;$("#open-app").href=location.origin+"/littleapp-v3.html?app="+slug}
 function translate(){
 document.documentElement.lang=lang();$("#builder-language").value=lang();$$$("[data-k]").forEach(n=>{if(C[lang()][n.dataset.k])n.textContent=t(n.dataset.k)});$("#page-title").textContent=t("title");$("#page-lead").textContent=t("lead");$("#detected").textContent=t("detected").replace("{n}",String(state.fields.length));$("#mode").value=api?(api.public_read?t("publicMode"):t("privateMode")):"";
 const theme={light:t("light"),dark:t("dark"),auto:t("system")};Array.from($("#theme").options).forEach(o=>o.textContent=theme[o.value]||o.value);const nav={top:t("top"),sidebar:t("sidebar"),bottom:t("bottom")};Array.from($("#navigation").options).forEach(o=>o.textContent=nav[o.value]||o.value);const ns={iconText:t("iconText"),icons:t("icons")};Array.from($("#nav-style").options).forEach(o=>o.textContent=ns[o.value]||o.value);$$$("[data-icon]").forEach(n=>n.innerHTML=icon(n.dataset.icon));$("#save-icon").innerHTML=icon("save");if($("#delete-app-icon"))$("#delete-app-icon").innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';renderFields();renderFormFields();renderTexts();renderDashboardBlocks();renderPreview();
