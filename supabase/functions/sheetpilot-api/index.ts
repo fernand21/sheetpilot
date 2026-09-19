@@ -1188,9 +1188,10 @@ async function publicLittleApp(request: Request, path: string[]) {
   };
 
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-19&app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-20&app=${encodeURIComponent(app.slug)}`;
+    const manifestId = `https://littleapi.online/pwa/${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
-      id: startUrl,
+      id: manifestId,
       name: app.name,
       short_name: String(app.name || "LittleApp").slice(0, 24),
       description: "Application powered by LittleAPI and Google Sheets.",
@@ -1212,12 +1213,11 @@ async function publicLittleApp(request: Request, path: string[]) {
             purpose: "any",
           }];
         }
-        return [{
-          src: "https://littleapi.online/littleapi-icon.svg",
-          sizes: "any",
-          type: "image/svg+xml",
-          purpose: "any maskable",
-        }];
+        return [
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+          { src: "https://littleapi.online/logo-sheetpilot.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "https://littleapi.online/logo-sheetpilot.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+        ];
       })(),
     }), {
       status: 200,
@@ -1227,6 +1227,89 @@ async function publicLittleApp(request: Request, path: string[]) {
         "Cache-Control": "no-store, max-age=0",
       },
     });
+  }
+
+  if (path[1] === "sync") {
+    if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para sincronizar una aplicación.");
+    const api = await getApi(app.api_id);
+    if (!api || api.resource_type !== "sheet") return failure(404, "api_not_found", "La fuente de datos de esta aplicación ya no está disponible.");
+
+    const quotaError = await consumeQuota(api);
+    if (quotaError) return quotaError;
+
+    const token = await googleTokenForUser(api.user_id);
+    const screenDefs: Array<{ id: string; config: any; sheet: string }> = [];
+    const screens = config?.screens && typeof config.screens === "object" ? config.screens : {};
+    for (const type of ["data", "form", "chat"]) {
+      const screen = screens?.[type] && typeof screens[type] === "object" ? screens[type] : null;
+      if (screen?.active === true) screenDefs.push({ id: type, config: screen, sheet: String(screen.sheet || app.sheet || api.default_sheet || "Sheet1") });
+    }
+    const customPages = Array.isArray(config?.customPages) ? config.customPages : [];
+    for (const page of customPages) {
+      if (page?.active === false || String(page?.mode || "content") === "content") continue;
+      screenDefs.push({ id: String(page.id || crypto.randomUUID()), config: page, sheet: String(page.sheet || app.sheet || api.default_sheet || "Sheet1") });
+    }
+    if (!screenDefs.length) {
+      screenDefs.push({ id: "data", config: screens?.data || {}, sheet: String(app.sheet || api.default_sheet || "Sheet1") });
+    }
+
+    const dashboardConfig = screens?.dashboard && typeof screens.dashboard === "object" && screens.dashboard.active === true ? screens.dashboard : null;
+    const dashboardSheet = dashboardConfig ? String(dashboardConfig.sheet || app.sheet || api.default_sheet || "Sheet1") : "";
+    const sheetNames = new Set(screenDefs.map((item) => item.sheet));
+    if (dashboardSheet) sheetNames.add(dashboardSheet);
+
+    const tables = new Map<string, TableData>();
+    for (const sheet of sheetNames) tables.set(sheet, await readAuthorized(api, token, sheet));
+
+    const pagePayload: Record<string, unknown> = {};
+    for (const def of screenDefs) {
+      const table = tables.get(def.sheet)!;
+      const pageFields = Array.isArray(def.config?.fields) ? def.config.fields.filter((field: any) => field?.name) : [];
+      const fallbackFields = def.sheet === String(app.sheet || "") ? visibleFields : [];
+      const configuredPageFields = pageFields.length ? pageFields : fallbackFields;
+      const names = (configuredPageFields.length
+        ? configuredPageFields.filter((field: any) => field?.visible !== false).map((field: any) => String(field.name))
+        : table.headers
+      ).filter((name: string) => table.headers.includes(name));
+      const allowedNames = new Set(names);
+      const rows = table.rows
+        .map((row, index) => ({ row, sheetRow: index + 2 }))
+        .filter((entry) => rowHasData(entry.row))
+        .map((entry) => {
+          const object: Record<string, unknown> = { __row: entry.sheetRow };
+          for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+          return object;
+        });
+      pagePayload[def.id] = { sheet: def.sheet, headers: table.headers.filter((header) => allowedNames.has(header)), rows };
+    }
+
+    let dashboardPayload: unknown = null;
+    if (dashboardConfig && dashboardSheet) {
+      const table = tables.get(dashboardSheet)!;
+      const referenced = new Set<string>();
+      for (const block of (Array.isArray(dashboardConfig.blocks) ? dashboardConfig.blocks : [])) {
+        for (const key of ["valueField", "categoryField", "seriesField"]) {
+          const name = String(block?.[key] || "");
+          if (name && table.headers.includes(name)) referenced.add(name);
+        }
+      }
+      const rows = table.rows
+        .map((row, index) => ({ row, sheetRow: index + 2 }))
+        .filter((entry) => rowHasData(entry.row))
+        .map((entry) => {
+          const object: Record<string, unknown> = { __row: entry.sheetRow };
+          for (const header of table.headers) if (referenced.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+          return object;
+        });
+      dashboardPayload = { sheet: dashboardSheet, headers: Array.from(referenced), rows };
+    }
+
+    return response({
+      synced_at: new Date().toISOString(),
+      app_updated_at: app.updated_at,
+      pages: pagePayload,
+      dashboard: dashboardPayload,
+    }, 200, { "Cache-Control": "no-store" });
   }
 
   if (path[1] === "dashboard") {
@@ -1508,7 +1591,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-19&app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-20&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
