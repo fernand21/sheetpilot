@@ -26,7 +26,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-21">
+<meta name="littleapp-build" content="20260919-22">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -691,7 +691,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-21").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-22").catch(()=>{})}
 void boot();
 })();
 </script>
