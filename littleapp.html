@@ -23,6 +23,7 @@
 dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1px solid var(--line);border-radius:17px;background:var(--panel);color:var(--text);padding:0;box-shadow:0 30px 100px rgba(0,0,0,.28)}dialog::backdrop{background:rgba(6,20,17,.48)}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line)}.dialog-head h2{margin:0;font-size:1.05rem}.close{border:0;background:transparent;color:var(--muted);font-size:1.6rem}.dialog-body{padding:19px 20px}.detail-row{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.detail-row span{color:var(--muted);font-size:.75rem}.detail-row strong{word-break:break-word}
 .sidebar-mode .app-header{position:fixed;left:0;top:0;bottom:0;width:220px;height:100vh;display:flex;flex-direction:column;align-items:stretch;padding:22px 14px}.sidebar-mode .identity{min-width:0}.sidebar-mode .nav{margin:18px 0 0;display:grid;justify-content:stretch}.sidebar-mode .nav button{justify-content:flex-start}.sidebar-mode .header-tools{margin-top:auto}.sidebar-mode .content{margin-left:220px}.bottom-mode .nav{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--panel);border-top:1px solid var(--line);padding:7px 10px;justify-content:center;margin:0}.bottom-mode .content{padding-bottom:90px}.bottom-mode .app-header .nav{display:none}
 @media(max-width:760px){.app-header{padding:9px 12px;gap:9px}.identity{min-width:0;flex:1}.identity strong{font-size:.88rem}.identity small{font-size:.61rem}.nav{gap:2px}.nav button{padding:7px}.nav button .nav-text{display:none}.header-tools{margin-left:auto}.content{padding:15px 12px 80px}.cards{grid-template-columns:1fr}.list .record{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.sidebar-mode .app-header{position:sticky;width:auto;height:auto;display:flex;flex-direction:row;padding:9px 12px}.sidebar-mode .nav{position:fixed;left:0;right:0;bottom:0;top:auto;background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:center;margin:0;padding:7px}.sidebar-mode .header-tools{margin:0 0 0 auto}.sidebar-mode .content{margin-left:0;padding-bottom:90px}.fab{right:16px;bottom:82px}.detail-row{grid-template-columns:1fr;gap:4px}}
+.dash-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}.dash-block{grid-column:span 4;border:1px solid var(--line);background:var(--panel);border-radius:15px;padding:16px;min-height:130px}.dash-block.chart-wide{grid-column:span 8}.dash-block h3{margin:0 0 12px;font-size:.88rem}.metric-value{font-size:2rem;font-weight:900;letter-spacing:-.03em;margin-top:18px}.metric-sub{font-size:.7rem;color:var(--muted);margin-top:5px}.chart-svg{width:100%;height:230px;display:block}.pie-layout{display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:center}.pie-shell{width:170px;height:170px;border-radius:50%;margin:auto}.pie-shell.doughnut{position:relative}.pie-shell.doughnut:after{content:"";position:absolute;inset:38px;border-radius:50%;background:var(--panel)}.pie-legend{display:grid;gap:7px}.pie-legend span{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.72rem}.pie-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}.chat.support .bubble{max-width:90%;border-radius:12px}.chat.support .bubble:nth-child(even){margin-left:0;border-radius:12px;background:var(--panel)}.chat.compact{gap:5px}.chat.compact .bubble{max-width:92%;padding:8px 10px;border-radius:9px}.chat.compact .bubble:nth-child(even){border-radius:9px}.chat-date{display:block;margin-top:5px;color:var(--muted);font-size:.63rem}.chat-meta{display:block;margin-top:4px;color:var(--muted);font-size:.68rem}@media(max-width:900px){.dash-block,.dash-block.chart-wide{grid-column:1/-1}.pie-layout{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -155,21 +156,59 @@ if(app.config?.actions?.create!==true){$("#view").innerHTML='<div class="notice"
 $("#view").innerHTML='<section class="form-page"><h2>'+esc(pageLabel(page()))+'</h2><p>'+esc(tr("formHelp"))+'</p><form id="create-form"><div class="form-grid">'+formMarkup()+'</div><div class="form-actions"><button class="button primary">'+icon("save")+' '+esc(tr("save"))+'</button></div><p id="form-status" class="count"></p></form></section>';
 $("#create-form").onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries()),status=$("#form-status");status.textContent="…";try{await mutate("POST","",data);e.target.reset();status.textContent=tr("submitOk")}catch(err){status.textContent=err.message||String(err)}};
 }
-function dashboardData(){
-const fs=fields(),rows=state.rows,numeric=fs.find(f=>f.type==="number"&&rows.some(r=>!Number.isNaN(Number(r[f.name])))),category=fs.find(f=>f!==numeric)||fs[0];
-const nums=numeric?rows.map(r=>Number(String(r[numeric.name]??"").replace(",","."))).filter(Number.isFinite):[];const sum=nums.reduce((a,b)=>a+b,0),avg=nums.length?sum/nums.length:0;
-const counts={};if(category)rows.forEach(r=>{const k=String(r[category.name]??"").trim()||"—";counts[k]=(counts[k]||0)+1});return{numeric,category,sum,avg,counts}
+function numberValue(value){
+const raw=String(value??"").trim();if(!raw)return NaN;
+const clean=raw.replace(/\s/g,"").replace(/(?<=\d)[.,](?=\d{3}(?:\D|$))/g,"").replace(",",".");
+return Number(clean);
+}
+function aggregate(values,aggregation){
+if(aggregation==="count")return values.length;
+const nums=values.map(numberValue).filter(Number.isFinite);if(!nums.length)return 0;
+if(aggregation==="sum")return nums.reduce((a,b)=>a+b,0);
+if(aggregation==="average")return nums.reduce((a,b)=>a+b,0)/nums.length;
+if(aggregation==="min")return Math.min(...nums);
+if(aggregation==="max")return Math.max(...nums);
+return nums.length;
+}
+function metricValue(block){
+const rows=state.rows,agg=block.aggregation||"count";
+if(agg==="count")return block.valueField?rows.filter(r=>String(r[block.valueField]??"").trim()!=="").length:rows.length;
+return aggregate(rows.map(r=>r[block.valueField]),agg);
+}
+function groupedValues(block){
+const groups=new Map(),category=block.categoryField,value=block.valueField,agg=block.aggregation||"count";
+for(const row of state.rows){const key=String(row[category]??"").trim()||"—";if(!groups.has(key))groups.set(key,[]);groups.get(key).push(value?row[value]:1)}
+return Array.from(groups.entries()).map(([label,values])=>({label,value:agg==="count"?values.length:aggregate(values,agg)})).sort((a,b)=>b.value-a.value).slice(0,Math.max(1,Number(block.limit||7)));
+}
+function chartPalette(index){const colors=["#0b766e","#2f6fed","#6658e8","#e57c28","#d94f70","#47a36b","#b28b2d","#526b82","#a65aa1","#4f9fa8"];return colors[index%colors.length]}
+function barChart(items){
+const max=Math.max(1,...items.map(x=>Math.abs(Number(x.value)||0))),w=760,h=260,pad=34,gap=14,count=Math.max(1,items.length),bar=Math.max(18,(w-pad*2-gap*(count-1))/count);
+const shapes=items.map((item,i)=>{const bh=(Math.abs(Number(item.value)||0)/max)*170,x=pad+i*(bar+gap),y=195-bh;return '<rect x="'+x+'" y="'+y+'" width="'+bar+'" height="'+bh+'" rx="6" fill="var(--accent)" opacity="'+Math.min(.95,.48+i*.06)+'"/><text x="'+(x+bar/2)+'" y="222" text-anchor="middle" fill="currentColor" opacity=".58" font-size="11">'+esc(String(item.label).slice(0,12))+'</text><text x="'+(x+bar/2)+'" y="'+Math.max(16,y-6)+'" text-anchor="middle" fill="currentColor" opacity=".72" font-size="10">'+esc(formatNumber(item.value))+'</text>'}).join("");
+return '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><line x1="'+pad+'" y1="195" x2="'+(w-pad)+'" y2="195" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>';
+}
+function lineChart(items,area=false){
+if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const w=760,h=260,pad=38,max=Math.max(1,...items.map(x=>Number(x.value)||0)),min=Math.min(0,...items.map(x=>Number(x.value)||0)),span=Math.max(1,max-min);
+const pts=items.map((item,i)=>{const x=items.length===1?w/2:pad+i*((w-pad*2)/(items.length-1)),y=195-((Number(item.value)-min)/span)*155;return{x,y,item}});const points=pts.map(p=>p.x+","+p.y).join(" "),labels=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="var(--accent)"/><text x="'+p.x+'" y="220" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(p.item.label).slice(0,10))+'</text>').join("");const fill=area?'<polygon points="'+pad+',195 '+points+' '+(w-pad)+',195" fill="var(--accent)" opacity=".13"/>':"";
+return '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+fill+'<polyline points="'+points+'" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+labels+'</svg>';
+}
+function pieChart(items,doughnut=false){
+if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const total=Math.max(1,items.reduce((a,b)=>a+Math.max(0,Number(b.value)||0),0));let pos=0,parts=[];items.forEach((item,i)=>{const share=Math.max(0,Number(item.value)||0)/total*100,start=pos,end=pos+share;parts.push(chartPalette(i)+" "+start+"% "+end+"%");pos=end});const legend=items.map((item,i)=>'<span><i class="pie-dot" style="background:'+chartPalette(i)+'"></i>'+esc(item.label)+' · '+esc(formatNumber(item.value))+'</span>').join("");return '<div class="pie-layout"><div class="pie-shell '+(doughnut?"doughnut":"")+'" style="background:conic-gradient('+parts.join(",")+')"></div><div class="pie-legend">'+legend+'</div></div>';
+}
+function renderChart(block){
+const items=groupedValues(block),type=block.chartType||"bar";if(type==="line")return lineChart(items,false);if(type==="area")return lineChart(items,true);if(type==="pie")return pieChart(items,false);if(type==="doughnut")return pieChart(items,true);return barChart(items)
 }
 function renderDashboard(){
-$("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");const d=dashboardData(),entries=Object.entries(d.counts).sort((a,b)=>b[1]-a[1]).slice(0,7),max=Math.max(1,...entries.map(x=>x[1])),w=700,h=230,gap=18,bar=Math.max(30,(w-70-gap*Math.max(0,entries.length-1))/Math.max(1,entries.length));
-const rects=entries.map((e,i)=>{const bh=(e[1]/max)*170,x=35+i*(bar+gap),y=190-bh;return '<rect x="'+x+'" y="'+y+'" width="'+bar+'" height="'+bh+'" rx="7" fill="var(--accent)" opacity="'+(0.55+i*0.06)+'"/><text x="'+(x+bar/2)+'" y="214" text-anchor="middle" fill="currentColor" opacity=".55" font-size="11">'+esc(String(e[0]).slice(0,10))+'</text>'}).join("");
-$("#view").innerHTML='<section class="dashboard"><div class="metrics"><div class="metric"><small>'+esc(tr("records").replace("{n}",""))+'</small><strong>'+state.total+'</strong></div><div class="metric"><small>'+(d.numeric?esc(d.numeric.label||d.numeric.name):"Sum")+'</small><strong>'+formatNumber(d.sum)+'</strong></div><div class="metric"><small>Average</small><strong>'+formatNumber(d.avg)+'</strong></div></div><div class="chart-card"><h3>'+(d.category?esc(d.category.label||d.category.name):"Distribution")+'</h3><svg viewBox="0 0 700 230" preserveAspectRatio="none">'+rects+'</svg></div></section>';
+$("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");
+const blocks=Array.isArray(app.config?.screens?.dashboard?.blocks)?app.config.screens.dashboard.blocks:[];
+if(!blocks.length){$("#view").innerHTML='<div class="notice">'+esc(appLang()==="es"?"Este panel todavía no tiene bloques configurados.":"This dashboard has no configured blocks yet.")+'</div>';return}
+$("#view").innerHTML='<section class="dash-grid">'+blocks.map(block=>{const title=appLang()==="es"?(block.titleEs||block.titleEn):(block.titleEn||block.titleEs);if(block.kind==="metric"){const value=metricValue(block);return'<article class="dash-block"><h3>'+esc(title||"Metric")+'</h3><div class="metric-value">'+esc(formatNumber(value))+'</div><div class="metric-sub">'+esc(block.aggregation||"count")+'</div></article>'}return'<article class="dash-block chart-wide"><h3>'+esc(title||"Chart")+'</h3>'+renderChart(block)+'</article>'}).join("")+'</section>';
 }
 function formatNumber(n){return new Intl.NumberFormat(appLang(),{maximumFractionDigits:2}).format(Number(n||0))}
 function renderChat(){
-$("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");const fs=fields();
+$("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");
+const c=app.config?.screens?.chat||{},fs=fields(),titleField=c.titleField||fs[0]?.name,messageField=c.messageField||fs[1]?.name||titleField,metaField=c.metaField||"",dateField=c.dateField||"",style=["support","compact"].includes(c.style)?c.style:"modern";
 if(!state.rows.length){$("#view").innerHTML='<div class="empty">'+esc(tr("empty"))+'</div>';return}
-$("#view").innerHTML='<section class="chat">'+state.rows.map((r,i)=>'<article class="bubble"><strong>'+esc(r[fs[0]?.name]||("Record "+(i+1)))+'</strong><p>'+esc(r[fs[1]?.name]||r[fs[0]?.name]||"")+'</p>'+(fs[2]?'<small>'+esc(fs[2].label||fs[2].name)+': '+esc(r[fs[2].name])+'</small>':"")+'</article>').join("")+'</section>';
+$("#view").innerHTML='<section class="chat '+style+'">'+state.rows.map((r,i)=>'<article class="bubble"><strong>'+esc(r[titleField]||("Record "+(i+1)))+'</strong><p>'+esc(r[messageField]||"")+'</p>'+(metaField&&r[metaField]!==undefined?'<span class="chat-meta">'+esc(r[metaField])+'</span>':"")+(dateField&&r[dateField]!==undefined?'<span class="chat-date">'+esc(r[dateField])+'</span>':"")+'</article>').join("")+'</section>';
 }
 async function renderActive(load=true){
 const p=page();renderNav();if(p.type==="form"){renderForm();return}if(load){state.page=0;await loadRows(p.type==="dashboard"||p.type==="chat"?100:undefined);return}if(p.type==="dashboard")renderDashboard();else if(p.type==="chat")renderChat();else renderData(p)
