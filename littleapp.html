@@ -76,8 +76,16 @@ return(navigator.language||"en").toLowerCase().startsWith("es")?"es":"en";
 }
 function tr(key){const l=appLang(),custom=app?.config?.texts?.[l]?.[key];return custom||defaults[l]?.[key]||defaults.en[key]||key}
 function pages(){
-const p=Array.isArray(app?.config?.pages)&&app.config.pages.length?app.config.pages:[{id:"data",type:"data",icon:"table",labelEn:"Data",labelEs:"Datos",view:app?.config?.view||"cards",search:app?.config?.search!==false,detail:app?.config?.detail!==false}];
-return p;
+const screens=app?.config?.screens;
+if(screens&&typeof screens==="object"){
+  const order=["data","form","dashboard","chat"],items=[];
+  for(const type of order){
+    const sc=screens[type];
+    if(sc?.active===true)items.push({id:type,type,icon:sc.icon||({data:"table",form:"plus",dashboard:"chart",chat:"chat"}[type]),labelEn:sc.labelEn||({data:"Data",form:"Add",dashboard:"Dashboard",chat:"Chat"}[type]),labelEs:sc.labelEs||({data:"Datos",form:"Agregar",dashboard:"Panel",chat:"Chat"}[type]),view:sc.view,search:sc.search,detail:sc.detail});
+  }
+  if(items.length)return items;
+}
+return Array.isArray(app?.config?.pages)&&app.config.pages.length?app.config.pages:[{id:"data",type:"data",icon:"table",labelEn:"Data",labelEs:"Datos",view:app?.config?.view||"cards",search:app?.config?.search!==false,detail:app?.config?.detail!==false}];
 }
 function page(){return pages().find(p=>p.id===activePageId)||pages()[0]}
 function pageLabel(p){return appLang()==="es"?(p.labelEs||p.labelEn||"Página"):(p.labelEn||p.labelEs||"Page")}
@@ -129,8 +137,16 @@ $("#view").innerHTML='<div class="cards">'+rows.map(r=>'<article class="record">
 bindRowActions();const limit=Math.max(1,Number(app.config?.pageSize||25));$("#pager").classList.toggle("hidden",state.total<=limit&&state.page===0);$("#page-label").textContent=tr("page").replace("{n}",String(state.page+1));$("#prev").textContent="← "+tr("previous");$("#next").textContent=tr("next")+" →";$("#prev").disabled=state.page===0;$("#next").disabled=!state.hasMore;
 $("#fab").classList.toggle("hidden",app.config?.actions?.create!==true);$("#fab-icon").innerHTML=icon("plus");$("#fab").title=tr("add");
 }
+function normalizeDateForInput(value){
+const raw=String(value??"").trim();if(!raw)return"";
+let m=raw.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);if(m)return m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0");
+m=raw.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);if(m){let a=Number(m[1]),b=Number(m[2]),day=a,month=b;if(b>12&&a<=12){month=a;day=b}else if(a<=12&&b<=12&&appLang()==="en"){month=a;day=b}else{day=a;month=b}if(month>=1&&month<=12&&day>=1&&day<=31)return m[3]+"-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0")}
+const d=new Date(raw);if(!Number.isNaN(d.getTime()))return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");return"";
+}
 function inputFor(field,value="",prefix="new"){
-const type=field.type==="number"?"number":field.type==="date"?"date":field.type==="email"?"email":"text";return '<label><span>'+esc(field.label||field.name)+(field.required?" *":"")+'</span><input name="'+esc(field.name)+'" type="'+type+'" value="'+esc(value)+'" '+(field.required?"required":"")+'></label>';
+const type=field.type==="number"?"number":field.type==="date"?"date":field.type==="email"?"email":"text";
+const normalized=type==="date"?normalizeDateForInput(value):value;
+return '<label><span>'+esc(field.label||field.name)+(field.required?" *":"")+'</span><input name="'+esc(field.name)+'" type="'+type+'" value="'+esc(normalized)+'" '+(field.required?"required":"")+'></label>';
 }
 function formMarkup(values={},prefix="new"){return editableFields().map(f=>inputFor(f,values[f.name]??"",prefix)).join("")}
 function renderForm(){
