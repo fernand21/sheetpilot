@@ -92,6 +92,10 @@ async function sha256(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
+async function rowFingerprint(headers: string[], row: unknown[]) {
+  const normalized = headers.map((_, index) => row[index] ?? "");
+  return sha256(JSON.stringify(normalized));
+}
 function sameSecret(left: string, right: string) {
   if (left.length !== right.length) return false;
   let result = 0;
@@ -1188,7 +1192,7 @@ async function publicLittleApp(request: Request, path: string[]) {
   };
 
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-20&app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-21&app=${encodeURIComponent(app.slug)}`;
     const manifestId = `https://littleapi.online/pwa/${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: manifestId,
@@ -1273,14 +1277,14 @@ async function publicLittleApp(request: Request, path: string[]) {
         : table.headers
       ).filter((name: string) => table.headers.includes(name));
       const allowedNames = new Set(names);
-      const rows = table.rows
+      const entries = table.rows
         .map((row, index) => ({ row, sheetRow: index + 2 }))
-        .filter((entry) => rowHasData(entry.row))
-        .map((entry) => {
-          const object: Record<string, unknown> = { __row: entry.sheetRow };
-          for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
-          return object;
-        });
+        .filter((entry) => rowHasData(entry.row));
+      const rows = await Promise.all(entries.map(async (entry) => {
+        const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
+        for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+        return object;
+      }));
       pagePayload[def.id] = { sheet: def.sheet, headers: table.headers.filter((header) => allowedNames.has(header)), rows };
     }
 
@@ -1294,14 +1298,14 @@ async function publicLittleApp(request: Request, path: string[]) {
           if (name && table.headers.includes(name)) referenced.add(name);
         }
       }
-      const rows = table.rows
+      const entries = table.rows
         .map((row, index) => ({ row, sheetRow: index + 2 }))
-        .filter((entry) => rowHasData(entry.row))
-        .map((entry) => {
-          const object: Record<string, unknown> = { __row: entry.sheetRow };
-          for (const header of table.headers) if (referenced.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
-          return object;
-        });
+        .filter((entry) => rowHasData(entry.row));
+      const rows = await Promise.all(entries.map(async (entry) => {
+        const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
+        for (const header of table.headers) if (referenced.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+        return object;
+      }));
       dashboardPayload = { sheet: dashboardSheet, headers: Array.from(referenced), rows };
     }
 
@@ -1522,6 +1526,7 @@ async function publicLittleApp(request: Request, path: string[]) {
       }, 200, { "Cache-Control": "no-store" });
     }
 
+    const mutationBody = request.method === "GET" ? {} : await request.json().catch(() => ({}));
     const actions = config.actions && typeof config.actions === "object" ? config.actions : {};
     const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete";
     if (actions[action] !== true) return failure(403, "app_action_disabled", `La aplicación no permite ${action} registros.`);
@@ -1529,7 +1534,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     if (denied) return denied;
 
     if (request.method === "POST") {
-      const body = await request.json().catch(() => ({}));
+      const body = mutationBody;
       const data = body?.data && typeof body.data === "object" ? body.data : body;
       const values = table.headers.map((header) => editableNames.has(header) ? (data?.[header] ?? "") : "");
       if (!rowHasData(values)) return failure(400, "row_required", "Completa al menos un campo antes de guardar.");
@@ -1543,7 +1548,8 @@ async function publicLittleApp(request: Request, path: string[]) {
         body: JSON.stringify({ majorDimension: "ROWS", values: [values] }),
       });
       cache.clear();
-      return response({ success: true, inserted: 1, updates: result.updates || null }, 201, { "Cache-Control": "no-store" });
+      const insertedFingerprint = await rowFingerprint(table.headers, values);
+      return response({ success: true, inserted: 1, updates: result.updates || null, fingerprint: insertedFingerprint }, 201, { "Cache-Control": "no-store" });
     }
 
     const rowNumber = Number(path[2] || 0);
@@ -1551,9 +1557,16 @@ async function publicLittleApp(request: Request, path: string[]) {
 
     const index = rowNumber - 2;
     if (index < 0 || index >= table.rows.length) return failure(404, "row_not_found", "El registro ya no existe.");
+    const expectedFingerprint = String(mutationBody?.expected_fingerprint || "");
+    if (expectedFingerprint) {
+      const currentFingerprint = await rowFingerprint(table.headers, table.rows[index] || []);
+      if (!sameSecret(currentFingerprint, expectedFingerprint)) {
+        return failure(409, "stale_row", "Los datos cambiaron en otra aplicación. Sincroniza antes de volver a guardar.", { row: rowNumber });
+      }
+    }
 
     if (request.method === "PATCH") {
-      const body = await request.json().catch(() => ({}));
+      const body = mutationBody;
       const changes = body?.data && typeof body.data === "object" ? body.data : body;
       const current = table.rows[index] || [];
       const next = table.headers.map((header, column) => {
@@ -1568,7 +1581,7 @@ async function publicLittleApp(request: Request, path: string[]) {
       }
       await updateValues(api, token, sheetRange(sheet, `A${rowNumber}:${columnName(table.headers.length)}${rowNumber}`), [next]);
       cache.clear();
-      return response({ success: true, updated: 1, row: rowNumber }, 200, { "Cache-Control": "no-store" });
+      return response({ success: true, updated: 1, row: rowNumber, fingerprint: await rowFingerprint(table.headers, next) }, 200, { "Cache-Control": "no-store" });
     }
 
     const metadata = await spreadsheetMetadata(api, token);
@@ -1592,7 +1605,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-20&app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-21&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
