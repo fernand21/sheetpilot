@@ -42,7 +42,7 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button class="close" data-close="detail-dialog">×</button></div><div class="dialog-body" id="detail-body"></div></dialog>
 <dialog id="edit-dialog"><div class="dialog-head"><h2 id="edit-title"></h2><button class="close" data-close="edit-dialog">×</button></div><div class="dialog-body"><form id="edit-form"><div class="form-grid" id="edit-fields"></div><div class="form-actions"><button type="button" class="button" data-close="edit-dialog" id="edit-cancel"></button><button class="button primary" id="edit-save"></button></div></form></div></dialog>
 
-<script src="config.js?v=20260919-1"></script>
+<script src="config.js?v=20260919-2"></script>
 <script>
 (() => {
 const cfg=window.SUPABASE_CONFIG||{},params=new URLSearchParams(location.search),slug=params.get("app")||"";
@@ -233,6 +233,7 @@ $("#search").oninput=e=>{clearTimeout(timer);state.search=e.target.value.trim();
 $("#fab").onclick=()=>{const fp=pages().find(p=>p.type==="form");if(fp){activePageId=fp.id;renderActive()}else{openEdit({__row:null})}};
 $("#edit-form").onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());try{if(editingRow?.__row)await mutate("PATCH",editingRow.__row,data);else await mutate("POST","",data);$("#edit-dialog").close();await loadRows()}catch(err){alert(err.message||String(err))}};
 $$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());$("#language-toggle").onclick=()=>{const next=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",next);applyLanguage()};
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-2").catch(()=>{})}
 init().catch(e=>{$("#view").innerHTML='<div class="error">'+esc(e.message||String(e))+'</div>'});
 })();
 </script>
