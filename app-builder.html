@@ -125,14 +125,17 @@ chat:{active:false,labelEn:"Chat",labelEs:"Chat",icon:"chat",sheet:"",titleField
 },customPages:[],texts:{en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details"},es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles"}}};
 function uid(){return Math.random().toString(36).slice(2,9)}
 function ensureState(){
-state.actions={create:false,update:false,delete:false,...(state.actions||{})};state.screens=state.screens||{};
-state.screens.data={active:true,labelEn:"Data",labelEs:"Datos",icon:"table",view:"cards",search:true,detail:true,...(state.screens.data||{})};
-state.screens.form={active:false,labelEn:"Add",labelEs:"Agregar",icon:"plus",...(state.screens.form||{})};
-state.screens.dashboard={active:false,labelEn:"Dashboard",labelEs:"Panel",icon:"chart",blocks:[],...(state.screens.dashboard||{})};
-state.screens.chat={active:false,labelEn:"Chat",labelEs:"Chat",icon:"chat",titleField:"",messageField:"",metaField:"",dateField:"",style:"modern",...(state.screens.chat||{})};
+state.actions={create:false,update:false,delete:false,...(state.actions||{})};state.screens=state.screens||{};state.navigation="responsive";
+const defaultSheet=state.defaultSheet||schema.selected_sheet||api?.default_sheet||"";
+state.screens.data={active:true,labelEn:"Data",labelEs:"Datos",icon:"table",sheet:defaultSheet,view:"cards",search:true,detail:true,fields:[],...(state.screens.data||{})};
+state.screens.form={active:false,labelEn:"Add",labelEs:"Agregar",icon:"plus",sheet:defaultSheet,fields:[],...(state.screens.form||{})};
+state.screens.dashboard={active:false,labelEn:"Dashboard",labelEs:"Panel",icon:"chart",sheet:defaultSheet,blocks:[],...(state.screens.dashboard||{})};
+state.screens.chat={active:false,labelEn:"Chat",labelEs:"Chat",icon:"chat",sheet:defaultSheet,titleField:"",messageField:"",metaField:"",dateField:"",style:"modern",...(state.screens.chat||{})};
 state.screens.dashboard.blocks=Array.isArray(state.screens.dashboard.blocks)?state.screens.dashboard.blocks:[];
+state.customPages=Array.isArray(state.customPages)?state.customPages:[];
 state.texts={en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",...(state.texts?.en||{})},es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",...(state.texts?.es||{})}};
 state.fields=(state.fields||[]).map(f=>({...f,visible:f.visible!==false,editable:f.editable!==false,required:f.required===true}));
+for(const key of ["data","form"]){state.screens[key].fields=(state.screens[key].fields||[]).map(f=>({...f,visible:f.visible!==false,editable:f.editable!==false,required:f.required===true}))}
 }
 function migrate(old){
 if(!old)return;state={...state,...old};
@@ -140,15 +143,27 @@ if(!old.screens&&Array.isArray(old.pages)){const screens={};for(const p of old.p
 ensureState();
 }
 function slugify(v){return String(v||"app").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,58)||"app"}
-function inferType(name,vals){const n=String(name).toLowerCase();if(/mail|correo|email/.test(n))return"email";if(/fecha|date|nacimiento|hora/.test(n))return"date";const s=vals.filter(v=>String(v??"").trim()).slice(0,4);if(s.length&&s.every(v=>!Number.isNaN(Number(String(v).replace(",",".")))))return"number";return"text"}
-function mergeFields(headers,preview){const old=new Map((state.fields||[]).map(f=>[f.name,f]));state.fields=headers.map((name,i)=>old.get(name)||{name,label:name,type:inferType(name,(preview||[]).map(r=>r[i])),visible:true,editable:true,required:false})}
+function inferType(name,vals){const n=String(name).toLowerCase();if(/mail|correo|email/.test(n))return"email";if(/fecha|date|nacimiento|hora/.test(n))return"date";const sample=(vals||[]).filter(v=>String(v??"").trim()).slice(0,4);if(sample.length&&sample.every(v=>!Number.isNaN(Number(String(v).replace(",",".")))))return"number";return"text"}
+function mergeFieldList(existing,headers,preview){
+const old=new Map((existing||[]).map(f=>[f.name,f]));
+return (headers||[]).map((name,i)=>old.get(name)||{name,label:name,type:inferType(name,(preview||[]).map(r=>r[i])),visible:true,editable:true,required:false});
+}
+function mergeFields(headers,preview){state.fields=mergeFieldList(state.fields,headers,preview)}
 function rows(){return(schema.preview||[]).map(r=>Object.fromEntries((schema.headers||[]).map((h,i)=>[h,r[i]??""])))}
-function visibleFields(){return state.fields.filter(f=>f.visible)}
-function options(selected="",allowBlank=true){return (allowBlank?'<option value="">—</option>':"")+state.fields.filter(f=>f.visible).map(f=>'<option value="'+esc(f.name)+'" '+(f.name===selected?"selected":"")+'>'+esc(f.label||f.name)+'</option>').join("")}
-function screenLabel(s,l=lang()){return l==="es"?(s.labelEs||s.labelEn):(s.labelEn||s.labelEs)}
-function fieldNumericNames(){return state.fields.filter(f=>f.visible&&f.type==="number")}
-function defaultMetric(){const f=fieldNumericNames()[0]||visibleFields()[0];return{id:uid(),kind:"metric",titleEn:"Total",titleEs:"Total",aggregation:f&&f.type==="number"?"sum":"count",valueField:f?.name||""}}
-function defaultChart(){const fs=visibleFields(),num=fieldNumericNames()[0];return{id:uid(),kind:"chart",titleEn:"Overview",titleEs:"Resumen",chartType:"bar",categoryField:fs.find(f=>f.name!==num?.name)?.name||fs[0]?.name||"",valueField:num?.name||"",aggregation:num?"sum":"count",limit:7}}
+function screenSchema(key){return screenSchemas[key]||schema}
+function fieldsFor(key){
+if(key==="data"||key==="form"){const list=state.screens[key]?.fields||[];return list.length?list:state.fields}
+const sc=screenSchema(key);return (sc.headers||[]).map((name,i)=>({name,label:name,type:inferType(name,(sc.preview||[]).map(r=>r[i])),visible:true,editable:true,required:false}));
+}
+function visibleFields(){return fieldsFor("data").filter(f=>f.visible)}
+function optionsFrom(list,selected="",allowBlank=true){return (allowBlank?'<option value="">—</option>':"")+(list||[]).filter(f=>f.visible!==false).map(f=>'<option value="'+esc(f.name)+'" '+(f.name===selected?"selected":"")+'>'+esc(f.label||f.name)+'</option>').join("")}
+function options(selected="",allowBlank=true){return optionsFrom(visibleFields(),selected,allowBlank)}
+function screenOptions(key,selected="",allowBlank=true){return optionsFrom(fieldsFor(key),selected,allowBlank)}
+function sheetOptions(selected=""){return (schema.sheets||[]).map(item=>'<option value="'+esc(item.title)+'" '+(item.title===selected?"selected":"")+'>'+esc(item.title)+'</option>').join("")}
+function screenLabel(scr,l=lang()){return l==="es"?(scr.labelEs||scr.labelEn):(scr.labelEn||scr.labelEs)}
+function fieldNumericNames(key="dashboard"){return fieldsFor(key).filter(f=>f.visible!==false&&f.type==="number")}
+function defaultMetric(){const fs=fieldsFor("dashboard"),f=fieldNumericNames("dashboard")[0]||fs[0];return{id:uid(),kind:"metric",titleEn:"Total",titleEs:"Total",aggregation:f&&f.type==="number"?"sum":"count",valueField:f?.name||""}}
+function defaultChart(){const fs=fieldsFor("dashboard"),num=fieldNumericNames("dashboard")[0];return{id:uid(),kind:"chart",titleEn:"Overview",titleEs:"Resumen",chartType:"bar",categoryField:fs.find(f=>f.name!==num?.name)?.name||fs[0]?.name||"",seriesField:"",seriesLimit:6,valueField:num?.name||"",aggregation:num?"sum":"count",limit:15}}
 function renderIcons(id,screen){const root=$("#"+id);root.innerHTML=iconNames.map(n=>'<button data-icon-choice="'+n+'" class="'+(screen.icon===n?"selected":"")+'" title="'+n+'">'+icon(n)+'</button>').join("");root.querySelectorAll("[data-icon-choice]").forEach(b=>b.onclick=()=>{screen.icon=b.dataset.iconChoice;renderAll()})}
 function renderFields(){
 $("#field-list").innerHTML=state.fields.map((f,i)=>'<div class="field-row"><input type="checkbox" data-f-vis="'+i+'" '+(f.visible?"checked":"")+'><input data-f-label="'+i+'" value="'+esc(f.label)+'"><select data-f-type="'+i+'"><option value="text" '+(f.type==="text"?"selected":"")+'>Text</option><option value="number" '+(f.type==="number"?"selected":"")+'>Number</option><option value="date" '+(f.type==="date"?"selected":"")+'>Date</option><option value="email" '+(f.type==="email"?"selected":"")+'>Email</option></select><span class="field-actions"><button data-up="'+i+'">↑</button><button data-down="'+i+'">↓</button></span></div>').join("");
