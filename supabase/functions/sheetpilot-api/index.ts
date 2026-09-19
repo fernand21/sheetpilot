@@ -1163,7 +1163,6 @@ function quotaExempt(path: string[], method: string) {
   return method === "GET" && ["name", "metadata", "openapi.json", "usage"].includes(path[1] || "");
 }
 async function publicLittleApp(request: Request, path: string[]) {
-  if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para consultar una aplicación publicada.");
   const slug = decodeURIComponent(path[0] || "").trim().toLowerCase();
   if (!slug) return failure(400, "app_slug_required", "Indica el identificador de la aplicación.");
 
@@ -1173,7 +1172,22 @@ async function publicLittleApp(request: Request, path: string[]) {
   const app = rows?.[0];
   if (!app) return failure(404, "app_not_found", "No existe una aplicación publicada con ese identificador.");
 
-  if (path[1] === "manifest.webmanifest") {
+  const config = app.config && typeof app.config === "object" ? app.config : {};
+  const configuredFields = Array.isArray(config.fields) ? config.fields : [];
+  const visibleFields = configuredFields.filter((field: any) => field?.visible !== false && field?.name);
+  const editableFields = visibleFields.filter((field: any) => field?.editable !== false);
+  const publicConfig = {
+    ...config,
+    fields: visibleFields.map((field: any) => ({
+      name: String(field.name || ""),
+      label: String(field.label || field.name || ""),
+      type: String(field.type || "text"),
+      required: field.required === true,
+      editable: field.editable !== false,
+    })),
+  };
+
+  if (path[1] === "manifest.webmanifest" && request.method === "GET") {
     const startUrl = `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: startUrl,
@@ -1202,12 +1216,119 @@ async function publicLittleApp(request: Request, path: string[]) {
     });
   }
 
+  if (path[1] === "rows") {
+    const api = await getApi(app.api_id);
+    if (!api || api.resource_type !== "sheet") return failure(404, "api_not_found", "La fuente de datos de esta aplicación ya no está disponible.");
+
+    const quotaError = await consumeQuota(api);
+    if (quotaError) return quotaError;
+
+    const sheet = String(app.sheet || api.default_sheet || "Sheet1");
+    const token = await googleTokenForUser(api.user_id);
+    const table = await readAuthorized(api, token, sheet);
+    const allowedNames = new Set((visibleFields.length ? visibleFields.map((field: any) => String(field.name)) : table.headers).filter((name: string) => table.headers.includes(name)));
+    const editableNames = new Set((editableFields.length ? editableFields.map((field: any) => String(field.name)) : Array.from(allowedNames)).filter((name: string) => table.headers.includes(name)));
+
+    if (request.method === "GET") {
+      const url = new URL(request.url);
+      const search = String(url.searchParams.get("search") || "").trim().toLowerCase();
+      const requested = Number(url.searchParams.get("limit") || config.pageSize || 25);
+      const limit = Math.max(1, Math.min(100, Number.isFinite(requested) ? Math.floor(requested) : 25));
+      const requestedOffset = Number(url.searchParams.get("offset") || 0);
+      const offset = Math.max(0, Number.isFinite(requestedOffset) ? Math.floor(requestedOffset) : 0);
+
+      let data = table.rows
+        .map((row, index) => ({ row, sheetRow: index + 2 }))
+        .filter((entry) => rowHasData(entry.row))
+        .map((entry) => {
+          const object: Record<string, unknown> = { __row: entry.sheetRow };
+          for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+          return object;
+        });
+
+      if (search) data = data.filter((row) => Object.entries(row).some(([key, value]) => key !== "__row" && String(value ?? "").toLowerCase().includes(search)));
+      const total = data.length;
+      const paged = data.slice(offset, offset + limit);
+      return response({
+        data: paged,
+        total,
+        limit,
+        offset,
+        returned: paged.length,
+        has_more: offset + paged.length < total,
+        next_offset: offset + paged.length < total ? offset + paged.length : null,
+      }, 200, { "Cache-Control": "no-store" });
+    }
+
+    const actions = config.actions && typeof config.actions === "object" ? config.actions : {};
+    const action = request.method === "POST" ? "create" : request.method === "PATCH" ? "update" : "delete";
+    if (actions[action] !== true) return failure(403, "app_action_disabled", `La aplicación no permite ${action} registros.`);
+    const denied = requirePermission(api, action);
+    if (denied) return denied;
+
+    if (request.method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      const data = body?.data && typeof body.data === "object" ? body.data : body;
+      const values = table.headers.map((header) => editableNames.has(header) ? (data?.[header] ?? "") : "");
+      if (!rowHasData(values)) return failure(400, "row_required", "Completa al menos un campo antes de guardar.");
+      for (const field of editableFields) {
+        if (field?.required === true && String(data?.[field.name] ?? "").trim() === "") {
+          return failure(400, "required_field", `El campo ${field.label || field.name} es obligatorio.`);
+        }
+      }
+      const result = await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A1"))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+        method: "POST",
+        body: JSON.stringify({ majorDimension: "ROWS", values: [values] }),
+      });
+      cache.clear();
+      return response({ success: true, inserted: 1, updates: result.updates || null }, 201, { "Cache-Control": "no-store" });
+    }
+
+    const rowNumber = Number(path[2] || 0);
+    if (!Number.isInteger(rowNumber) || rowNumber < 2) return failure(400, "row_required", "Indica una fila válida.");
+
+    const index = rowNumber - 2;
+    if (index < 0 || index >= table.rows.length) return failure(404, "row_not_found", "El registro ya no existe.");
+
+    if (request.method === "PATCH") {
+      const body = await request.json().catch(() => ({}));
+      const changes = body?.data && typeof body.data === "object" ? body.data : body;
+      const current = table.rows[index] || [];
+      const next = table.headers.map((header, column) => {
+        if (editableNames.has(header) && Object.prototype.hasOwnProperty.call(changes, header)) return changes[header];
+        return current[column] ?? "";
+      });
+      for (const field of editableFields) {
+        if (field?.required === true) {
+          const column = table.headers.indexOf(String(field.name));
+          if (column >= 0 && String(next[column] ?? "").trim() === "") return failure(400, "required_field", `El campo ${field.label || field.name} es obligatorio.`);
+        }
+      }
+      await updateValues(api, token, sheetRange(sheet, `A${rowNumber}:${columnName(table.headers.length)}${rowNumber}`), [next]);
+      cache.clear();
+      return response({ success: true, updated: 1, row: rowNumber }, 200, { "Cache-Control": "no-store" });
+    }
+
+    const metadata = await spreadsheetMetadata(api, token);
+    const sheetInfo = metadata.sheets?.find((item: any) => item.properties?.title === sheet);
+    const sheetId = sheetInfo?.properties?.sheetId;
+    if (sheetId === undefined) return failure(404, "sheet_not_found", "No se encontró la pestaña de la aplicación.");
+    await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: rowNumber - 1, endIndex: rowNumber } } }] }),
+    });
+    cache.clear();
+    return response({ success: true, deleted: 1, row: rowNumber }, 200, { "Cache-Control": "no-store" });
+  }
+
+  if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para consultar una aplicación publicada.");
+
   return response({
     name: app.name,
     slug: app.slug,
     api_id: app.api_id,
     sheet: app.sheet,
-    config: app.config || {},
+    config: publicConfig,
     updated_at: app.updated_at,
     app_url: `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "public, max-age=60" });
