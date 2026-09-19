@@ -1162,11 +1162,63 @@ function quotaExempt(path: string[], method: string) {
   if (path[1] === "mcp") return true;
   return method === "GET" && ["name", "metadata", "openapi.json", "usage"].includes(path[1] || "");
 }
+async function publicLittleApp(request: Request, path: string[]) {
+  if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para consultar una aplicación publicada.");
+  const slug = decodeURIComponent(path[0] || "").trim().toLowerCase();
+  if (!slug) return failure(400, "app_slug_required", "Indica el identificador de la aplicación.");
+
+  const rows = await dbFetch(
+    `littleapps?select=api_id,name,slug,sheet,config,published,updated_at&slug=eq.${encodeURIComponent(slug)}&published=eq.true&limit=1`,
+  );
+  const app = rows?.[0];
+  if (!app) return failure(404, "app_not_found", "No existe una aplicación publicada con ese identificador.");
+
+  if (path[1] === "manifest.webmanifest") {
+    const startUrl = `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`;
+    return new Response(JSON.stringify({
+      id: startUrl,
+      name: app.name,
+      short_name: String(app.name || "LittleApp").slice(0, 24),
+      description: "Application powered by LittleAPI and Google Sheets.",
+      start_url: startUrl,
+      scope: "https://littleapi.online/",
+      display: "standalone",
+      orientation: "any",
+      background_color: "#f7faf9",
+      theme_color: "#0b766e",
+      icons: [{
+        src: "https://littleapi.online/littleapi-icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any maskable",
+      }],
+    }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/manifest+json; charset=utf-8",
+        "Cache-Control": "public, max-age=300",
+      },
+    });
+  }
+
+  return response({
+    name: app.name,
+    slug: app.slug,
+    api_id: app.api_id,
+    sheet: app.sheet,
+    config: app.config || {},
+    updated_at: app.updated_at,
+    app_url: `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`,
+  }, 200, { "Cache-Control": "public, max-age=60" });
+}
+
 async function handler(request: Request) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...corsHeaders, "X-LittleAPI-Version": API_VERSION } });
   const url = new URL(request.url), path = partsFor(url);
   if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) return failure(405, "method_not_allowed", "Usa GET, POST, PATCH o DELETE.", { allowed_methods: ["GET", "POST", "PATCH", "DELETE"] });
   if (path[0] === "health" && request.method === "GET") return response({ status: "ok", name: "LittleAPI", version: API_VERSION, time: new Date().toISOString() });
+  if (path[0] === "apps") return publicLittleApp(request, path.slice(1));
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
   if (path[0] === "auth" && path[1] === "api-keys") return apiKeysConnection(request);
@@ -1193,7 +1245,7 @@ Deno.serve(async (request) => {
   const started = Date.now();
   const requestId = crypto.randomUUID();
   const path = partsFor(new URL(request.url));
-  const apiId = path[0] && !["health", "auth", "account"].includes(path[0]) ? path[0] : "";
+  const apiId = path[0] && !["health", "auth", "account", "apps"].includes(path[0]) ? path[0] : "";
   const settings = apiId ? await getSecuritySettings(apiId).catch(() => null) : null;
 
   if (request.method === "OPTIONS") {
