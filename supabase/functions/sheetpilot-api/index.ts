@@ -1234,7 +1234,7 @@ async function publicLittleApp(request: Request, path: string[]) {
   }
 
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-22&app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-23&app=${encodeURIComponent(app.slug)}`;
     const manifestId = `https://littleapi.online/pwa/${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: manifestId,
@@ -1642,7 +1642,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-22&app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-23&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
