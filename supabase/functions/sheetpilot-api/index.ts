@@ -1214,9 +1214,9 @@ async function publicLittleApp(request: Request, path: string[]) {
           }];
         }
         return [
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-          { src: "https://littleapi.online/logo-sheetpilot.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "https://littleapi.online/logo-sheetpilot.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
         ];
       })(),
     }), {
