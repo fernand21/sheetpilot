@@ -1237,20 +1237,10 @@ async function publicLittleApp(request: Request, path: string[]) {
     const quotaError = await consumeQuota(api);
     if (quotaError) return quotaError;
 
-    const sheet = String(app.sheet || api.default_sheet || "Sheet1");
+    const dashboardConfig = config?.screens?.dashboard && typeof config.screens.dashboard === "object" ? config.screens.dashboard : {};
+    const sheet = String(dashboardConfig.sheet || app.sheet || api.default_sheet || "Sheet1");
     const token = await googleTokenForUser(api.user_id);
     const table = await readAuthorized(api, token, sheet);
-    const allowedNames = new Set((visibleFields.length ? visibleFields.map((field: any) => String(field.name)) : table.headers).filter((name: string) => table.headers.includes(name)));
-    const objects = table.rows
-      .filter((row: unknown[]) => rowHasData(row))
-      .map((row: unknown[]) => {
-        const object: Record<string, unknown> = {};
-        for (let index = 0; index < table.headers.length; index += 1) {
-          const header = table.headers[index];
-          if (allowedNames.has(header)) object[header] = row[index] ?? "";
-        }
-        return object;
-      });
 
     const numberValue = (value: unknown) => {
       const raw = String(value ?? "").trim();
@@ -1276,50 +1266,118 @@ async function publicLittleApp(request: Request, path: string[]) {
       if (mode === "max") return Math.max(...numbers);
       return numbers.length;
     };
+    const dateValue = (label: string) => {
+      const raw = String(label || "").trim();
+      let match = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+      if (match) return Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+      match = raw.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
+      if (match) return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      const parsed = Date.parse(raw);
+      return Number.isFinite(parsed) ? parsed : Number.NaN;
+    };
+    const sortCategories = (labels: string[]) => {
+      const dated = labels.map((label) => ({ label, time: dateValue(label) }));
+      if (dated.length && dated.every((item) => Number.isFinite(item.time))) {
+        return dated.sort((left, right) => left.time - right.time).map((item) => item.label);
+      }
+      return labels;
+    };
 
-    const blocks = Array.isArray(config?.screens?.dashboard?.blocks) ? config.screens.dashboard.blocks : [];
+    const blocks = Array.isArray(dashboardConfig.blocks) ? dashboardConfig.blocks : [];
+    const referenced = new Set<string>();
+    for (const block of blocks) {
+      for (const key of ["valueField", "categoryField", "seriesField"]) {
+        const name = String(block?.[key] || "");
+        if (name && table.headers.includes(name)) referenced.add(name);
+      }
+    }
+    const objects = table.rows
+      .filter((row: unknown[]) => rowHasData(row))
+      .map((row: unknown[]) => {
+        const object: Record<string, unknown> = {};
+        for (const header of table.headers) if (referenced.has(header)) object[header] = row[table.headers.indexOf(header)] ?? "";
+        return object;
+      });
+
     const resultBlocks = blocks.map((block: any) => {
       const kind = block?.kind === "chart" ? "chart" : "metric";
-      const aggregation = String(block?.aggregation || "count");
-      const valueField = String(block?.valueField || "");
-      const categoryField = String(block?.categoryField || "");
+      const aggregation = ["count", "sum", "average", "min", "max"].includes(String(block?.aggregation || "")) ? String(block.aggregation) : "count";
+      const valueField = table.headers.includes(String(block?.valueField || "")) ? String(block.valueField) : "";
+      const categoryField = table.headers.includes(String(block?.categoryField || "")) ? String(block.categoryField) : "";
+      const seriesField = table.headers.includes(String(block?.seriesField || "")) ? String(block.seriesField) : "";
+      const chartType = ["bar", "line", "area", "pie", "doughnut"].includes(String(block?.chartType || "")) ? String(block.chartType) : "bar";
       const common = {
         id: String(block?.id || crypto.randomUUID()),
         kind,
         titleEn: String(block?.titleEn || ""),
         titleEs: String(block?.titleEs || ""),
         aggregation,
-        valueField: allowedNames.has(valueField) ? valueField : "",
+        valueField,
+        categoryField,
+        seriesField,
+        chartType,
       };
 
       if (kind === "metric") {
-        const values = common.valueField ? objects.map((row) => row[common.valueField]).filter((value) => aggregation !== "count" || String(value ?? "").trim() !== "") : objects;
-        return { ...common, value: aggregation === "count" && !common.valueField ? objects.length : aggregate(values, aggregation) };
+        const values = valueField ? objects.map((row) => row[valueField]).filter((value) => aggregation !== "count" || String(value ?? "").trim() !== "") : objects;
+        return { ...common, value: aggregation === "count" && !valueField ? objects.length : aggregate(values, aggregation) };
       }
 
-      if (!allowedNames.has(categoryField)) return { ...common, categoryField: "", chartType: String(block?.chartType || "bar"), items: [] };
+      if (!categoryField) return { ...common, items: [], categories: [], series: [] };
+      const limit = Math.max(1, Math.min(30, Number(block?.limit || 7)));
+
+      if (seriesField && ["bar", "line", "area"].includes(chartType)) {
+        const categorySet = new Set<string>();
+        const seriesBuckets = new Map<string, Map<string, unknown[]>>();
+        for (const row of objects) {
+          const category = String(row[categoryField] ?? "").trim() || "—";
+          const seriesName = String(row[seriesField] ?? "").trim() || "—";
+          categorySet.add(category);
+          if (!seriesBuckets.has(seriesName)) seriesBuckets.set(seriesName, new Map());
+          const bucket = seriesBuckets.get(seriesName)!;
+          if (!bucket.has(category)) bucket.set(category, []);
+          bucket.get(category)!.push(valueField ? row[valueField] : 1);
+        }
+        const categories = sortCategories(Array.from(categorySet)).slice(0, limit);
+        const seriesLimit = Math.max(1, Math.min(12, Number(block?.seriesLimit || 6)));
+        const ranked = Array.from(seriesBuckets.entries()).map(([name, bucket]) => {
+          const score = categories.reduce((total, category) => {
+            const values = bucket.get(category) || [];
+            return total + Number(aggregation === "count" ? values.length : aggregate(values, aggregation) || 0);
+          }, 0);
+          return { name, bucket, score };
+        }).sort((a, b) => b.score - a.score).slice(0, seriesLimit);
+        const series = ranked.map(({ name, bucket }) => ({
+          name,
+          values: categories.map((category) => {
+            const values = bucket.get(category) || [];
+            return aggregation === "count" ? values.length : aggregate(values, aggregation);
+          }),
+        }));
+        return { ...common, limit, seriesLimit, categories, series };
+      }
+
       const groups = new Map<string, unknown[]>();
       for (const row of objects) {
         const key = String(row[categoryField] ?? "").trim() || "—";
         if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)?.push(common.valueField ? row[common.valueField] : 1);
+        groups.get(key)!.push(valueField ? row[valueField] : 1);
       }
-      const limit = Math.max(1, Math.min(30, Number(block?.limit || 7)));
-      const items = Array.from(groups.entries())
-        .map(([label, values]) => ({ label, value: aggregation === "count" ? values.length : aggregate(values, aggregation) }))
-        .sort((left, right) => Number(right.value) - Number(left.value))
-        .slice(0, limit);
+      let items = Array.from(groups.entries())
+        .map(([label, values]) => ({ label, value: aggregation === "count" ? values.length : aggregate(values, aggregation) }));
+      const orderedLabels = sortCategories(items.map((item) => item.label));
+      if (orderedLabels.length && orderedLabels.every((label, index) => label === items[index]?.label) === false && orderedLabels.every((label) => Number.isFinite(dateValue(label)))) {
+        const byLabel = new Map(items.map((item) => [item.label, item]));
+        items = orderedLabels.map((label) => byLabel.get(label)!).filter(Boolean);
+      } else if (!orderedLabels.every((label) => Number.isFinite(dateValue(label)))) {
+        items.sort((left, right) => Number(right.value) - Number(left.value));
+      }
+      items = items.slice(0, limit);
 
-      return {
-        ...common,
-        categoryField,
-        chartType: ["bar", "line", "area", "pie", "doughnut"].includes(String(block?.chartType || "")) ? String(block.chartType) : "bar",
-        limit,
-        items,
-      };
+      return { ...common, limit, items, categories: [], series: [] };
     });
 
-    return response({ total: objects.length, blocks: resultBlocks }, 200, { "Cache-Control": "no-store" });
+    return response({ total: objects.length, sheet, blocks: resultBlocks }, 200, { "Cache-Control": "no-store" });
   }
 
   if (path[1] === "rows") {
@@ -1329,18 +1387,25 @@ async function publicLittleApp(request: Request, path: string[]) {
     const quotaError = await consumeQuota(api);
     if (quotaError) return quotaError;
 
-    const sheet = String(app.sheet || api.default_sheet || "Sheet1");
+    const requestUrl = new URL(request.url);
+    const pageId = String(requestUrl.searchParams.get("page") || "data");
+    const customPages = Array.isArray(config?.customPages) ? config.customPages : [];
+    const customPage = customPages.find((page: any) => String(page?.id || "") === pageId);
+    const screenConfig = customPage || (config?.screens?.[pageId] && typeof config.screens[pageId] === "object" ? config.screens[pageId] : {});
+    const sheet = String(screenConfig?.sheet || app.sheet || api.default_sheet || "Sheet1");
     const token = await googleTokenForUser(api.user_id);
     const table = await readAuthorized(api, token, sheet);
-    const allowedNames = new Set((visibleFields.length ? visibleFields.map((field: any) => String(field.name)) : table.headers).filter((name: string) => table.headers.includes(name)));
-    const editableNames = new Set((editableFields.length ? editableFields.map((field: any) => String(field.name)) : Array.from(allowedNames)).filter((name: string) => table.headers.includes(name)));
+    const pageFields = Array.isArray(screenConfig?.fields) ? screenConfig.fields.filter((field: any) => field?.name) : [];
+    const fallbackFields = sheet === String(app.sheet || "") ? visibleFields : [];
+    const configuredPageFields = pageFields.length ? pageFields : fallbackFields;
+    const allowedNames = new Set((configuredPageFields.length ? configuredPageFields.filter((field: any) => field?.visible !== false).map((field: any) => String(field.name)) : table.headers).filter((name: string) => table.headers.includes(name)));
+    const editableNames = new Set((configuredPageFields.length ? configuredPageFields.filter((field: any) => field?.editable !== false).map((field: any) => String(field.name)) : Array.from(allowedNames)).filter((name: string) => table.headers.includes(name)));
 
     if (request.method === "GET") {
-      const url = new URL(request.url);
-      const search = String(url.searchParams.get("search") || "").trim().toLowerCase();
-      const requested = Number(url.searchParams.get("limit") || config.pageSize || 25);
+      const search = String(requestUrl.searchParams.get("search") || "").trim().toLowerCase();
+      const requested = Number(requestUrl.searchParams.get("limit") || config.pageSize || 25);
       const limit = Math.max(1, Math.min(100, Number.isFinite(requested) ? Math.floor(requested) : 25));
-      const requestedOffset = Number(url.searchParams.get("offset") || 0);
+      const requestedOffset = Number(requestUrl.searchParams.get("offset") || 0);
       const offset = Math.max(0, Number.isFinite(requestedOffset) ? Math.floor(requestedOffset) : 0);
 
       let data = table.rows
@@ -1363,6 +1428,9 @@ async function publicLittleApp(request: Request, path: string[]) {
         returned: paged.length,
         has_more: offset + paged.length < total,
         next_offset: offset + paged.length < total ? offset + paged.length : null,
+        headers: table.headers.filter((header: string) => allowedNames.has(header)),
+        sheet,
+        page: pageId,
       }, 200, { "Cache-Control": "no-store" });
     }
 
