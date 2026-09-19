@@ -90,10 +90,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=20260919-10"></script>
+<script src="config.js?v=20260919-11"></script>
 <script>
 (() => {
-const cfg=window.SUPABASE_CONFIG||{},apiId=new URLSearchParams(location.search).get("api")||"";
+const cfg=window.SUPABASE_CONFIG||{};let apiId=new URLSearchParams(location.search).get("api")||"";
 const ref=(()=>{try{return new URL(cfg.url).hostname.split(".")[0]}catch(_){return"littleapi"}})();
 const sb=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{storageKey:"sb-"+ref+"-auth-token",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
@@ -266,7 +266,7 @@ $("#data-name-en").value=state.screens.data.labelEn;$("#data-name-es").value=sta
 renderIcons("data-icons",state.screens.data);renderIcons("form-icons",state.screens.form);renderIcons("dashboard-icons",state.screens.dashboard);renderIcons("chat-icons",state.screens.chat);$$("[data-data-view]").forEach(b=>b.classList.toggle("selected",b.dataset.dataView===state.screens.data.view));$$("[data-data-toggle]").forEach(b=>b.classList.toggle("on",Boolean(state.screens.data[b.dataset.dataToggle])));
 renderFields();renderFormFields();renderTexts();renderDashboardBlocks();renderChatSelects();renderCustomPages();renderPreview();sensitive();updateUrl();
 }
-function updateUrl(){const slug=slugify($("#slug").value||state.name);$("#public-url").textContent=location.origin+"/littleapp-v3.html?v=20260919-10&app="+slug;$("#open-app").href=location.origin+"/littleapp-v3.html?v=20260919-10&app="+slug}
+function updateUrl(){const slug=slugify($("#slug").value||state.name);$("#public-url").textContent=location.origin+"/littleapp-v3.html?v=20260919-11&app="+slug;$("#open-app").href=location.origin+"/littleapp-v3.html?v=20260919-11&app="+slug}
 function translate(){
 document.documentElement.lang=lang();$("#builder-language").value=lang();$$("[data-k]").forEach(n=>{if(C[lang()][n.dataset.k])n.textContent=t(n.dataset.k)});$("#page-title").textContent=t("title");$("#page-lead").textContent=t("lead");$("#detected").textContent=t("detected").replace("{n}",String(state.fields.length));$("#mode").value=api?(api.public_read?t("publicMode"):t("privateMode")):"";
 const theme={light:t("light"),dark:t("dark"),auto:t("system")};Array.from($("#theme").options).forEach(o=>o.textContent=theme[o.value]||o.value);Array.from($("#navigation").options).forEach(o=>o.textContent=lang()==="es"?"Lateral en escritorio · Inferior en móvil":"Desktop sidebar · Mobile bottom");const ns={iconText:t("iconText"),icons:t("icons")};Array.from($("#nav-style").options).forEach(o=>o.textContent=ns[o.value]||o.value);$$("[data-icon]").forEach(n=>n.innerHTML=icon(n.dataset.icon));$("#save-icon").innerHTML=icon("save");if($("#delete-app-icon"))$("#delete-app-icon").innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';renderFields();renderFormFields();renderTexts();renderDashboardBlocks();renderPreview();
@@ -308,7 +308,7 @@ try{
 }
 
 async function init(){
-const sr=await sb.auth.getSession();session=sr.data.session;if(!session){location.replace("app.html");return}const ar=await sb.from("api_endpoints").select("id,project_id,api_id,name,default_sheet,public_read,permissions,resource_type").eq("api_id",apiId).limit(1).maybeSingle();if(ar.error||!ar.data){alert(t("noApi"));location.replace("app.html");return}api=ar.data;const er=await sb.from("littleapps").select("*").eq("api_id",apiId).limit(1).maybeSingle();existing=er.data||null;await loadSchema(existing?.sheet||api.default_sheet||"");$("#api-name").value=api.name;$("#api-id").value=api.api_id;$("#builder-name").textContent=api.name;$("#sheet").innerHTML=(schema.sheets||[]).map(x=>'<option value="'+esc(x.title)+'">'+esc(x.title)+'</option>').join("");$("#sheet").value=schema.selected_sheet||api.default_sheet||"";
+const sr=await sb.auth.getSession();session=sr.data.session;if(!session){location.replace("app.html");return}let ar=await sb.from("api_endpoints").select("id,project_id,api_id,name,default_sheet,public_read,permissions,resource_type").eq("api_id",apiId).limit(1).maybeSingle();if(!ar.data&&!ar.error&&apiId){const fallback=await sb.from("api_endpoints").select("id,project_id,api_id,name,default_sheet,public_read,permissions,resource_type").ilike("api_id",apiId).limit(2);if(!fallback.error&&Array.isArray(fallback.data)&&fallback.data.length===1){ar={data:fallback.data[0],error:null};apiId=ar.data.api_id;const u=new URL(location.href);u.searchParams.set("api",apiId);u.searchParams.set("v","20260919-11");history.replaceState(null,"",u.toString())}}if(ar.error||!ar.data){alert(t("noApi"));location.replace("app.html");return}api=ar.data;const er=await sb.from("littleapps").select("*").eq("api_id",apiId).limit(1).maybeSingle();existing=er.data||null;await loadSchema(existing?.sheet||api.default_sheet||"");$("#api-name").value=api.name;$("#api-id").value=api.api_id;$("#builder-name").textContent=api.name;$("#sheet").innerHTML=(schema.sheets||[]).map(x=>'<option value="'+esc(x.title)+'">'+esc(x.title)+'</option>').join("");$("#sheet").value=schema.selected_sheet||api.default_sheet||"";
 if(existing?.config){migrate(existing.config);state.name=existing.config.name||existing.name||api.name;state.subtitle=existing.config.subtitle||existing.sheet||schema.selected_sheet||"";$("#slug").value=existing.slug||slugify(state.name)}else{state.name=api.name;state.subtitle=schema.selected_sheet||api.default_sheet||"";state.languageMode=lang();$("#slug").value=slugify(api.name)+"-"+api.api_id.slice(0,5).toLowerCase()}
 mergeFields(schema.headers||[],schema.preview||[]);const defaultSheet=existing?.sheet||schema.selected_sheet||api.default_sheet||"";for(const key of ["data","form","dashboard","chat"]){if(!state.screens[key].sheet)state.screens[key].sheet=defaultSheet;try{await loadScreenSchema(key,state.screens[key].sheet)}catch(_){screenSchemas[key]=schema}}const chatFields=fieldsFor("chat");if(!state.screens.chat.titleField)state.screens.chat.titleField=chatFields[0]?.name||"";if(!state.screens.chat.messageField)state.screens.chat.messageField=chatFields[1]?.name||chatFields[0]?.name||"";syncControls();translate();$("#open-app").classList.toggle("hidden",!existing?.published);$("#unpublish").classList.toggle("hidden",!existing?.published);$("#delete-app").classList.toggle("hidden",!existing?.id)
 }
@@ -323,7 +323,7 @@ $("#app-name").oninput=e=>{state.name=e.target.value;if(!existing)$("#slug").val
 $("#sheet").onchange=async e=>{await loadSchema(e.target.value);mergeFields(schema.headers||[],schema.preview||[]);renderAll()};$("#save-top").onclick=()=>save(false);$("#save-draft").onclick=()=>save(false);$("#publish").onclick=()=>save(true);$("#unpublish").onclick=unpublish;$("#delete-app").onclick=deleteApp;$("#builder-language").onchange=e=>{localStorage.setItem("littleapi:language",e.target.value);translate()};
 $$(".devices button").forEach(b=>b.onclick=()=>{$$(".devices button").forEach(x=>x.classList.toggle("active",x===b));$("#device").className="device "+(b.dataset.device==="desktop"?"":b.dataset.device)});
 function renderAll(){syncControls();translate()}
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-5").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-11").catch(()=>{})}
 translate();init().catch(e=>{console.error(e);$("#status").textContent=e.message||String(e);$("#status").className="status error"});
 })();
 </script>
