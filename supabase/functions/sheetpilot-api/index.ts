@@ -1200,12 +1200,25 @@ async function publicLittleApp(request: Request, path: string[]) {
       orientation: "any",
       background_color: "#f7faf9",
       theme_color: "#0b766e",
-      icons: [{
-        src: "https://littleapi.online/littleapi-icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any maskable",
-      }],
+      icons: (() => {
+        const icon = config?.appIcon && typeof config.appIcon === "object" ? config.appIcon : null;
+        const url = String(icon?.url || "").trim();
+        if (url) {
+          const width = Number(icon?.width || 0), height = Number(icon?.height || 0);
+          return [{
+            src: url,
+            sizes: width > 0 && height > 0 ? `${width}x${height}` : "any",
+            type: "image/png",
+            purpose: "any maskable",
+          }];
+        }
+        return [{
+          src: "https://littleapi.online/littleapi-icon.svg",
+          sizes: "any",
+          type: "image/svg+xml",
+          purpose: "any maskable",
+        }];
+      })(),
     }), {
       status: 200,
       headers: {
