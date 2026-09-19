@@ -1209,7 +1209,7 @@ async function publicLittleApp(request: Request, path: string[]) {
             src: url,
             sizes: width > 0 && height > 0 ? `${width}x${height}` : "any",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "any",
           }];
         }
         return [{
