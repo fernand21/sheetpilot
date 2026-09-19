@@ -20,7 +20,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-15">
+<meta name="littleapp-build" content="20260919-16">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -41,6 +41,59 @@ html[data-boot-theme="light"]{color-scheme:light}
 .fab{position:fixed;right:24px;bottom:24px;width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 30%,transparent);z-index:25}.fab svg{width:22px;height:22px}
 dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1px solid var(--line);border-radius:17px;background:var(--panel);color:var(--text);padding:0;box-shadow:0 30px 100px rgba(0,0,0,.28)}dialog::backdrop{background:rgba(6,20,17,.48)}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line)}.dialog-head h2{margin:0;font-size:1.05rem}.close{border:0;background:transparent;color:var(--muted);font-size:1.6rem}.dialog-body{padding:19px 20px}.detail-row{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.detail-row span{color:var(--muted);font-size:.75rem}.detail-row strong{word-break:break-word}
 .sidebar-mode .app-header{position:fixed;left:0;top:0;bottom:0;width:220px;height:100vh;display:flex;flex-direction:column;align-items:stretch;padding:22px 14px}.sidebar-mode .identity{min-width:0}.sidebar-mode .nav{margin:18px 0 0;display:grid;justify-content:stretch}.sidebar-mode .nav button{justify-content:flex-start}.sidebar-mode .header-tools{margin-top:auto}.sidebar-mode .content{margin-left:220px}.bottom-mode .app-header{position:sticky;left:auto;top:0;bottom:auto;width:auto;height:auto;display:flex;flex-direction:row;align-items:center;padding:9px 12px}.bottom-mode .identity{min-width:0;flex:1}.bottom-mode .header-tools{margin-left:auto}.bottom-mode .nav{position:fixed!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;z-index:90!important;background:color-mix(in srgb,var(--panel) 97%,transparent);border-top:1px solid var(--line);padding:7px 8px calc(7px + env(safe-area-inset-bottom));display:flex!important;align-items:stretch;justify-content:space-evenly;margin:0!important;box-shadow:0 -10px 34px rgba(14,55,47,.12);backdrop-filter:blur(18px);flex-wrap:nowrap}.bottom-mode .nav button{flex:1 1 0;min-width:0;max-width:108px;min-height:55px;justify-content:center;align-items:center;flex-direction:column;gap:4px;padding:6px 4px;font-size:.61rem;line-height:1.05;border-radius:11px}.bottom-mode .nav button svg{width:21px;height:21px;flex:0 0 21px}.bottom-mode .nav .nav-text{display:block!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.61rem;font-weight:760;line-height:1.1}.bottom-mode .nav button.active{background:var(--accent-soft);color:var(--accent)}.bottom-mode .nav button.active svg{filter:drop-shadow(0 3px 6px color-mix(in srgb,var(--accent) 30%,transparent))}.bottom-mode .content{margin-left:0!important;padding-bottom:calc(92px + env(safe-area-inset-bottom));min-height:100vh}.bottom-mode .fab{bottom:calc(82px + env(safe-area-inset-bottom))}
+.mobile-bottom-nav{display:none}
+@media(max-width:900px){
+  .desktop-nav{display:none!important}
+  .mobile-bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    top:auto!important;
+    z-index:10000!important;
+    display:grid!important;
+    grid-template-columns:repeat(var(--mobile-nav-count,4),minmax(0,1fr))!important;
+    width:100%!important;
+    margin:0!important;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))!important;
+    border:0!important;
+    border-top:1px solid var(--line)!important;
+    background:color-mix(in srgb,var(--panel) 98%,transparent)!important;
+    box-shadow:0 -10px 28px rgba(14,55,47,.14)!important;
+    backdrop-filter:blur(16px)!important;
+    -webkit-backdrop-filter:blur(16px)!important;
+    transform:translateZ(0)!important;
+    will-change:transform!important;
+  }
+  .mobile-bottom-nav button{
+    min-width:0!important;
+    min-height:58px!important;
+    border:0!important;
+    background:transparent!important;
+    color:var(--text)!important;
+    border-radius:12px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    padding:6px 3px!important;
+    font-size:.64rem!important;
+    font-weight:780!important;
+    overflow:hidden!important;
+  }
+  .mobile-bottom-nav button svg{width:22px!important;height:22px!important;flex:0 0 22px!important}
+  .mobile-bottom-nav .nav-text{
+    display:block!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  .mobile-bottom-nav button.active{background:var(--accent-soft)!important;color:var(--accent)!important}
+  .content{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))!important}
+  .fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}
+}
 @media(max-width:900px){.app-header{position:sticky!important;left:auto!important;top:0!important;bottom:auto!important;width:auto!important;height:auto!important;display:flex!important;flex-direction:row!important;align-items:center!important;padding:9px 12px!important;gap:9px!important}.nav{position:fixed!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;z-index:100!important;background:color-mix(in srgb,var(--panel) 97%,transparent)!important;border-top:1px solid var(--line)!important;padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;display:flex!important;align-items:stretch!important;justify-content:space-evenly!important;margin:0!important;box-shadow:0 -10px 34px rgba(14,55,47,.12)!important;backdrop-filter:blur(18px)!important;flex-wrap:nowrap!important}.nav button{flex:1 1 0!important;min-width:0!important;max-width:108px!important;min-height:55px!important;justify-content:center!important;align-items:center!important;flex-direction:column!important;gap:4px!important;padding:6px 4px!important;font-size:.61rem!important;line-height:1.05!important;border-radius:11px!important}.nav button svg{width:21px!important;height:21px!important;flex:0 0 21px!important}.nav .nav-text{display:block!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:.61rem!important;font-weight:760!important;line-height:1.1!important}.identity{min-width:0;flex:1}.identity strong{font-size:.88rem}.identity small{font-size:.61rem}.header-tools{margin-left:auto}.content{margin-left:0!important;padding:15px 12px calc(92px + env(safe-area-inset-bottom))!important}.cards{grid-template-columns:1fr}.list .record{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.fab{right:16px;bottom:calc(82px + env(safe-area-inset-bottom))}.detail-row{grid-template-columns:1fr;gap:4px}}@media(max-width:900px){.dash-block,.dash-block.chart-wide{grid-column:1/-1}.pie-layout{grid-template-columns:1fr}}
 </style>
 </head>
@@ -48,7 +101,7 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 <div class="app-loader" id="app-loader" aria-live="polite"><div class="app-loader-card"><div class="loader-mark" aria-hidden="true"><i></i><i></i><i></i></div><strong id="loader-name">LittleApp</strong><small id="loader-status">Loading application…</small><div class="loader-track"></div></div></div>
 <header class="app-header">
 <div class="identity"><img src="" alt="" style="visibility:hidden"><div><strong id="app-name">LittleApp</strong><small id="app-subtitle"></small></div></div>
-<nav class="nav" id="nav"></nav>
+<nav class="nav desktop-nav" id="desktop-nav"></nav>
 <div class="header-tools"><button class="lang-toggle hidden" id="language-toggle" type="button" title="Change language"></button></div>
 </header>
 <main class="content">
@@ -56,6 +109,7 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 <div id="view"><div class="empty">…</div></div>
 <div class="pager hidden" id="pager"><button id="prev">←</button><span id="page-label"></span><label class="page-jump"><input id="page-input" type="number" min="1" step="1" inputmode="numeric"><span id="page-total"></span></label><button id="next">→</button></div>
 </main>
+<nav class="mobile-bottom-nav" id="mobile-nav" aria-label="App navigation"></nav>
 <button class="fab hidden" id="fab" title="Add"><span id="fab-icon"></span></button>
 
 <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button class="close" data-close="detail-dialog">×</button></div><div class="dialog-body" id="detail-body"></div></dialog>
@@ -174,22 +228,25 @@ function applyResponsiveNavigation(){
 const mobile=isMobileLayout();
 document.body.classList.toggle("sidebar-mode",!mobile);
 document.body.classList.toggle("bottom-mode",mobile);
-const nav=$("#nav"),header=document.querySelector(".app-header"),tools=header?.querySelector(".header-tools"),content=document.querySelector(".content");
-if(mobile&&nav){
-  if(nav.parentElement!==document.body)document.body.appendChild(nav);
-  Object.assign(nav.style,{position:"fixed",left:"0",right:"0",top:"auto",bottom:"0",width:"100%",zIndex:"9999",display:"flex",flexWrap:"nowrap",justifyContent:"space-evenly",alignItems:"stretch",margin:"0",padding:"7px 8px calc(7px + env(safe-area-inset-bottom))",background:"var(--panel)",borderTop:"1px solid var(--line)",borderBottom:"0",boxShadow:"0 -10px 34px rgba(14,55,47,.12)"});
+const header=document.querySelector(".app-header"),content=document.querySelector(".content");
+if(mobile){
   if(header)Object.assign(header.style,{position:"sticky",left:"auto",right:"auto",top:"0",bottom:"auto",width:"auto",height:"auto",display:"flex",flexDirection:"row"});
-  if(content){content.style.marginLeft="0";content.style.paddingBottom="calc(100px + env(safe-area-inset-bottom))";}
+  if(content){content.style.marginLeft="0";content.style.paddingBottom="calc(104px + env(safe-area-inset-bottom,0px))";}
 }else{
-  if(nav&&header&&nav.parentElement!==header)header.insertBefore(nav,tools||null);
-  if(nav)nav.removeAttribute("style");
   if(header)header.removeAttribute("style");
   if(content)content.removeAttribute("style");
 }
 if(app)renderNav();
 }
 function renderNav(){
-const c=app.config||{},p=page(),mobile=isMobileLayout(),showText=mobile||c.navStyle!=="icons";$("#nav").innerHTML=pages().map(pg=>'<button class="'+(pg.id===p.id?"active":"")+'" data-page="'+esc(pg.id)+'" title="'+esc(pageLabel(pg))+'">'+icon(pg.icon)+'<span class="nav-text">'+(showText?esc(pageLabel(pg)):"")+'</span></button>').join("");
+const p=page(),items=pages(),mobile=isMobileLayout(),c=app.config||{};
+const desktop=$("#desktop-nav"),mobileNav=$("#mobile-nav");
+const markup=showText=>items.map(pg=>'<button class="'+(pg.id===p.id?"active":"")+'" data-page="'+esc(pg.id)+'" title="'+esc(pageLabel(pg))+'">'+icon(pg.icon)+'<span class="nav-text">'+(showText?esc(pageLabel(pg)):"")+'</span></button>').join("");
+if(desktop)desktop.innerHTML=markup(c.navStyle!=="icons");
+if(mobileNav){
+  mobileNav.style.setProperty("--mobile-nav-count",String(Math.max(1,Math.min(items.length,6))));
+  mobileNav.innerHTML=markup(true);
+}
 $$("[data-page]").forEach(b=>b.onclick=()=>{activePageId=b.dataset.page;state.page=0;state.search="";const search=$("#search");if(search)search.value="";renderNav();void renderActive()});
 }
 function rowsUrl(limitOverride){
