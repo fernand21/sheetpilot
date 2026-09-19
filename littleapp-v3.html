@@ -26,7 +26,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-23">
+<meta name="littleapp-build" content="20260919-24">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -359,8 +359,8 @@ install:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 };
 const icon=n=>ICONS[n]||ICONS.table;
 const defaults={
-en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",previous:"Previous",next:"Next",records:"{n} records",page:"Page {n}",submitOk:"Saved successfully.",deleteConfirm:"Delete this record?",actionDisabled:"This action is not enabled for this app.",formHelp:"Complete the fields and save the new record.",sync:"Sync",syncing:"Syncing…",install:"Install app",lastSync:"Last sync",neverSync:"Not synced",syncSuccess:"Synchronization completed successfully.",staleData:"Data changed in another app. LittleApp was synchronized; try again."},
-es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",previous:"Anterior",next:"Siguiente",records:"{n} registros",page:"Página {n}",submitOk:"Guardado correctamente.",deleteConfirm:"¿Eliminar este registro?",actionDisabled:"Esta acción no está habilitada para esta app.",formHelp:"Completa los campos y guarda el nuevo registro.",sync:"Sincronizar",syncing:"Sincronizando…",install:"Instalar app",lastSync:"Última sincronización",neverSync:"Sin sincronizar",syncSuccess:"Sincronización completada correctamente.",staleData:"Los datos cambiaron en otra app. LittleApp se sincronizó; inténtalo de nuevo."}
+en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",previous:"Previous",next:"Next",records:"{n} records",page:"Page {n}",submitOk:"Saved successfully.",deleteConfirm:"Delete this record?",actionDisabled:"This action is not enabled for this app.",formHelp:"Complete the fields and save the new record.",sync:"Sync",syncing:"Syncing…",install:"Install app",lastSync:"Last sync",neverSync:"Not synced",syncSuccess:"Synchronization completed successfully.",staleData:"Data changed in another app. LittleApp was synchronized; try again.",pending:"{n} pending",savedLocal:"Saved on this device. Pending synchronization.",syncConflict:"Synchronization found a conflict. Your local changes were kept."},
+es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",previous:"Anterior",next:"Siguiente",records:"{n} registros",page:"Página {n}",submitOk:"Guardado correctamente.",deleteConfirm:"¿Eliminar este registro?",actionDisabled:"Esta acción no está habilitada para esta app.",formHelp:"Completa los campos y guarda el nuevo registro.",sync:"Sincronizar",syncing:"Sincronizando…",install:"Instalar app",lastSync:"Última sincronización",neverSync:"Sin sincronizar",syncSuccess:"Sincronización completada correctamente.",staleData:"Los datos cambiaron en otra app. LittleApp se sincronizó; inténtalo de nuevo.",pending:"{n} pendientes",savedLocal:"Guardado en este dispositivo. Pendiente de sincronización.",syncConflict:"La sincronización encontró un conflicto. Tus cambios locales se conservaron."}
 };
 let app=null,activePageId="",state={rows:[],headers:[],sheet:"",total:0,page:0,search:"",loading:false,dashboardData:null,snapshot:null,syncing:false},timer=null,editingRow=null,deferredInstallPrompt=null;
 const LOCAL_DB_NAME="littleapi-littleapps",LOCAL_DB_VERSION=1,LOCAL_STORE="snapshots";
@@ -368,10 +368,11 @@ function openLocalDb(){return new Promise((resolve,reject)=>{const req=indexedDB
 async function localGet(){try{const db=await openLocalDb();return await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_STORE,"readonly"),req=tx.objectStore(LOCAL_STORE).get(slug);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)})}catch(e){console.warn("IndexedDB read failed",e);return null}}
 async function localPut(snapshot){try{const db=await openLocalDb();await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_STORE,"readwrite");tx.objectStore(LOCAL_STORE).put({slug,...snapshot});tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}catch(e){console.warn("IndexedDB write failed",e)}}
 function formatSyncTime(value){if(!value)return tr("neverSync");try{return new Intl.DateTimeFormat(appLang(),{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}).format(new Date(value))}catch(_){return String(value)}}
+function pendingOps(){return Array.isArray(state.snapshot?.pending)?state.snapshot.pending:[]}
 function updateSyncUi(){
- const b=$("#sync-button"),stamp=$("#sync-stamp");
- if(b){b.disabled=state.syncing;b.innerHTML=icon("refresh")+'<span class="tool-text">'+esc(state.syncing?tr("syncing"):tr("sync"))+'</span>';b.title=state.syncing?tr("syncing"):tr("sync")}
- if(stamp)stamp.textContent=tr("lastSync")+": "+formatSyncTime(state.snapshot?.synced_at);
+ const b=$("#sync-button"),stamp=$("#sync-stamp"),count=pendingOps().length;
+ if(b){b.disabled=state.syncing;const label=state.syncing?tr("syncing"):tr("sync")+(count?" ("+count+")":"");b.innerHTML=icon("refresh")+'<span class="tool-text">'+esc(label)+'</span>';b.title=label}
+ if(stamp)stamp.textContent=count?tr("pending").replace("{n}",String(count)):tr("lastSync")+": "+formatSyncTime(state.snapshot?.synced_at);
 }
 function updateInstallUi(){
  const b=$("#install-button");if(!b)return;
@@ -473,15 +474,20 @@ async function syncNow(renderAfter=true){
  if(state.syncing)return;
  state.syncing=true;updateSyncUi();
  try{
-   const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(app.slug)+"/sync",{cache:"no-store"}),data=await r.json().catch(()=>({}));
-   if(!r.ok)throw new Error(data.message||data.error||"sync_error");
-   state.snapshot={...data,slug:app.slug};
+   const base=cfg.apiBase||"https://littleapi.online/api/v1",ops=pendingOps(),options={cache:"no-store"};
+   if(ops.length){options.method="POST";options.headers={"Content-Type":"application/json"};options.body=JSON.stringify({operations:ops})}
+   const r=await fetch(base+"/apps/"+encodeURIComponent(app.slug)+"/sync",options),data=await r.json().catch(()=>({}));
+   if(!r.ok){
+     const err=new Error(data.message||data.error||"sync_error");err.status=r.status;err.code=data.error||"sync_error";err.details=data.details;throw err
+   }
+   state.snapshot={...data,slug:app.slug,pending:[]};
    await localPut(state.snapshot);
    if(renderAfter){state.page=0;await renderActive(true);showToast(tr("syncSuccess"))}
  }catch(e){
    console.error("LittleApp sync failed",e);
    if(!state.snapshot)throw e;
-   alert((appLang()==="es"?"No se pudo sincronizar. Se conservarán los datos locales.":"Could not sync. Local data will be kept.")+"\n"+(e.message||String(e)));
+   if(e.status===409)showToast(tr("syncConflict"),"error");
+   else showToast((appLang()==="es"?"Sin conexión. Los cambios siguen guardados en este dispositivo.":"Offline. Your changes remain saved on this device."),"error");
  }finally{state.syncing=false;updateSyncUi()}
 }
 function pageSnapshot(p=page()){return state.snapshot?.pages?.[p?.id]||null}
@@ -521,17 +527,18 @@ try{
  state.dashboardData=buildLocalDashboard(rows);state.total=rows.length;renderDashboard()
 }catch(e){$("#view").innerHTML='<div class="error">'+esc(e.message||String(e))+'</div>'}finally{state.loading=false}
 }
+function rowKey(row){return row?.__local_id?"local:"+row.__local_id:String(row?.__row??"")}
 function actionsFor(row,p){
-const a=app.config?.actions||{},items=[];
-if(p.detail!==false)items.push('<button class="action-icon" data-view-row="'+row.__row+'" title="'+esc(tr("details"))+'">'+icon("eye")+'</button>');
-if(a.update===true)items.push('<button class="action-icon" data-edit-row="'+row.__row+'" title="'+esc(tr("edit"))+'">'+icon("edit")+'</button>');
-if(a.delete===true)items.push('<button class="action-icon danger" data-delete-row="'+row.__row+'" title="'+esc(tr("delete"))+'">'+icon("trash")+'</button>');
+const a=app.config?.actions||{},items=[],key=rowKey(row);
+if(p.detail!==false)items.push('<button class="action-icon" data-view-row="'+esc(key)+'" title="'+esc(tr("details"))+'">'+icon("eye")+'</button>');
+if(a.update===true)items.push('<button class="action-icon" data-edit-row="'+esc(key)+'" title="'+esc(tr("edit"))+'">'+icon("edit")+'</button>');
+if(a.delete===true)items.push('<button class="action-icon danger" data-delete-row="'+esc(key)+'" title="'+esc(tr("delete"))+'">'+icon("trash")+'</button>');
 return items.join("");
 }
 function bindRowActions(){
-$$("[data-view-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();showDetail(state.rows.find(r=>String(r.__row)===String(b.dataset.viewRow)))});
-$$("[data-edit-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(state.rows.find(r=>String(r.__row)===String(b.dataset.editRow)))});
-$$("[data-delete-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteRow(Number(b.dataset.deleteRow))});
+$("[data-view-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();showDetail(state.rows.find(r=>rowKey(r)===String(b.dataset.viewRow)))});
+$("[data-edit-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(state.rows.find(r=>rowKey(r)===String(b.dataset.editRow)))});
+$("[data-delete-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();void deleteRow(String(b.dataset.deleteRow))});
 }
 function renderData(p){
 const fs=fields(),rows=state.rows,view=p.view||"cards";$("#toolbar").classList.toggle("hidden",p.search===false);$("#count").textContent=tr("records").replace("{n}",String(state.total));$("#search").placeholder=tr("search");$("#search-icon").innerHTML=icon("search");
@@ -644,39 +651,66 @@ const p=page();renderNav();if(p.type==="form"){if(load){state.page=0;await loadR
 }
 function showDetail(row){if(!row)return;$("#detail-title").textContent=tr("details");$("#detail-body").innerHTML=fields().map(f=>'<div class="detail-row"><span>'+esc(f.label||f.name)+'</span><strong>'+esc(row[f.name])+'</strong></div>').join("");$("#detail-dialog").showModal()}
 function openEdit(row){if(!row)return;editingRow=row;$("#edit-title").textContent=tr("edit");$("#edit-fields").innerHTML=formMarkup(row,"edit");$("#edit-cancel").textContent=tr("cancel");$("#edit-save").innerHTML=icon("save")+" "+esc(tr("save"));$("#edit-dialog").showModal()}
-function applyLocalMutation(method,row,data,out){
- if(!state.snapshot)return;
- const currentPage=page(),source=state.snapshot.pages?.[currentPage.id],sheet=source?.sheet;if(!sheet)return;
- let targetRow=Number(row||0);
- if(method==="POST"){const range=String(out?.updates?.updatedRange||"");const match=range.match(/![A-Z]+(\d+)(?::|$)/i);targetRow=match?Number(match[1]):Math.max(1,...Object.values(state.snapshot.pages||{}).filter(x=>x?.sheet===sheet).flatMap(x=>(x.rows||[]).map(r=>Number(r.__row)||1)))+1}
- const updateBucket=bucket=>{if(!bucket||bucket.sheet!==sheet)return;bucket.rows=Array.isArray(bucket.rows)?bucket.rows:[];if(method==="POST"){const obj={__row:targetRow,__fingerprint:out?.fingerprint||""};for(const h of bucket.headers||[])obj[h]=data?.[h]??"";bucket.rows.push(obj)}else if(method==="PATCH"){const item=bucket.rows.find(r=>Number(r.__row)===targetRow);if(item){for(const [k,v] of Object.entries(data||{}))if((bucket.headers||[]).includes(k))item[k]=v;if(out?.fingerprint)item.__fingerprint=out.fingerprint}}else if(method==="DELETE"){bucket.rows=bucket.rows.filter(r=>Number(r.__row)!==targetRow).map(r=>Number(r.__row)>targetRow?{...r,__row:Number(r.__row)-1}:r)}};
- for(const bucket of Object.values(state.snapshot.pages||{}))updateBucket(bucket);
- updateBucket(state.snapshot.dashboard);
- void localPut(state.snapshot);
+function sameLocalTarget(op,row){
+ if(row?.__local_id)return op.local_id===row.__local_id;
+ return Boolean(row?.__fingerprint)&&op.fingerprint===row.__fingerprint;
+}
+function updateLocalBuckets(sheet,callback){
+ for(const bucket of Object.values(state.snapshot?.pages||{})){if(bucket?.sheet===sheet){bucket.rows=Array.isArray(bucket.rows)?bucket.rows:[];callback(bucket)}}
+ if(state.snapshot?.dashboard?.sheet===sheet){const bucket=state.snapshot.dashboard;bucket.rows=Array.isArray(bucket.rows)?bucket.rows:[];callback(bucket)}
+}
+function queueLocalMutation(method,rowKeyValue,data){
+ if(!state.snapshot)throw new Error("local_snapshot_missing");
+ state.snapshot.pending=Array.isArray(state.snapshot.pending)?state.snapshot.pending:[];
+ const p=page(),source=state.snapshot.pages?.[p.id],sheet=source?.sheet||p.sheet||app.sheet||"",queue=state.snapshot.pending;
+ const row=state.rows.find(r=>rowKey(r)===String(rowKeyValue));
+ if(method==="POST"){
+   const localId=crypto.randomUUID(),tempRow="local:"+localId,op={id:crypto.randomUUID(),type:"create",page:p.id,sheet,local_id:localId,data:{...(data||{})},created_at:new Date().toISOString()};
+   queue.push(op);
+   updateLocalBuckets(sheet,bucket=>{const obj={__row:tempRow,__local_id:localId,__pending:true};for(const h of bucket.headers||[])obj[h]=data?.[h]??"";bucket.rows.push(obj)});
+   return op;
+ }
+ if(!row)throw new Error("row_not_found");
+ const isLocal=Boolean(row.__local_id);
+ if(method==="PATCH"){
+   if(isLocal){
+     const createOp=queue.find(op=>op.type==="create"&&op.local_id===row.__local_id);if(createOp)createOp.data={...(createOp.data||{}),...(data||{})};
+   }else{
+     let updateOp=queue.find(op=>op.type==="update"&&sameLocalTarget(op,row));
+     if(updateOp)updateOp.data={...(updateOp.data||{}),...(data||{})};
+     else queue.push({id:crypto.randomUUID(),type:"update",page:p.id,sheet,row:Number(row.__row)||0,fingerprint:row.__fingerprint||"",data:{...(data||{})},created_at:new Date().toISOString()});
+   }
+   updateLocalBuckets(sheet,bucket=>{const item=bucket.rows.find(r=>rowKey(r)===rowKey(row));if(item){for(const [k,v] of Object.entries(data||{}))if((bucket.headers||[]).includes(k))item[k]=v;item.__pending=true}});
+ }else if(method==="DELETE"){
+   if(isLocal){
+     state.snapshot.pending=queue.filter(op=>!(op.type==="create"&&op.local_id===row.__local_id));
+   }else{
+     state.snapshot.pending=queue.filter(op=>!((op.type==="update"||op.type==="delete")&&sameLocalTarget(op,row)));
+     state.snapshot.pending.push({id:crypto.randomUUID(),type:"delete",page:p.id,sheet,row:Number(row.__row)||0,fingerprint:row.__fingerprint||"",data:{},created_at:new Date().toISOString()});
+   }
+   updateLocalBuckets(sheet,bucket=>{bucket.rows=bucket.rows.filter(r=>rowKey(r)!==rowKey(row))});
+ }
+ return true;
 }
 async function mutate(method,row,data){
-const base=cfg.apiBase||"https://littleapi.online/api/v1",q="?page="+encodeURIComponent(page()?.id||"data"),url=base+"/apps/"+encodeURIComponent(app.slug)+"/rows"+(row?"/"+encodeURIComponent(row):"")+q;
-const current=Number(row)?state.rows.find(r=>Number(r.__row)===Number(row)):null;
-const payload={data,expected_fingerprint:current?.__fingerprint||""};
-const r=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}),out=await r.json().catch(()=>({}));
-if(!r.ok){
-  if(r.status===409&&out.error==="stale_row"){await syncNow(true);const err=new Error(tr("staleData"));err.code="stale_row";throw err}
-  throw new Error(out.message||out.error||"request_failed")
+ queueLocalMutation(method,row,data);
+ await localPut(state.snapshot);
+ updateSyncUi();
+ showToast(tr("savedLocal"));
+ return {success:true,local:true}
 }
-applyLocalMutation(method,row,data,out);return out
-}
-async function deleteRow(row){if(!confirm(tr("deleteConfirm")))return;try{await mutate("DELETE",row);state.page=0;await renderActive(true)}catch(e){alert(e.message||String(e))}}
+async function deleteRow(row){if(!confirm(tr("deleteConfirm")))return;try{await mutate("DELETE",row,{});state.page=0;await renderActive(true)}catch(e){showToast(e.message||String(e),"error")}}
 function applyLanguage(){document.documentElement.lang=appLang();if((app.config?.languageMode||"en")==="both")$("#language-toggle").innerHTML=icon("translate")+'<span>'+appLang().toUpperCase()+'</span>';renderNav();$("#search").placeholder=tr("search");if(!state.loading)renderActive(false)}
 async function init(){
 const cached=window.__LITTLEAPP_BOOT__;if(cached?.name)$("#loader-name").textContent=cached.name;
-if(!slug)throw new Error("missing_slug");const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(slug),{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"app_not_found");app=data;state.snapshot=await localGet();$("#loader-name").textContent=app.config?.name||app.name||"LittleApp";activePageId=pages()[0].id;document.title=(app.config?.name||app.name)+" — LittleApp";applyChrome();renderNav();$("#search-icon").innerHTML=icon("search");updateSyncUi();updateInstallUi();if(!state.snapshot)await syncNow(false);await renderActive(true);requestAnimationFrame(()=>document.body.classList.add("app-ready"))
+if(!slug)throw new Error("missing_slug");const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(slug),{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"app_not_found");app=data;state.snapshot=await localGet();if(state.snapshot&&!Array.isArray(state.snapshot.pending))state.snapshot.pending=[];$("#loader-name").textContent=app.config?.name||app.name||"LittleApp";activePageId=pages()[0].id;document.title=(app.config?.name||app.name)+" — LittleApp";applyChrome();renderNav();$("#search-icon").innerHTML=icon("search");updateSyncUi();updateInstallUi();if(!state.snapshot)await syncNow(false);await renderActive(true);requestAnimationFrame(()=>document.body.classList.add("app-ready"))
 }
 function bindRuntimeEvents(){
 const search=$("#search");if(search)search.oninput=e=>{clearTimeout(timer);state.search=e.target.value.trim();timer=setTimeout(()=>{state.page=0;void loadRows()},250)};
 const prev=$("#prev");if(prev)prev.onclick=()=>{if(state.page>0){state.page--;void loadRows()}};
 const next=$("#next");if(next)next.onclick=()=>{if(state.hasMore){state.page++;void loadRows()}};const pageInput=$("#page-input");if(pageInput){const jump=()=>{const limit=Math.max(1,Number(app.config?.pageSize||25)),totalPages=Math.max(1,Math.ceil(state.total/limit)),wanted=Math.max(1,Math.min(totalPages,Number(pageInput.value)||1));if(wanted!==state.page+1){state.page=wanted-1;void loadRows()}else pageInput.value=String(wanted)};pageInput.onchange=jump;pageInput.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();jump()}}};
 const fab=$("#fab");if(fab)fab.onclick=()=>{const fp=pages().find(p=>p.type==="form");if(fp){activePageId=fp.id;void renderActive()}else{openEdit({__row:null})}};
-const editForm=$("#edit-form");if(editForm)editForm.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());try{if(editingRow?.__row)await mutate("PATCH",editingRow.__row,data);else await mutate("POST","",data);$("#edit-dialog")?.close();await loadRows()}catch(err){alert(err.message||String(err))}};
+const editForm=$("#edit-form");if(editForm)editForm.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());try{if(editingRow?.__row||editingRow?.__local_id)await mutate("PATCH",rowKey(editingRow),data);else await mutate("POST","",data);$("#edit-dialog")?.close();await loadRows()}catch(err){alert(err.message||String(err))}};
 $$("[data-close]").forEach(b=>{b.onclick=()=>$("#"+b.dataset.close)?.close()});
 const syncButton=$("#sync-button");if(syncButton)syncButton.onclick=()=>void syncNow(true);
 const installButton=$("#install-button");if(installButton)installButton.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice.catch(()=>null);deferredInstallPrompt=null;updateInstallUi()};
@@ -691,7 +725,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-23").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-24").catch(()=>{})}
 void boot();
 })();
 </script>
