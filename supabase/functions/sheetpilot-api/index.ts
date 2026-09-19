@@ -789,21 +789,28 @@ async function accountSheetSchema(request: Request) {
     }
 
     let headers: string[] = [];
+    let preview: unknown[][] = [];
     if (selectedSheet) {
-      const headerData = await sheetsRequest(
+      const previewData = await sheetsRequest(
         api,
         token,
-        `spreadsheets/${encodeURIComponent(api.spreadsheet_id)}/values/${encodeURIComponent(sheetRange(selectedSheet, "1:1"))}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`,
+        `spreadsheets/${encodeURIComponent(api.spreadsheet_id)}/values/${encodeURIComponent(sheetRange(selectedSheet, "A1:ZZ9"))}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`,
       );
-      headers = (Array.isArray(headerData.values?.[0]) ? headerData.values[0] : [])
+      const values = Array.isArray(previewData.values) ? previewData.values : [];
+      headers = (Array.isArray(values[0]) ? values[0] : [])
         .map((value: unknown, index: number) => String(value == null || value === "" ? columnName(index + 1) : value));
+      preview = values.slice(1).filter((row: unknown[]) => rowHasData(row)).slice(0, 8);
     }
 
     return response({
       api_id: api.api_id,
+      api_name: api.name,
+      public_read: api.public_read === true,
+      permissions: api.permissions || {},
       sheets,
       selected_sheet: selectedSheet,
       headers,
+      preview,
       oauth_scope: "https://www.googleapis.com/auth/drive.file",
     });
   } catch (error) {
