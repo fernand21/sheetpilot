@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LittleApps Builder — LittleAPI Documentation</title>
+  <link rel="icon" href="../littleapi-icon.svg">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .guide{max-width:1180px;margin:auto;padding:46px 22px 80px}.hero{padding:34px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,#0d2b23,#081b17);margin-bottom:24px}.hero h1{font-size:clamp(2.2rem,5vw,4.6rem);line-height:.98;margin:10px 0 15px}.hero h1 span{color:var(--lime)}.hero p{max-width:820px;color:#bfd9d1;line-height:1.7}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.actions a{padding:11px 14px;border-radius:10px;text-decoration:none;font-weight:850}.actions .primary{background:var(--lime);color:#10251f}.actions .secondary{border:1px solid #397466;color:#e4f5ef}
+    .five{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:22px 0}.five article{padding:15px;border:1px solid var(--line);border-radius:13px;background:#0b211b}.five span{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:#16483b;color:#dff8ef;font-weight:900}.five h3{margin:12px 0 5px;font-size:.9rem}.five p{margin:0;color:var(--muted);font-size:.76rem;line-height:1.5}
+    section.doc{padding:30px 0;border-bottom:1px solid var(--line)}section.doc h2{font-size:clamp(1.6rem,3vw,2.5rem);margin:7px 0 14px}section.doc>p{max-width:860px;color:var(--muted);line-height:1.7}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{padding:18px;border:1px solid var(--line);border-radius:13px;background:#0b211b}.card h3{margin:0 0 8px}.card p{margin:0;color:var(--muted);line-height:1.6;font-size:.85rem}.flow{padding:16px;border:1px solid var(--line);border-radius:12px;background:#071713;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d8ff7d;white-space:pre-wrap;line-height:1.7}.note{padding:16px 18px;border:1px solid #816d3e;border-left:4px solid #d7b85d;border-radius:12px;background:#241f11;color:#d9cab2}.lang-only{display:none}html[data-guide-lang="en"] [data-lang="en"],html[data-guide-lang="es"] [data-lang="es"]{display:block}html[data-guide-lang="en"] [data-inline-lang="en"],html[data-guide-lang="es"] [data-inline-lang="es"]{display:inline}
+    @media(max-width:900px){.five{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}@media(max-width:560px){.five{grid-template-columns:1fr}.guide{padding:28px 14px 60px}.hero{padding:22px}}
+  </style>
+</head>
+<body class="docs-page">
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-mark"><img src="../littleapi-icon.svg" alt="" style="width:100%;height:100%"></span><span>Little<span class="brand-accent">API</span></span></a>
+  <nav><a href="../">Home</a><a href="./">Documentation</a><a href="../pricing.html">Pricing</a><a href="../app.html">App</a></nav>
+  <div class="header-actions"><label class="language-control"><span id="language-label">Language</span><select id="language-select"><option value="en">English</option><option value="es">Español</option></select></label></div>
+</header>
+<main class="guide">
+  <section class="hero">
+    <p class="eyebrow">LITTLEAPI · LITTLEAPPS</p>
+    <div class="lang-only" data-lang="en"><h1>From API to app in <span>five steps.</span></h1><p>LittleApps turns an existing LittleAPI API into a responsive web application. There is no free-position canvas and no separate project to maintain: choose the data, the view, the fields and the visual style, then publish.</p></div>
+    <div class="lang-only" data-lang="es"><h1>De API a aplicación en <span>cinco pasos.</span></h1><p>LittleApps convierte una API existente de LittleAPI en una aplicación web adaptable. No hay un lienzo de posiciones libres ni otro proyecto que mantener: elige los datos, la vista, los campos y el estilo visual, y publica.</p></div>
+    <div class="actions"><a class="primary" href="../app.html"><span data-inline-lang="en">Open dashboard</span><span data-inline-lang="es">Abrir panel</span></a><a class="secondary" href="excel-addin.html"><span data-inline-lang="en">Excel Add-in guide</span><span data-inline-lang="es">Guía del complemento Excel</span></a></div>
+  </section>
+
+  <div class="five">
+    <article><span>1</span><h3><span data-inline-lang="en">Data</span><span data-inline-lang="es">Datos</span></h3><p><span data-inline-lang="en">Choose the workbook tab already connected to LittleAPI.</span><span data-inline-lang="es">Elige la pestaña del libro ya conectada a LittleAPI.</span></p></article>
+    <article><span>2</span><h3><span data-inline-lang="en">Pages</span><span data-inline-lang="es">Pantallas</span></h3><p><span data-inline-lang="en">Cards, table or list, plus search and details.</span><span data-inline-lang="es">Tarjetas, tabla o lista, más búsqueda y detalle.</span></p></article>
+    <article><span>3</span><h3><span data-inline-lang="en">Fields</span><span data-inline-lang="es">Campos</span></h3><p><span data-inline-lang="en">Hide, rename and reorder columns.</span><span data-inline-lang="es">Oculta, renombra y reordena columnas.</span></p></article>
+    <article><span>4</span><h3><span data-inline-lang="en">Design</span><span data-inline-lang="es">Diseño</span></h3><p><span data-inline-lang="en">Theme, accent and navigation style.</span><span data-inline-lang="es">Tema, acento y estilo de navegación.</span></p></article>
+    <article><span>5</span><h3><span data-inline-lang="en">Publish</span><span data-inline-lang="es">Publicar</span></h3><p><span data-inline-lang="en">Save one configuration and open the generated app URL.</span><span data-inline-lang="es">Guarda una configuración y abre la URL generada.</span></p></article>
+  </div>
+
+  <section class="doc">
+    <p class="eyebrow">START</p>
+    <div class="lang-only" data-lang="en"><h2>Create or edit from the API card</h2><p>Once an API exists, its dashboard card shows <strong>Create App</strong>. After saving a LittleApp, the same action changes to <strong>Edit App</strong>; published apps also show <strong>Open App</strong>.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Crea o edita desde la tarjeta de la API</h2><p>Cuando existe una API, su tarjeta del panel muestra <strong>Crear app</strong>. Después de guardar una LittleApp, esa acción cambia a <strong>Editar app</strong>; las apps publicadas también muestran <strong>Abrir app</strong>.</p></div>
+    <div class="flow">Google Sheet
+    ↓
+LittleAPI API
+    ↓
+Create App / Crear app
+    ↓
+Data → Pages → Fields → Design → Publish
+    ↓
+littleapi.online/littleapp.html?app=your-app</div>
+  </section>
+
+  <section class="doc">
+    <p class="eyebrow">RUNTIME</p>
+    <div class="lang-only" data-lang="en"><h2>One runtime, many applications</h2><p>LittleAPI does not generate a different HTML project for every user. The builder stores a compact configuration in Supabase and the shared LittleApps runtime interprets it. This keeps publishing fast and makes later edits immediate.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Un solo runtime, muchas aplicaciones</h2><p>LittleAPI no genera un proyecto HTML diferente por usuario. El constructor guarda una configuración compacta en Supabase y el runtime compartido de LittleApps la interpreta. Esto hace la publicación rápida y permite que los cambios posteriores sean inmediatos.</p></div>
+    <div class="grid">
+      <article class="card"><h3>PWA</h3><p><span data-inline-lang="en">Published apps expose a web app manifest. Supported browsers can offer installation without producing a separate APK.</span><span data-inline-lang="es">Las apps publicadas exponen un manifiesto web. Los navegadores compatibles pueden ofrecer instalación sin producir un APK separado.</span></p></article>
+      <article class="card"><h3><span data-inline-lang="en">Desktop</span><span data-inline-lang="es">Escritorio</span></h3><p><span data-inline-lang="en">The same URL can run in a browser or later be wrapped by a desktop shell without changing the data layer.</span><span data-inline-lang="es">La misma URL puede ejecutarse en el navegador o envolverse después en una app de escritorio sin cambiar la capa de datos.</span></p></article>
+      <article class="card"><h3><span data-inline-lang="en">Responsive</span><span data-inline-lang="es">Adaptable</span></h3><p><span data-inline-lang="en">The runtime automatically adapts the selected layout to desktop, tablet and mobile sizes.</span><span data-inline-lang="es">El runtime adapta automáticamente la interfaz elegida a escritorio, tablet y móvil.</span></p></article>
+    </div>
+  </section>
+
+  <section class="doc">
+    <p class="eyebrow">CURRENT VERSION</p>
+    <div class="lang-only" data-lang="en"><h2>What is available now</h2><p>The first LittleApps version is intentionally simple: read data, search, paginate, show details, choose visible fields and publish a responsive app. Public Read must be enabled because no private end-user authentication layer is included yet.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Qué está disponible ahora</h2><p>La primera versión de LittleApps es intencionalmente sencilla: leer datos, buscar, paginar, mostrar detalle, elegir campos visibles y publicar una app adaptable. Debe estar activada Lectura pública porque todavía no se incluye una capa de autenticación privada para usuarios finales.</p></div>
+    <div class="note"><strong><span data-inline-lang="en">Security:</span><span data-inline-lang="es">Seguridad:</span></strong> <span data-inline-lang="en">Do not publish an app from an API that exposes passwords, secrets or other private columns. Hide fields in the builder for presentation, but remember that Public Read still exposes the underlying endpoint.</span><span data-inline-lang="es">No publiques una app desde una API que exponga contraseñas, secretos u otras columnas privadas. Ocultar campos en el constructor sirve para la presentación, pero Lectura pública sigue exponiendo el endpoint subyacente.</span></div>
+  </section>
+
+  <section class="doc">
+    <p class="eyebrow">LANGUAGES</p>
+    <div class="lang-only" data-lang="en"><h2>English and Spanish are built in</h2><p>The builder and the published runtime share the LittleAPI language preference. Users can switch language without recreating the app.</p></div>
+    <div class="lang-only" data-lang="es"><h2>Inglés y español vienen integrados</h2><p>El constructor y el runtime publicado comparten la preferencia de idioma de LittleAPI. Los usuarios pueden cambiar el idioma sin volver a crear la aplicación.</p></div>
+  </section>
+</main>
+<footer><span>© 2026 LittleAPI</span><span><a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></span></footer>
+<script>
+(() => {
+  const select=document.getElementById("language-select"),label=document.getElementById("language-label");
+  const stored=localStorage.getItem("littleapi:language");
+  const initial=stored==="es"||stored==="en"?stored:"en";
+  function apply(v){document.documentElement.dataset.guideLang=v;document.documentElement.lang=v;select.value=v;label.textContent=v==="es"?"Idioma":"Language";localStorage.setItem("littleapi:language",v)}
+  select.addEventListener("change",()=>apply(select.value));apply(initial);
+})();
+</script>
+</body>
+</html>
