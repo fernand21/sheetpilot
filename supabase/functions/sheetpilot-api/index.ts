@@ -1437,7 +1437,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     config: publicConfig,
     updated_at: app.updated_at,
     app_url: `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`,
-  }, 200, { "Cache-Control": "public, max-age=60" });
+  }, 200, { "Cache-Control": "no-store" });
 }
 
 async function handler(request: Request) {
