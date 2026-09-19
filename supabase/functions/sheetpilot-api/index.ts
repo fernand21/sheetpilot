@@ -274,7 +274,8 @@ async function queryOperation(api: ApiRecord, request: Request) {
   const token = api.public_read ? "" : await googleTokenForUser(api.user_id);
   const sheetHeaders = columnsMode === "letters" ? [] : await queryHeaders(api, sheet, token, headerRows);
   const translatedQuery = columnsMode === "letters" ? query : mapQueryHeaders(query, sheetHeaders);
-  const cacheKey = `${api.api_id}:query:${sheet}:${headerRows}:${columnsMode}:${raw}:${translatedQuery}`;
+  const includeEmpty = shouldIncludeEmptyRows(url, body);
+  const cacheKey = `${api.api_id}:query:${sheet}:${headerRows}:${columnsMode}:${raw}:${includeEmpty}:${translatedQuery}`;
   const cached = cache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return response(cached.value, 200, {
     "X-LittleAPI-Cache": "HIT",
@@ -290,7 +291,8 @@ async function queryOperation(api: ApiRecord, request: Request) {
 
   try {
     const table = parseVisualization(text);
-    const data = rowsAsObjects(table.headers, table.rows);
+    const allData = rowsAsObjects(table.headers, table.rows);
+    const data = shouldIncludeEmptyRows(url, body) ? allData : allData.filter(rowHasData);
     const payload = raw ? data : {
       data,
       total: data.length,
@@ -320,6 +322,13 @@ async function queryOperation(api: ApiRecord, request: Request) {
 
 function rowsAsObjects(headers: string[], rows: unknown[][]) {
   return rows.map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
+}
+function rowHasData(row: unknown[] | Record<string, unknown>) {
+  const values = Array.isArray(row) ? row : Object.values(row || {});
+  return values.some((value) => String(value ?? "").trim() !== "");
+}
+function shouldIncludeEmptyRows(url: URL, body?: Record<string, unknown>) {
+  return body?.include_empty === true || url.searchParams.get("include_empty") === "true";
 }
 function valueOf(row: Record<string, unknown>, key: string) {
   const exact = Object.keys(row).find((candidate) => candidate === key);
@@ -361,7 +370,7 @@ function matchWhere(row: Record<string, unknown>, where: Record<string, unknown>
 const RESERVED_QUERY = new Set([
   "sheet", "limit", "offset", "sort_by", "sort_order", "sort", "order", "sort_method", "sort_date_format",
   "cast_numbers", "single_object", "mode", "casesensitive", "legacy", "raw", "infer_types", "select",
-  "group_by", "count", "sum", "avg", "min", "max", "search", "page_size", "page_token", "order_by",
+  "group_by", "count", "sum", "avg", "min", "max", "search", "page_size", "page_token", "order_by", "include_empty",
 ]);
 function filterRows(rows: Record<string, unknown>[], url: URL, orMode = false) {
   const casesensitive = url.searchParams.get("casesensitive") === "true", search = url.searchParams.get("search");
@@ -488,8 +497,9 @@ async function quotaStatus(api: ApiRecord) {
   return { used, limit, remaining: Math.max(0, limit - used), reset_at: reset };
 }
 function csvCell(value: unknown) { const text = String(value ?? ""); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
-function csvResponse(api: ApiRecord, table: TableData, sheet: string) {
-  const csv = [table.headers, ...table.rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
+function csvResponse(api: ApiRecord, table: TableData, sheet: string, includeEmpty = false) {
+  const rows = includeEmpty ? table.rows : table.rows.filter(rowHasData);
+  const csv = [table.headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
   return new Response(csv, { status: 200, headers: { ...corsHeaders, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${api.name.replace(/[^A-Za-z0-9_-]+/g, "-")}-${sheet.replace(/[^A-Za-z0-9_-]+/g, "-")}.csv"`, "X-LittleAPI-Version": API_VERSION } });
 }
 
@@ -505,12 +515,12 @@ async function exportOperation(api: ApiRecord, request: Request, format: "csv" |
     if (render === "FORMULA") {
       if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API requiere la cabecera X-API-Key.");
       const table = await readAuthorized(api, await googleTokenForUser(api.user_id), sheet, "FORMULA");
-      return csvResponse(api, table, sheet);
+      return csvResponse(api, table, sheet, shouldIncludeEmptyRows(url));
     }
 
     const table = api.public_read ? await readPublicSheet(api, sheet) : (await hasApiKey(api, request) ? await readAuthorized(api, await googleTokenForUser(api.user_id), sheet) : null);
     if (!table) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key.");
-    return csvResponse(api, table, sheet);
+    return csvResponse(api, table, sheet, shouldIncludeEmptyRows(url));
   }
   if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "La exportación Excel requiere la cabecera X-API-Key.");
   if (api.resource_type !== "sheet" || !api.spreadsheet_id) return failure(400, "not_a_sheet_api", "Excel sólo está disponible para APIs de Sheets.");
@@ -542,7 +552,9 @@ async function readOperation(api: ApiRecord, request: Request, path: string[]) {
   const cacheKey = `${api.api_id}:${path.join("/") || "root"}:${url.search}`;
   const cached = cacheable ? cache.get(cacheKey) : null;
   if (cached && cached.expires > Date.now()) return response(cached.value, 200, { "X-LittleAPI-Cache": "HIT", "Cache-Control": api.public_read ? `public, max-age=${Math.min(api.cache_ttl, 3600)}` : "no-store" });
-  const table = api.public_read ? await readPublicSheet(api, sheet) : await readAuthorized(api, await googleTokenForUser(api.user_id), sheet), objects = rowsAsObjects(table.headers, table.rows);
+  const table = api.public_read ? await readPublicSheet(api, sheet) : await readAuthorized(api, await googleTokenForUser(api.user_id), sheet);
+  const allObjects = rowsAsObjects(table.headers, table.rows);
+  const objects = shouldIncludeEmptyRows(url) ? allObjects : allObjects.filter(rowHasData);
   if (path[0] === "keys") return response(table.headers);
   if (path[0] === "count") return response({ rows: objects.length });
   if (path[0] === "cells") {
@@ -1062,6 +1074,7 @@ function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
     openApiParameter("infer_types", "Convierte números, booleanos y null de forma segura.", { type: "boolean" }, false),
     openApiParameter("single_object", "Devuelve sólo el primer objeto.", { type: "boolean" }, false),
     openApiParameter("raw", "Devuelve sólo data, sin el sobre de metadatos.", { type: "boolean" }, false),
+    openApiParameter("include_empty", "Incluye filas vacías o que sólo contienen espacios. Por defecto se omiten.", { type: "boolean" }, false),
   ];
   const basePaths: Record<string, unknown> = {
     "/name": { get: { operationId: "getApiName", summary: "Nombre de la API", security: api.public_read ? [] : key } },
@@ -1081,7 +1094,7 @@ function metadataResponse(api: ApiRecord, openapi: boolean, request: Request) {
     "/search": { get: { operationId: "searchRows", summary: "Busca y filtra filas con condiciones AND", security: api.public_read ? [] : key, parameters: [...commonRead, openApiParameter("search", "Texto libre en cualquier columna."), openApiParameter("casesensitive", "Hace sensibles a mayúsculas los filtros."), openApiParameter("contains[campo]", "La columna debe contener el texto."), openApiParameter("campo[]", "Repite el parámetro para aceptar varios valores en la misma columna.")] } },
     "/search_or": { get: { operationId: "searchRowsOr", summary: "Filtra filas cuando coincide cualquiera de las condiciones", security: api.public_read ? [] : key, parameters: commonRead } },
     "/query": {
-    get: { operationId: "advancedQuery", summary: "Consulta avanzada con Google Visualization Query Language y nombres de encabezado", security: api.public_read ? [] : key, parameters: [openApiParameter("sheet", "Pestaña a consultar."), openApiParameter("q", "Consulta, por ejemplo SELECT Nombre, SUM(Total) GROUP BY Nombre."), openApiParameter("query", "Alias de q."), openApiParameter("headers", "Número de filas de encabezado, de 0 a 10.", { type: "integer", minimum: 0, maximum: 10 }, 1), openApiParameter("columns", "Usa names para nombres de encabezado o letters para escribir A,B,C directamente.", { type: "string", enum: ["names", "letters"] }, "names"), openApiParameter("raw", "Devuelve sólo el array de resultados.", { type: "boolean" }, false)] },
+    get: { operationId: "advancedQuery", summary: "Consulta avanzada con Google Visualization Query Language y nombres de encabezado", security: api.public_read ? [] : key, parameters: [openApiParameter("sheet", "Pestaña a consultar."), openApiParameter("q", "Consulta, por ejemplo SELECT Nombre, SUM(Total) GROUP BY Nombre."), openApiParameter("query", "Alias de q."), openApiParameter("headers", "Número de filas de encabezado, de 0 a 10.", { type: "integer", minimum: 0, maximum: 10 }, 1), openApiParameter("columns", "Usa names para nombres de encabezado o letters para escribir A,B,C directamente.", { type: "string", enum: ["names", "letters"] }, "names"), openApiParameter("raw", "Devuelve sólo el array de resultados.", { type: "boolean" }, false), openApiParameter("include_empty", "Incluye filas vacías o que sólo contienen espacios.", { type: "boolean" }, false)] },
     post: { operationId: "advancedQueryPost", summary: "Consulta avanzada por JSON para consultas largas", security: api.public_read ? [] : key, requestBody: { required: true, content: jsonBody } },
   },
     "/keys": { get: { operationId: "listColumns", summary: "Nombres de columnas", security: api.public_read ? [] : key } },
@@ -1123,7 +1136,9 @@ async function statsOperation(api: ApiRecord, request: Request) {
   let table: TableData;
   if (api.public_read) table = await readPublicSheet(api, sheet);
   else { if (!(await hasApiKey(api, request))) return failure(401, "api_key_required", "Esta API privada requiere la cabecera X-API-Key."); table = await readAuthorized(api, await googleTokenForUser(api.user_id), sheet); }
-  const column = url.searchParams.get("column") || "", rows = rowsAsObjects(table.headers, table.rows);
+  const column = url.searchParams.get("column") || "";
+  const allRows = rowsAsObjects(table.headers, table.rows);
+  const rows = shouldIncludeEmptyRows(url) ? allRows : allRows.filter(rowHasData);
   if (!column) return response({ columns: table.headers, rows: rows.length });
   const values = rows.map((row) => Number(valueOf(row, column))).filter((value) => !Number.isNaN(value));
   return response({ column, count: rows.filter((row) => String(valueOf(row, column) ?? "") !== "").length, numeric_count: values.length, sum: values.reduce((a, b) => a + b, 0), avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, min: values.length ? Math.min(...values) : null, max: values.length ? Math.max(...values) : null });
