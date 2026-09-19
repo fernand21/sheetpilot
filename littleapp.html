@@ -68,7 +68,7 @@ const defaults={
 en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",previous:"Previous",next:"Next",records:"{n} records",page:"Page {n}",submitOk:"Saved successfully.",deleteConfirm:"Delete this record?",actionDisabled:"This action is not enabled for this app.",formHelp:"Complete the fields and save the new record."},
 es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",previous:"Anterior",next:"Siguiente",records:"{n} registros",page:"Página {n}",submitOk:"Guardado correctamente.",deleteConfirm:"¿Eliminar este registro?",actionDisabled:"Esta acción no está habilitada para esta app.",formHelp:"Completa los campos y guarda el nuevo registro."}
 };
-let app=null,activePageId="",state={rows:[],total:0,page:0,search:"",loading:false},timer=null,editingRow=null;
+let app=null,activePageId="",state={rows:[],total:0,page:0,search:"",loading:false,dashboardData:null},timer=null,editingRow=null;
 function appLang(){
 const mode=app?.config?.languageMode||"en";
 if(mode==="en"||mode==="es")return mode;
@@ -112,6 +112,10 @@ const q=new URLSearchParams({limit:String(limit),offset:String(offset)});if(stat
 async function loadRows(limitOverride){
 state.loading=true;$("#view").innerHTML='<div class="empty">…</div>';
 try{const r=await fetch(rowsUrl(limitOverride),{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"load_error");state.rows=Array.isArray(data.data)?data.data:[];state.total=Number(data.total||0);state.hasMore=Boolean(data.has_more);renderActive(false)}catch(e){$("#view").innerHTML='<div class="error">'+esc(e.message||String(e))+'</div>'}finally{state.loading=false}
+}
+async function loadDashboard(){
+state.loading=true;$("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");$("#view").innerHTML='<div class="empty">…</div>';
+try{const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(app.slug)+"/dashboard",{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"dashboard_error");state.dashboardData=data;state.total=Number(data.total||0);renderDashboard()}catch(e){$("#view").innerHTML='<div class="error">'+esc(e.message||String(e))+'</div>'}finally{state.loading=false}
 }
 function actionsFor(row,p){
 const a=app.config?.actions||{},items=[];
@@ -199,9 +203,9 @@ const items=groupedValues(block),type=block.chartType||"bar";if(type==="line")re
 }
 function renderDashboard(){
 $("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");
-const blocks=Array.isArray(app.config?.screens?.dashboard?.blocks)?app.config.screens.dashboard.blocks:[];
+const blocks=Array.isArray(state.dashboardData?.blocks)?state.dashboardData.blocks:[];
 if(!blocks.length){$("#view").innerHTML='<div class="notice">'+esc(appLang()==="es"?"Este panel todavía no tiene bloques configurados.":"This dashboard has no configured blocks yet.")+'</div>';return}
-$("#view").innerHTML='<section class="dash-grid">'+blocks.map(block=>{const title=appLang()==="es"?(block.titleEs||block.titleEn):(block.titleEn||block.titleEs);if(block.kind==="metric"){const value=metricValue(block);return'<article class="dash-block"><h3>'+esc(title||"Metric")+'</h3><div class="metric-value">'+esc(formatNumber(value))+'</div><div class="metric-sub">'+esc(block.aggregation||"count")+'</div></article>'}return'<article class="dash-block chart-wide"><h3>'+esc(title||"Chart")+'</h3>'+renderChart(block)+'</article>'}).join("")+'</section>';
+$("#view").innerHTML='<section class="dash-grid">'+blocks.map(block=>{const title=appLang()==="es"?(block.titleEs||block.titleEn):(block.titleEn||block.titleEs);if(block.kind==="metric"){return'<article class="dash-block"><h3>'+esc(title||"Metric")+'</h3><div class="metric-value">'+esc(formatNumber(block.value))+'</div><div class="metric-sub">'+esc(block.aggregation||"count")+'</div></article>'}const items=Array.isArray(block.items)?block.items:[],type=block.chartType||"bar",chart=type==="line"?lineChart(items,false):type==="area"?lineChart(items,true):type==="pie"?pieChart(items,false):type==="doughnut"?pieChart(items,true):barChart(items);return'<article class="dash-block chart-wide"><h3>'+esc(title||"Chart")+'</h3>'+chart+'</article>'}).join("")+'</section>';
 }
 function formatNumber(n){return new Intl.NumberFormat(appLang(),{maximumFractionDigits:2}).format(Number(n||0))}
 function renderChat(){
@@ -211,7 +215,7 @@ if(!state.rows.length){$("#view").innerHTML='<div class="empty">'+esc(tr("empty"
 $("#view").innerHTML='<section class="chat '+style+'">'+state.rows.map((r,i)=>'<article class="bubble"><strong>'+esc(r[titleField]||("Record "+(i+1)))+'</strong><p>'+esc(r[messageField]||"")+'</p>'+(metaField&&r[metaField]!==undefined?'<span class="chat-meta">'+esc(r[metaField])+'</span>':"")+(dateField&&r[dateField]!==undefined?'<span class="chat-date">'+esc(r[dateField])+'</span>':"")+'</article>').join("")+'</section>';
 }
 async function renderActive(load=true){
-const p=page();renderNav();if(p.type==="form"){renderForm();return}if(load){state.page=0;await loadRows(p.type==="dashboard"||p.type==="chat"?100:undefined);return}if(p.type==="dashboard")renderDashboard();else if(p.type==="chat")renderChat();else renderData(p)
+const p=page();renderNav();if(p.type==="form"){renderForm();return}if(p.type==="dashboard"){if(load){await loadDashboard();return}renderDashboard();return}if(load){state.page=0;await loadRows(p.type==="chat"?100:undefined);return}if(p.type==="chat")renderChat();else renderData(p)
 }
 function showDetail(row){if(!row)return;$("#detail-title").textContent=tr("details");$("#detail-body").innerHTML=fields().map(f=>'<div class="detail-row"><span>'+esc(f.label||f.name)+'</span><strong>'+esc(row[f.name])+'</strong></div>').join("");$("#detail-dialog").showModal()}
 function openEdit(row){if(!row)return;editingRow=row;$("#edit-title").textContent=tr("edit");$("#edit-fields").innerHTML=formMarkup(row,"edit");$("#edit-cancel").textContent=tr("cancel");$("#edit-save").innerHTML=icon("save")+" "+esc(tr("save"));$("#edit-dialog").showModal()}
