@@ -26,7 +26,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-20">
+<meta name="littleapp-build" content="20260919-21">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -39,6 +39,10 @@ html[data-boot-theme="light"]{color-scheme:light}
 .app-tool:disabled{opacity:.55;cursor:wait}
 .app-tool svg{width:17px;height:17px}
 .sync-stamp{max-width:130px;color:var(--muted);font-size:.62rem;line-height:1.15;text-align:right}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:12000;max-width:min(92vw,430px);padding:12px 16px;border-radius:14px;background:#173f36;color:#fff;box-shadow:0 18px 50px rgba(0,0,0,.24);font-size:.8rem;font-weight:780;opacity:0;pointer-events:none;transition:.22s ease}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.error{background:#8f3b35}
+
 @media(max-width:900px){.sync-stamp{display:none}.app-tool{width:36px;padding:0}.app-tool .tool-text{display:none}}
 
 .content{max-width:1480px;margin:auto;padding:clamp(18px,3vw,38px);min-height:100vh;background:var(--bg)}.sidebar-mode .content{min-height:100vh}
@@ -297,6 +301,7 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 </main>
 <nav class="mobile-bottom-nav" id="mobile-nav" aria-label="App navigation"></nav>
 <button class="fab hidden" id="fab" title="Add"><span id="fab-icon"></span></button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button class="close" data-close="detail-dialog">×</button></div><div class="dialog-body" id="detail-body"></div></dialog>
 <dialog id="edit-dialog"><div class="dialog-head"><h2 id="edit-title"></h2><button class="close" data-close="edit-dialog">×</button></div><div class="dialog-body"><form id="edit-form"><div class="form-grid" id="edit-fields"></div><div class="form-actions"><button type="button" class="button" data-close="edit-dialog" id="edit-cancel"></button><button class="button primary" id="edit-save"></button></div></form></div></dialog>
@@ -354,8 +359,8 @@ install:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 };
 const icon=n=>ICONS[n]||ICONS.table;
 const defaults={
-en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",previous:"Previous",next:"Next",records:"{n} records",page:"Page {n}",submitOk:"Saved successfully.",deleteConfirm:"Delete this record?",actionDisabled:"This action is not enabled for this app.",formHelp:"Complete the fields and save the new record.",sync:"Sync",syncing:"Syncing…",install:"Install app",lastSync:"Last sync",neverSync:"Not synced"},
-es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",previous:"Anterior",next:"Siguiente",records:"{n} registros",page:"Página {n}",submitOk:"Guardado correctamente.",deleteConfirm:"¿Eliminar este registro?",actionDisabled:"Esta acción no está habilitada para esta app.",formHelp:"Completa los campos y guarda el nuevo registro.",sync:"Sincronizar",syncing:"Sincronizando…",install:"Instalar app",lastSync:"Última sincronización",neverSync:"Sin sincronizar"}
+en:{search:"Search",add:"Add",save:"Save",edit:"Edit",delete:"Delete",cancel:"Cancel",empty:"No records found",details:"Details",previous:"Previous",next:"Next",records:"{n} records",page:"Page {n}",submitOk:"Saved successfully.",deleteConfirm:"Delete this record?",actionDisabled:"This action is not enabled for this app.",formHelp:"Complete the fields and save the new record.",sync:"Sync",syncing:"Syncing…",install:"Install app",lastSync:"Last sync",neverSync:"Not synced",syncSuccess:"Synchronization completed successfully.",staleData:"Data changed in another app. LittleApp was synchronized; try again."},
+es:{search:"Buscar",add:"Agregar",save:"Guardar",edit:"Editar",delete:"Eliminar",cancel:"Cancelar",empty:"No se encontraron registros",details:"Detalles",previous:"Anterior",next:"Siguiente",records:"{n} registros",page:"Página {n}",submitOk:"Guardado correctamente.",deleteConfirm:"¿Eliminar este registro?",actionDisabled:"Esta acción no está habilitada para esta app.",formHelp:"Completa los campos y guarda el nuevo registro.",sync:"Sincronizar",syncing:"Sincronizando…",install:"Instalar app",lastSync:"Última sincronización",neverSync:"Sin sincronizar",syncSuccess:"Sincronización completada correctamente.",staleData:"Los datos cambiaron en otra app. LittleApp se sincronizó; inténtalo de nuevo."}
 };
 let app=null,activePageId="",state={rows:[],headers:[],sheet:"",total:0,page:0,search:"",loading:false,dashboardData:null,snapshot:null,syncing:false},timer=null,editingRow=null,deferredInstallPrompt=null;
 const LOCAL_DB_NAME="littleapi-littleapps",LOCAL_DB_VERSION=1,LOCAL_STORE="snapshots";
@@ -376,6 +381,11 @@ function updateInstallUi(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallUi()});
 window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallUi()});
+let toastTimer=null;
+function showToast(message,type="success"){
+ const t=$("#toast");if(!t)return;clearTimeout(toastTimer);t.textContent=message;t.classList.toggle("error",type==="error");requestAnimationFrame(()=>t.classList.add("show"));toastTimer=setTimeout(()=>t.classList.remove("show"),2800);
+}
+
 function appLang(){
 const mode=app?.config?.languageMode||"en";
 if(mode==="en"||mode==="es")return mode;
@@ -467,7 +477,7 @@ async function syncNow(renderAfter=true){
    if(!r.ok)throw new Error(data.message||data.error||"sync_error");
    state.snapshot={...data,slug:app.slug};
    await localPut(state.snapshot);
-   if(renderAfter){state.page=0;await renderActive(true)}
+   if(renderAfter){state.page=0;await renderActive(true);showToast(tr("syncSuccess"))}
  }catch(e){
    console.error("LittleApp sync failed",e);
    if(!state.snapshot)throw e;
@@ -639,13 +649,21 @@ function applyLocalMutation(method,row,data,out){
  const currentPage=page(),source=state.snapshot.pages?.[currentPage.id],sheet=source?.sheet;if(!sheet)return;
  let targetRow=Number(row||0);
  if(method==="POST"){const range=String(out?.updates?.updatedRange||"");const match=range.match(/![A-Z]+(\d+)(?::|$)/i);targetRow=match?Number(match[1]):Math.max(1,...Object.values(state.snapshot.pages||{}).filter(x=>x?.sheet===sheet).flatMap(x=>(x.rows||[]).map(r=>Number(r.__row)||1)))+1}
- const updateBucket=bucket=>{if(!bucket||bucket.sheet!==sheet)return;bucket.rows=Array.isArray(bucket.rows)?bucket.rows:[];if(method==="POST"){const obj={__row:targetRow};for(const h of bucket.headers||[])obj[h]=data?.[h]??"";bucket.rows.push(obj)}else if(method==="PATCH"){const item=bucket.rows.find(r=>Number(r.__row)===targetRow);if(item)for(const [k,v] of Object.entries(data||{}))if((bucket.headers||[]).includes(k))item[k]=v}else if(method==="DELETE"){bucket.rows=bucket.rows.filter(r=>Number(r.__row)!==targetRow).map(r=>Number(r.__row)>targetRow?{...r,__row:Number(r.__row)-1}:r)}};
+ const updateBucket=bucket=>{if(!bucket||bucket.sheet!==sheet)return;bucket.rows=Array.isArray(bucket.rows)?bucket.rows:[];if(method==="POST"){const obj={__row:targetRow,__fingerprint:out?.fingerprint||""};for(const h of bucket.headers||[])obj[h]=data?.[h]??"";bucket.rows.push(obj)}else if(method==="PATCH"){const item=bucket.rows.find(r=>Number(r.__row)===targetRow);if(item){for(const [k,v] of Object.entries(data||{}))if((bucket.headers||[]).includes(k))item[k]=v;if(out?.fingerprint)item.__fingerprint=out.fingerprint}}else if(method==="DELETE"){bucket.rows=bucket.rows.filter(r=>Number(r.__row)!==targetRow).map(r=>Number(r.__row)>targetRow?{...r,__row:Number(r.__row)-1}:r)}};
  for(const bucket of Object.values(state.snapshot.pages||{}))updateBucket(bucket);
  updateBucket(state.snapshot.dashboard);
  void localPut(state.snapshot);
 }
 async function mutate(method,row,data){
-const base=cfg.apiBase||"https://littleapi.online/api/v1",q="?page="+encodeURIComponent(page()?.id||"data"),url=base+"/apps/"+encodeURIComponent(app.slug)+"/rows"+(row?"/"+encodeURIComponent(row):"")+q;const r=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:method==="DELETE"?undefined:JSON.stringify({data})}),out=await r.json().catch(()=>({}));if(!r.ok)throw new Error(out.message||out.error||"request_failed");applyLocalMutation(method,row,data,out);return out
+const base=cfg.apiBase||"https://littleapi.online/api/v1",q="?page="+encodeURIComponent(page()?.id||"data"),url=base+"/apps/"+encodeURIComponent(app.slug)+"/rows"+(row?"/"+encodeURIComponent(row):"")+q;
+const current=Number(row)?state.rows.find(r=>Number(r.__row)===Number(row)):null;
+const payload={data,expected_fingerprint:current?.__fingerprint||""};
+const r=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}),out=await r.json().catch(()=>({}));
+if(!r.ok){
+  if(r.status===409&&out.error==="stale_row"){await syncNow(true);const err=new Error(tr("staleData"));err.code="stale_row";throw err}
+  throw new Error(out.message||out.error||"request_failed")
+}
+applyLocalMutation(method,row,data,out);return out
 }
 async function deleteRow(row){if(!confirm(tr("deleteConfirm")))return;try{await mutate("DELETE",row);state.page=0;await renderActive(true)}catch(e){alert(e.message||String(e))}}
 function applyLanguage(){document.documentElement.lang=appLang();if((app.config?.languageMode||"en")==="both")$("#language-toggle").innerHTML=icon("translate")+'<span>'+appLang().toUpperCase()+'</span>';renderNav();$("#search").placeholder=tr("search");if(!state.loading)renderActive(false)}
@@ -673,7 +691,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-20").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-21").catch(()=>{})}
 void boot();
 })();
 </script>
