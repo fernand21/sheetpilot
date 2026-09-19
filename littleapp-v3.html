@@ -536,9 +536,9 @@ if(a.delete===true)items.push('<button class="action-icon danger" data-delete-ro
 return items.join("");
 }
 function bindRowActions(){
-$("[data-view-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();showDetail(state.rows.find(r=>rowKey(r)===String(b.dataset.viewRow)))});
-$("[data-edit-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(state.rows.find(r=>rowKey(r)===String(b.dataset.editRow)))});
-$("[data-delete-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();void deleteRow(String(b.dataset.deleteRow))});
+$$("[data-view-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();showDetail(state.rows.find(r=>rowKey(r)===String(b.dataset.viewRow)))});
+$$("[data-edit-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(state.rows.find(r=>rowKey(r)===String(b.dataset.editRow)))});
+$$("[data-delete-row]").forEach(b=>b.onclick=e=>{e.stopPropagation();void deleteRow(String(b.dataset.deleteRow))});
 }
 function renderData(p){
 const fs=fields(),rows=state.rows,view=p.view||"cards";$("#toolbar").classList.toggle("hidden",p.search===false);$("#count").textContent=tr("records").replace("{n}",String(state.total));$("#search").placeholder=tr("search");$("#search-icon").innerHTML=icon("search");
