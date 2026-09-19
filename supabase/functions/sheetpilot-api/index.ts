@@ -744,6 +744,76 @@ async function refreshGoogleTokenForUser(userId: string) {
   return { access_token: data.access_token as string, expires_in: Number(data.expires_in || 3600) };
 }
 async function googleTokenForUser(userId: string) { return (await refreshGoogleTokenForUser(userId)).access_token; }
+async function accountSheetSchema(request: Request) {
+  const user = await currentUser(request);
+  if (!user?.id) return failure(401, "login_required", "Inicia sesión para consultar la estructura de esta hoja.");
+  if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para consultar la estructura de la hoja.");
+
+  const url = new URL(request.url);
+  const apiId = String(url.searchParams.get("api_id") || "").trim();
+  if (!apiId) return failure(400, "api_id_required", "Indica el API_ID.");
+
+  const api = await getApi(apiId);
+  if (!api || api.user_id !== user.id) return failure(404, "api_not_found", "No existe una API propia con ese identificador.");
+  if (api.resource_type !== "sheet" || !api.spreadsheet_id) {
+    return failure(400, "not_a_sheet_api", "Esta API no está vinculada a un libro de Google Sheets.");
+  }
+
+  try {
+    const token = await googleTokenForUser(user.id);
+    const metadata = await spreadsheetMetadata(api, token);
+    const sheets = (metadata.sheets || [])
+      .map((item: any) => ({
+        sheet_id: item.properties?.sheetId,
+        title: item.properties?.title,
+        index: item.properties?.index,
+      }))
+      .filter((item: any) => item.title)
+      .sort((a: any, b: any) => Number(a.index || 0) - Number(b.index || 0));
+
+    let selectedSheet = String(url.searchParams.get("sheet") || api.default_sheet || sheets[0]?.title || "").trim();
+    if (selectedSheet && !sheets.some((item: any) => item.title === selectedSheet)) {
+      selectedSheet = String(sheets[0]?.title || "");
+    }
+
+    let headers: string[] = [];
+    if (selectedSheet) {
+      const headerData = await sheetsRequest(
+        api,
+        token,
+        `spreadsheets/${encodeURIComponent(api.spreadsheet_id)}/values/${encodeURIComponent(sheetRange(selectedSheet, "1:1"))}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`,
+      );
+      headers = (Array.isArray(headerData.values?.[0]) ? headerData.values[0] : [])
+        .map((value: unknown, index: number) => String(value == null || value === "" ? columnName(index + 1) : value));
+    }
+
+    return response({
+      api_id: api.api_id,
+      sheets,
+      selected_sheet: selectedSheet,
+      headers,
+      oauth_scope: "https://www.googleapis.com/auth/drive.file",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    if (/403|insufficient|permission|scope/i.test(message)) {
+      return failure(
+        409,
+        "google_file_access_required",
+        "Vuelve a autorizar esta hoja con Google para que LittleAPI pueda leerla mediante drive.file.",
+      );
+    }
+    if (/refresh|oauth|token/i.test(message)) {
+      return failure(
+        401,
+        "google_reauthorization_required",
+        "Vuelve a iniciar sesión con Google para renovar el acceso de LittleAPI.",
+      );
+    }
+    throw error;
+  }
+}
+
 async function googleConnection(request: Request) {
   const user = await currentUser(request);
   if (!user?.id) return failure(401, "login_required", "Inicia sesión para conectar Google.");
@@ -1078,6 +1148,7 @@ async function handler(request: Request) {
   if (path[0] === "auth" && path[1] === "google") return googleConnection(request);
   if (path[0] === "auth" && path[1] === "api-key") return apiKeyConnection(request);
   if (path[0] === "auth" && path[1] === "api-keys") return apiKeysConnection(request);
+  if (path[0] === "account" && path[1] === "sheet-schema") return accountSheetSchema(request);
   if (path[0] === "account") return accountRequest(request, path.slice(1));
   if (!path[0]) return response({ name: "LittleAPI", version: API_VERSION, usage: "/sheetpilot-api/{API_ID}", public_url: "https://littleapi.online/api/v1/{API_ID}", methods: ["GET", "POST", "PATCH", "DELETE"], authentication: "Public GETs can be anonymous; use X-API-Key for writes, private reads, Drive and admin operations." });
   const api = await getApi(path[0]);
