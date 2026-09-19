@@ -39,7 +39,7 @@
 
       const builderLabel = app ? text('✎ Editar app', '✎ Edit app') : text('✦ Crear app', '✦ Create app');
       const open = app?.published
-        ? '<a class="action-button" data-littleapp-open target="_blank" rel="noreferrer" href="littleapp.html?v=20260919-2&app=' + encodeURIComponent(app.slug) + '">' + text('▶ Abrir app', '▶ Open app') + '</a>'
+        ? '<a class="action-button" data-littleapp-open target="_blank" rel="noreferrer" href="littleapp-v3.html?app=' + encodeURIComponent(app.slug) + '">' + text('▶ Abrir app', '▶ Open app') + '</a>'
         : '';
       const remove = app
         ? '<button class="action-button" type="button" data-littleapp-delete style="color:#b8443b;border-color:#e2aaa5">' +
