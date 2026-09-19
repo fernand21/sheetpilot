@@ -1204,6 +1204,11 @@ async function publicLittleApp(request: Request, path: string[]) {
       icons: (() => {
         const icon = config?.appIcon && typeof config.appIcon === "object" ? config.appIcon : null;
         const url = String(icon?.url || "").trim();
+        const defaults = [
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
+        ];
         if (url) {
           const width = Number(icon?.width || 0), height = Number(icon?.height || 0);
           return [{
@@ -1211,13 +1216,9 @@ async function publicLittleApp(request: Request, path: string[]) {
             sizes: width > 0 && height > 0 ? `${width}x${height}` : "any",
             type: "image/png",
             purpose: "any",
-          }];
+          }, ...defaults];
         }
-        return [
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
-        ];
+        return defaults;
       })(),
     }), {
       status: 200,
