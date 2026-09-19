@@ -1188,7 +1188,7 @@ async function publicLittleApp(request: Request, path: string[]) {
   };
 
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp.html?v=20260919-1&app=${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: startUrl,
       name: app.name,
@@ -1436,7 +1436,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp.html?app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp.html?v=20260919-1&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
