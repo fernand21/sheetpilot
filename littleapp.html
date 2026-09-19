@@ -42,7 +42,7 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 <dialog id="detail-dialog"><div class="dialog-head"><h2 id="detail-title"></h2><button class="close" data-close="detail-dialog">×</button></div><div class="dialog-body" id="detail-body"></div></dialog>
 <dialog id="edit-dialog"><div class="dialog-head"><h2 id="edit-title"></h2><button class="close" data-close="edit-dialog">×</button></div><div class="dialog-body"><form id="edit-form"><div class="form-grid" id="edit-fields"></div><div class="form-actions"><button type="button" class="button" data-close="edit-dialog" id="edit-cancel"></button><button class="button primary" id="edit-save"></button></div></form></div></dialog>
 
-<script src="config.js?v=20260918-8"></script>
+<script src="config.js?v=20260919-1"></script>
 <script>
 (() => {
 const cfg=window.SUPABASE_CONFIG||{},params=new URLSearchParams(location.search),slug=params.get("app")||"";
