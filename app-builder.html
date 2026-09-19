@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f7faf9">
+  <title>LittleApps Builder — LittleAPI</title>
+  <link rel="icon" href="littleapi-icon.svg">
+  <style>
+    :root{--bg:#f5f8f7;--panel:#fff;--line:#dce8e4;--text:#17312b;--muted:#6d817b;--brand:#0b766e;--brand-soft:#e6f4f1;--accent:#6558e8;--shadow:0 16px 50px rgba(17,59,50,.10)}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit}button,a{transition:.18s ease}.hidden{display:none!important}
+    .topbar{height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.94);position:sticky;top:0;z-index:20;backdrop-filter:blur(16px)}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:900}.brand img{width:31px;height:31px}.brand span span{color:var(--brand)}
+    .top-actions{display:flex;align-items:center;gap:10px}.top-actions select,.ghost,.primary{border-radius:10px;padding:9px 12px;border:1px solid var(--line);background:#fff;color:var(--text);font-weight:800}.primary{background:var(--brand);color:#fff;border-color:var(--brand);cursor:pointer}.ghost{cursor:pointer;text-decoration:none}.primary:hover,.ghost:hover{transform:translateY(-1px)}
+    .shell{display:grid;grid-template-columns:250px minmax(0,1fr) 440px;min-height:calc(100vh - 66px)}
+    .steps{border-right:1px solid var(--line);background:#fff;padding:28px 18px;position:sticky;top:66px;height:calc(100vh - 66px)}
+    .steps-head{padding:0 12px 20px}.steps-head small{display:block;color:var(--muted);font-weight:800;letter-spacing:.08em}.steps-head strong{display:block;font-size:1.16rem;margin-top:5px}
+    .step{width:100%;display:flex;align-items:center;gap:12px;padding:13px 12px;border:0;background:transparent;border-radius:12px;color:#50655f;font-weight:850;text-align:left;cursor:pointer;margin:3px 0}
+    .step span{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--line);border-radius:9px;background:#fafcfc;color:#728781;font-size:.78rem}.step.active{background:var(--brand-soft);color:var(--brand)}.step.active span{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .editor{padding:38px clamp(24px,4vw,56px) 70px;min-width:0}.editor-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:28px}.eyebrow{margin:0 0 8px;color:var(--brand);font-size:.72rem;font-weight:950;letter-spacing:.12em}.editor h1{font-size:clamp(2rem,4vw,3.2rem);line-height:1;margin:0}.editor-head p{max-width:640px;color:var(--muted);line-height:1.65}
+    .pane{display:none}.pane.active{display:block}.section-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 35px rgba(20,70,60,.05);margin-bottom:16px}.section-card h2{margin:0 0 5px;font-size:1.05rem}.section-card>p{margin:0 0 18px;color:var(--muted);line-height:1.55;font-size:.9rem}
+    label{display:grid;gap:7px;font-size:.82rem;font-weight:800;color:#405852;margin:12px 0}input,select{width:100%;border:1px solid #ccdcd7;border-radius:10px;padding:11px 12px;background:#fbfdfc;color:var(--text);outline:none}input:focus,select:focus{border-color:#6db9aa;box-shadow:0 0 0 3px rgba(11,118,110,.09)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.choice{border:1px solid var(--line);border-radius:14px;padding:15px;background:#fff;cursor:pointer;text-align:left;color:var(--text)}.choice strong{display:block;margin-bottom:5px}.choice small{color:var(--muted)}.choice.selected{border-color:var(--brand);box-shadow:0 0 0 3px rgba(11,118,110,.08);background:#f5fbf9}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid #edf3f1}.toggle-row:last-child{border-bottom:0}.toggle-row p{margin:3px 0 0;color:var(--muted);font-size:.78rem}.switch{width:46px;height:26px;border-radius:999px;border:0;background:#c7d5d1;position:relative;cursor:pointer}.switch:after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:.18s}.switch.on{background:var(--brand)}.switch.on:after{left:23px}
+    .field-list{display:grid;gap:8px}.field-row{display:grid;grid-template-columns:auto minmax(150px,1fr) 150px auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.field-row .vis{width:18px;height:18px}.field-row input,.field-row select{margin:0;padding:8px 9px}.field-actions{display:flex;gap:5px}.field-actions button{width:31px;height:31px;border:1px solid var(--line);background:#f9fbfa;border-radius:8px;cursor:pointer}
+    .accent-row{display:flex;gap:10px;flex-wrap:wrap}.accent{width:38px;height:38px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}.accent.selected{box-shadow:0 0 0 3px #1e3c35}.a-teal{background:#0b766e}.a-purple{background:#6558e8}.a-blue{background:#2f6fed}.a-orange{background:#e47b28}.a-rose{background:#d94f70}
+    .publish-box{border:1px solid #bde1d8;background:#f0faf7;border-radius:14px;padding:16px}.url{display:block;margin-top:8px;padding:11px;border-radius:9px;background:#fff;border:1px solid #d5e8e2;color:#0a665f;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78rem}
+    .warning{border-color:#f0cf8c;background:#fff8e9}.warning strong{color:#8e5e08}.status{min-height:22px;font-size:.84rem;color:var(--muted);margin-top:12px}.status.error{color:#b33d34}.status.ok{color:#08785e}
+    .preview-side{border-left:1px solid var(--line);background:#eef4f2;padding:24px;position:sticky;top:66px;height:calc(100vh - 66px);overflow:auto}.preview-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.preview-toolbar strong{font-size:.82rem}.devices{display:flex;gap:6px}.devices button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;cursor:pointer}.devices button.active{background:#e6f4f1;border-color:#91cfc2}
+    .device{max-width:100%;margin:auto;background:#fff;border:1px solid #cfded9;border-radius:22px;min-height:620px;overflow:hidden;box-shadow:var(--shadow);transition:.2s}.device.mobile{max-width:360px}.device.tablet{max-width:600px}.preview-app{display:grid;grid-template-columns:112px 1fr;min-height:620px}.preview-nav{background:#10231f;color:#dcece7;padding:20px 12px}.preview-nav h3{font-size:.85rem;margin:0 0 24px}.preview-nav span{display:block;padding:9px;border-radius:8px;background:rgba(255,255,255,.08);font-size:.72rem;font-weight:800}.preview-main{padding:22px;min-width:0}.preview-main h2{margin:0}.preview-main p{color:#72857f;font-size:.77rem}.preview-search{height:34px;border:1px solid #dde7e4;border-radius:9px;margin:14px 0;background:#fafcfc}.preview-items{display:grid;gap:9px}.preview-card{padding:12px;border:1px solid #e0e9e6;border-radius:11px;background:#fff}.preview-card strong{display:block;font-size:.78rem}.preview-card small{display:block;color:#7a8b86;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.preview-table{width:100%;border-collapse:collapse;font-size:.7rem}.preview-table th,.preview-table td{padding:7px;border-bottom:1px solid #e7efec;text-align:left;max-width:105px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.preview-list{display:grid;gap:0}.preview-list .preview-card{border-width:0 0 1px;border-radius:0}
+    .preview-app.nav-top{display:block}.preview-app.nav-top .preview-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}.preview-app.nav-top .preview-nav h3{margin:0}.preview-app.nav-top .preview-nav span{display:inline-block}.preview-app.nav-bottom{display:flex;flex-direction:column}.preview-app.nav-bottom .preview-main{order:1;flex:1}.preview-app.nav-bottom .preview-nav{order:2;display:flex;justify-content:space-between;padding:11px 18px}.preview-app.nav-bottom .preview-nav h3{margin:0}.preview-app.nav-bottom .preview-nav span{display:inline-block}
+    @media(max-width:1150px){.shell{grid-template-columns:220px 1fr}.preview-side{display:none}}@media(max-width:720px){.shell{display:block}.steps{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;padding:10px}.steps-head{display:none}.step{min-width:max-content;width:auto}.step span{display:none}.editor{padding:24px 16px 50px}.grid2,.choice-grid{grid-template-columns:1fr}.field-row{grid-template-columns:auto 1fr auto}.field-row select{grid-column:2}.topbar{padding:0 12px}.top-actions .ghost{display:none}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="app.html"><img src="littleapi-icon.svg" alt=""><span>Little<span>API</span></span></a>
+  <div class="top-actions">
+    <select id="language"><option value="en">English</option><option value="es">Español</option></select>
+    <a class="ghost" href="app.html" id="back-link">Dashboard</a>
+    <button class="primary" id="save-top">Save</button>
+  </div>
+</header>
+<div class="shell">
+  <aside class="steps">
+    <div class="steps-head"><small>LITTLEAPPS</small><strong id="builder-name">App Builder</strong></div>
+    <button class="step active" data-step="data"><span>1</span><b data-k="stepData">Data</b></button>
+    <button class="step" data-step="pages"><span>2</span><b data-k="stepPages">Pages</b></button>
+    <button class="step" data-step="fields"><span>3</span><b data-k="stepFields">Fields</b></button>
+    <button class="step" data-step="design"><span>4</span><b data-k="stepDesign">Design</b></button>
+    <button class="step" data-step="publish"><span>5</span><b data-k="stepPublish">Publish</b></button>
+  </aside>
+  <main class="editor">
+    <div class="editor-head">
+      <div><p class="eyebrow">LITTLEAPPS BUILDER</p><h1 id="page-title">Build your app</h1><p id="page-lead"></p></div>
+    </div>
+
+    <section class="pane active" data-pane="data">
+      <div class="section-card">
+        <h2 data-k="dataTitle">Connected data</h2><p data-k="dataHelp">The app uses the LittleAPI API already linked to your Google Sheet.</p>
+        <div class="grid2"><label><span>API</span><input id="api-name" readonly></label><label><span data-k="sheet">Sheet</span><select id="sheet"></select></label></div>
+        <div class="grid2"><label><span>API ID</span><input id="api-id" readonly></label><label><span data-k="mode">Mode</span><input id="mode" readonly></label></div>
+      </div>
+      <div class="section-card"><h2 data-k="detectedTitle">Detected automatically</h2><p id="detected"></p></div>
+    </section>
+
+    <section class="pane" data-pane="pages">
+      <div class="section-card"><h2 data-k="viewTitle">Main view</h2><p data-k="viewHelp">Choose how records are displayed. You can change it later without rebuilding the app.</p>
+        <div class="choice-grid">
+          <button class="choice selected" data-view="cards"><strong data-k="cards">Cards</strong><small data-k="cardsHelp">Visual and easy to scan</small></button>
+          <button class="choice" data-view="table"><strong data-k="table">Table</strong><small data-k="tableHelp">Best for many columns</small></button>
+          <button class="choice" data-view="list"><strong data-k="list">List</strong><small data-k="listHelp">Compact for mobile</small></button>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="toggle-row"><div><strong data-k="search">Search</strong><p data-k="searchHelp">Show a search box above the data.</p></div><button class="switch on" data-toggle="search"></button></div>
+        <div class="toggle-row"><div><strong data-k="detail">Detail page</strong><p data-k="detailHelp">Open a complete record when the user selects an item.</p></div><button class="switch on" data-toggle="detail"></button></div>
+        <label><span data-k="pageSize">Rows per page</span><select id="page-size"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></label>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="fields">
+      <div class="section-card"><h2 data-k="fieldsTitle">Visible fields and order</h2><p data-k="fieldsHelp">Hide what the app does not need, rename labels, and change the order.</p><div class="field-list" id="field-list"></div></div>
+    </section>
+
+    <section class="pane" data-pane="design">
+      <div class="section-card"><h2 data-k="identityTitle">Identity</h2><div class="grid2"><label><span data-k="appName">App name</span><input id="app-name" maxlength="80"></label><label><span data-k="subtitle">Subtitle</span><input id="app-subtitle" maxlength="120"></label></div></div>
+      <div class="section-card"><h2 data-k="themeTitle">Appearance</h2>
+        <div class="grid2"><label><span data-k="theme">Theme</span><select id="theme"><option value="light">Light</option><option value="dark">Dark</option><option value="auto">System</option></select></label><label><span data-k="navigation">Navigation</span><select id="navigation"><option value="sidebar">Sidebar</option><option value="top">Top bar</option><option value="bottom">Bottom bar</option></select></label></div>
+        <label><span data-k="accent">Accent color</span><div class="accent-row"><button class="accent a-teal selected" data-accent="teal" title="Teal"></button><button class="accent a-purple" data-accent="purple" title="Purple"></button><button class="accent a-blue" data-accent="blue" title="Blue"></button><button class="accent a-orange" data-accent="orange" title="Orange"></button><button class="accent a-rose" data-accent="rose" title="Rose"></button></div></label>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="publish">
+      <div class="section-card"><h2 data-k="publishTitle">Publish your app</h2><p data-k="publishHelp">Publishing creates a reusable web app. The same address works on desktop and mobile.</p>
+        <label><span data-k="address">App address</span><input id="slug" maxlength="64"></label>
+        <div class="publish-box"><strong data-k="publicUrl">Public URL</strong><span class="url" id="public-url"></span></div>
+        <div class="publish-box warning hidden" id="public-warning" style="margin-top:12px"><strong data-k="publicRequired">Public Read is required for this first LittleApps version.</strong><p data-k="publicRequiredHelp">Enable Public Read for this API before publishing. Private authenticated apps can be added later.</p></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="ghost" id="save-draft" type="button" data-k="saveDraft">Save draft</button><button class="primary" id="publish" type="button" data-k="publishButton">Publish app</button><a class="ghost hidden" id="open-app" target="_blank" rel="noreferrer" data-k="openApp">Open app ↗</a></div>
+        <p class="status" id="status"></p>
+      </div>
+      <div class="section-card"><h2 data-k="pwaTitle">Installable web app</h2><p data-k="pwaHelp">Published LittleApps include a web app manifest, so supported browsers can install them like an app without generating a separate HTML project.</p></div>
+    </section>
+  </main>
+
+  <aside class="preview-side">
+    <div class="preview-toolbar"><strong data-k="livePreview">Live preview</strong><div class="devices"><button data-device="desktop" class="active">▣</button><button data-device="tablet">▤</button><button data-device="mobile">▯</button></div></div>
+    <div class="device" id="device"><div id="preview"></div></div>
+  </aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=20260917-7"></script>
+<script>
+(() => {
+  const cfg = window.SUPABASE_CONFIG || {};
+  const ref = (() => { try { return new URL(cfg.url).hostname.split(".")[0]; } catch (_) { return "littleapi"; } })();
+  const sb = window.supabase.createClient(cfg.url, cfg.publishableKey, {auth:{storageKey:"sb-"+ref+"-auth-token",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  const apiId = new URLSearchParams(location.search).get("api") || "";
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const lang = () => localStorage.getItem("littleapi:language") === "es" ? "es" : "en";
+  const dict = {
+    en:{stepData:"Data",stepPages:"Pages",stepFields:"Fields",stepDesign:"Design",stepPublish:"Publish",title:"Build your app",lead:"Five simple steps. LittleAPI keeps the data connection; you decide how the app looks.",dataTitle:"Connected data",dataHelp:"The app uses the LittleAPI API already linked to your Google Sheet.",sheet:"Sheet",mode:"Mode",publicMode:"Public read",privateMode:"Private API",detectedTitle:"Detected automatically",detected:"{n} fields detected from the first row. No schema setup is required.",viewTitle:"Main view",viewHelp:"Choose how records are displayed. You can change it later without rebuilding the app.",cards:"Cards",cardsHelp:"Visual and easy to scan",table:"Table",tableHelp:"Best for many columns",list:"List",listHelp:"Compact for mobile",search:"Search",searchHelp:"Show a search box above the data.",detail:"Detail page",detailHelp:"Open a complete record when the user selects an item.",pageSize:"Rows per page",fieldsTitle:"Visible fields and order",fieldsHelp:"Hide what the app does not need, rename labels, and change the order.",identityTitle:"Identity",appName:"App name",subtitle:"Subtitle",themeTitle:"Appearance",theme:"Theme",navigation:"Navigation",accent:"Accent color",publishTitle:"Publish your app",publishHelp:"Publishing creates a reusable web app. The same address works on desktop and mobile.",address:"App address",publicUrl:"Public URL",publicRequired:"Public Read is required for this first LittleApps version.",publicRequiredHelp:"Enable Public Read for this API before publishing. Private authenticated apps can be added later.",saveDraft:"Save draft",publishButton:"Publish app",openApp:"Open app ↗",pwaTitle:"Installable web app",pwaHelp:"Published LittleApps include a web app manifest, so supported browsers can install them like an app without generating a separate HTML project.",livePreview:"Live preview",visible:"Visible",text:"Text",number:"Number",date:"Date",email:"Email",saved:"Draft saved.",published:"App published.",saveError:"Could not save the app.",login:"Your session has expired. Sign in again.",noApi:"This API was not found in your account.",loading:"Loading builder…"},
+    es:{stepData:"Datos",stepPages:"Pantallas",stepFields:"Campos",stepDesign:"Diseño",stepPublish:"Publicar",title:"Crea tu aplicación",lead:"Cinco pasos simples. LittleAPI mantiene la conexión de datos; tú decides cómo se verá la app.",dataTitle:"Datos conectados",dataHelp:"La app usa la API de LittleAPI que ya está vinculada a tu Google Sheet.",sheet:"Pestaña",mode:"Modo",publicMode:"Lectura pública",privateMode:"API privada",detectedTitle:"Detectado automáticamente",detected:"Se detectaron {n} campos desde la primera fila. No necesitas configurar un esquema.",viewTitle:"Vista principal",viewHelp:"Elige cómo se muestran los registros. Puedes cambiarlo después sin reconstruir la app.",cards:"Tarjetas",cardsHelp:"Visual y fácil de revisar",table:"Tabla",tableHelp:"Ideal para muchas columnas",list:"Lista",listHelp:"Compacta para móvil",search:"Buscar",searchHelp:"Muestra un buscador encima de los datos.",detail:"Vista de detalle",detailHelp:"Abre el registro completo al seleccionar un elemento.",pageSize:"Filas por página",fieldsTitle:"Campos visibles y orden",fieldsHelp:"Oculta lo que la app no necesita, cambia las etiquetas y el orden.",identityTitle:"Identidad",appName:"Nombre de la app",subtitle:"Subtítulo",themeTitle:"Apariencia",theme:"Tema",navigation:"Navegación",accent:"Color de acento",publishTitle:"Publica tu app",publishHelp:"Publicar crea una aplicación web reutilizable. La misma dirección funciona en escritorio y móvil.",address:"Dirección de la app",publicUrl:"URL pública",publicRequired:"Esta primera versión de LittleApps requiere Lectura pública.",publicRequiredHelp:"Activa Lectura pública en esta API antes de publicar. Más adelante podremos añadir apps privadas con autenticación.",saveDraft:"Guardar borrador",publishButton:"Publicar app",openApp:"Abrir app ↗",pwaTitle:"Aplicación web instalable",pwaHelp:"Las LittleApps publicadas incluyen un manifiesto web para que navegadores compatibles puedan instalarlas como aplicación sin generar otro proyecto HTML.",livePreview:"Vista previa",visible:"Visible",text:"Texto",number:"Número",date:"Fecha",email:"Correo",saved:"Borrador guardado.",published:"App publicada.",saveError:"No se pudo guardar la aplicación.",login:"Tu sesión ha caducado. Inicia sesión nuevamente.",noApi:"No encontramos esta API en tu cuenta.",loading:"Cargando constructor…"}
+  };
+  const t = k => (dict[lang()]||dict.en)[k] || k;
+  let session=null, api=null, existing=null, schema={sheets:[],headers:[],preview:[]};
+  let state={view:"cards",search:true,detail:true,pageSize:25,theme:"light",navigation:"sidebar",accent:"teal",name:"",subtitle:"",fields:[]};
+
+  function translate(){
+    document.documentElement.lang=lang(); $("#language").value=lang();
+    $$("[data-k]").forEach(n=>{const key=n.dataset.k;if(dict[lang()][key])n.textContent=t(key)});
+    $("#page-title").textContent=t("title"); $("#page-lead").textContent=t("lead");
+    if(api){$("#mode").value=api.public_read?t("publicMode"):t("privateMode");$("#detected").textContent=t("detected").replace("{n}",String(state.fields.length))}
+    renderPreview();
+  }
+  function slugify(v){return String(v||"app").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,58)||"app"}
+  function inferType(name,values){const n=String(name).toLowerCase();if(/mail|correo|email/.test(n))return"email";if(/fecha|date|nacimiento/.test(n))return"date";const sample=values.filter(v=>String(v??"").trim()!=="").slice(0,4);if(sample.length&&sample.every(v=>!Number.isNaN(Number(String(v).replace(",",".")))))return"number";return"text"}
+  function previewObjects(){return (schema.preview||[]).map(row=>Object.fromEntries((schema.headers||[]).map((h,i)=>[h,row[i]??""])))}
+  function visibleFields(){return state.fields.filter(f=>f.visible)}
+  function renderFields(){
+    const list=$("#field-list"); if(!list)return;
+    list.innerHTML=state.fields.map((f,i)=>'<div class="field-row"><input class="vis" type="checkbox" data-field-vis="'+i+'" '+(f.visible?"checked":"")+' title="'+esc(t("visible"))+'"><input data-field-label="'+i+'" value="'+esc(f.label)+'"><select data-field-type="'+i+'"><option value="text" '+(f.type==="text"?"selected":"")+">Text</option><option value="number" '+(f.type==="number"?"selected":"")+">Number</option><option value="date" '+(f.type==="date"?"selected":"")+">Date</option><option value="email" '+(f.type==="email"?"selected":"")+">Email</option></select><span class="field-actions"><button data-up="'+i+'" '+(i===0?"disabled":"")+'>↑</button><button data-down="'+i+'" '+(i===state.fields.length-1?"disabled":"")+'>↓</button></span></div>').join("");
+    $$("[data-field-vis]").forEach(n=>n.onchange=()=>{state.fields[+n.dataset.fieldVis].visible=n.checked;renderPreview()});
+    $$("[data-field-label]").forEach(n=>n.oninput=()=>{state.fields[+n.dataset.fieldLabel].label=n.value;renderPreview()});
+    $$("[data-field-type]").forEach(n=>n.onchange=()=>{state.fields[+n.dataset.fieldType].type=n.value;renderPreview()});
+    $$("[data-up]").forEach(n=>n.onclick=()=>{const i=+n.dataset.up;if(i>0){[state.fields[i-1],state.fields[i]]=[state.fields[i],state.fields[i-1]];renderFields();renderPreview()}});
+    $$("[data-down]").forEach(n=>n.onclick=()=>{const i=+n.dataset.down;if(i<state.fields.length-1){[state.fields[i+1],state.fields[i]]=[state.fields[i],state.fields[i+1]];renderFields();renderPreview()}});
+  }
+  function renderPreview(){
+    const root=$("#preview");if(!root)return;const rows=previewObjects(),fields=visibleFields().slice(0,6);const accent={teal:"#0b766e",purple:"#6558e8",blue:"#2f6fed",orange:"#e47b28",rose:"#d94f70"}[state.accent]||"#0b766e";
+    const navClass=state.navigation==="top"?"nav-top":state.navigation==="bottom"?"nav-bottom":"";
+    let items="";
+    if(state.view==="table"){items='<table class="preview-table"><thead><tr>'+fields.map(f=>"<th>"+esc(f.label)+"</th>").join("")+'</tr></thead><tbody>'+rows.slice(0,4).map(r=>"<tr>"+fields.map(f=>"<td>"+esc(r[f.name])+"</td>").join("")+"</tr>").join("")+"</tbody></table>"}
+    else {items='<div class="'+(state.view==="list"?"preview-list":"preview-items")+'">'+rows.slice(0,5).map(r=>'<div class="preview-card"><strong>'+esc(r[fields[0]?.name]||"Record")+'</strong>'+fields.slice(1,3).map(f=>"<small>"+esc(f.label)+": "+esc(r[f.name])+"</small>").join("")+"</div>").join("")+"</div>"}
+    const dark=state.theme==="dark";
+    root.innerHTML='<div class="preview-app '+navClass+'" style="--accent:'+accent+';background:'+(dark?"#111c1a":"#fff")+';color:'+(dark?"#eef8f5":"#17312b")+'"><aside class="preview-nav" style="background:'+accent+'"><h3>'+esc(state.name||api?.name||"LittleApp")+'</h3><span>⌂ '+(lang()==="es"?"Datos":"Data")+'</span></aside><main class="preview-main"><h2>'+esc(state.name||api?.name||"LittleApp")+'</h2><p>'+esc(state.subtitle||schema.selected_sheet||"")+'</p>'+(state.search?'<div class="preview-search"></div>':'')+items+'</main></div>';
+  }
+  function refreshControls(){
+    $$("[data-view]").forEach(n=>n.classList.toggle("selected",n.dataset.view===state.view));
+    $$("[data-toggle]").forEach(n=>n.classList.toggle("on",Boolean(state[n.dataset.toggle])));
+    $("#page-size").value=String(state.pageSize);$("#theme").value=state.theme;$("#navigation").value=state.navigation;$("#app-name").value=state.name;$("#app-subtitle").value=state.subtitle;
+    $$("[data-accent]").forEach(n=>n.classList.toggle("selected",n.dataset.accent===state.accent));renderFields();renderPreview();updateUrl();
+  }
+  function updateUrl(){const slug=slugify($("#slug")?.value||state.name);if($("#public-url"))$("#public-url").textContent=location.origin+"/littleapp.html?app="+slug;if($("#open-app"))$("#open-app").href=location.origin+"/littleapp.html?app="+slug}
+  async function loadSchema(sheet){
+    const res=await fetch((cfg.apiBase||cfg.url+"/functions/v1/sheetpilot-api")+"/account/sheet-schema?api_id="+encodeURIComponent(apiId)+(sheet?"&sheet="+encodeURIComponent(sheet):""),{headers:{apikey:cfg.publishableKey,Authorization:"Bearer "+session.access_token}});
+    const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.message||data.error||"schema_error");schema=data;return data;
+  }
+  function mergeFields(headers,preview){
+    const old=new Map((state.fields||[]).map(f=>[f.name,f]));state.fields=headers.map((name,i)=>old.get(name)||{name,label:name,visible:true,type:inferType(name,(preview||[]).map(r=>r[i]))});
+  }
+  async function save(publish){
+    const status=$("#status");status.textContent=t("loading");status.className="status";
+    try{
+      const slug=slugify($("#slug").value||state.name);$("#slug").value=slug;
+      if(publish&&!api.public_read){$("#public-warning").classList.remove("hidden");throw new Error(t("publicRequired"))}
+      const payload={user_id:session.user.id,project_id:api.project_id,api_id:api.api_id,name:state.name.trim()||api.name,slug,sheet:$("#sheet").value,config:{version:1,view:state.view,search:state.search,detail:state.detail,pageSize:state.pageSize,theme:state.theme,navigation:state.navigation,accent:state.accent,name:state.name.trim()||api.name,subtitle:state.subtitle,fields:state.fields},published:Boolean(publish||existing?.published),updated_at:new Date().toISOString()};
+      let result;if(existing?.id)result=await sb.from("littleapps").update(payload).eq("id",existing.id).select().single();else result=await sb.from("littleapps").insert(payload).select().single();
+      if(result.error)throw result.error;existing=result.data;status.textContent=publish?t("published"):t("saved");status.className="status ok";$("#open-app").classList.toggle("hidden",!existing.published);updateUrl();
+    }catch(e){status.textContent=e.message||t("saveError");status.className="status error"}
+  }
+  async function init(){
+    $("#status").textContent=t("loading");const sr=await sb.auth.getSession();session=sr.data.session;if(!session){location.replace("app.html");return}
+    const ar=await sb.from("api_endpoints").select("id,project_id,api_id,name,default_sheet,public_read,permissions,resource_type").eq("api_id",apiId).limit(1).maybeSingle();if(ar.error||!ar.data){alert(t("noApi"));location.replace("app.html");return}api=ar.data;
+    const er=await sb.from("littleapps").select("*").eq("api_id",apiId).limit(1).maybeSingle();existing=er.data||null;
+    await loadSchema(existing?.sheet||api.default_sheet||"");
+    $("#api-name").value=api.name;$("#api-id").value=api.api_id;$("#mode").value=api.public_read?t("publicMode"):t("privateMode");$("#builder-name").textContent=api.name;
+    $("#sheet").innerHTML=(schema.sheets||[]).map(s=>'<option value="'+esc(s.title)+'">'+esc(s.title)+'</option>').join("");$("#sheet").value=schema.selected_sheet||api.default_sheet||"";
+    if(existing?.config){state=Object.assign(state,existing.config);state.name=existing.config.name||existing.name||api.name;state.subtitle=existing.config.subtitle||existing.sheet||schema.selected_sheet||"";$("#slug").value=existing.slug||slugify(state.name)}
+    else{state.name=api.name;state.subtitle=schema.selected_sheet||api.default_sheet||"";$("#slug").value=slugify(api.name)+"-"+api.api_id.slice(0,5).toLowerCase()}
+    mergeFields(schema.headers||[],schema.preview||[]);
+    $("#public-warning").classList.toggle("hidden",api.public_read);$("#open-app").classList.toggle("hidden",!existing?.published);$("#status").textContent="";refreshControls();translate();
+  }
+  $$(".step").forEach(b=>b.onclick=()=>{$$(".step").forEach(x=>x.classList.toggle("active",x===b));$$(".pane").forEach(p=>p.classList.toggle("active",p.dataset.pane===b.dataset.step))});
+  $$(".choice").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;refreshControls()});
+  $$("[data-toggle]").forEach(b=>b.onclick=()=>{state[b.dataset.toggle]=!state[b.dataset.toggle];refreshControls()});
+  $$(".accent").forEach(b=>b.onclick=()=>{state.accent=b.dataset.accent;refreshControls()});
+  $$(".devices button").forEach(b=>b.onclick=()=>{$$(".devices button").forEach(x=>x.classList.toggle("active",x===b));$("#device").className="device "+(b.dataset.device==="desktop"?"":b.dataset.device)});
+  $("#page-size").onchange=e=>{state.pageSize=Number(e.target.value);renderPreview()};$("#theme").onchange=e=>{state.theme=e.target.value;renderPreview()};$("#navigation").onchange=e=>{state.navigation=e.target.value;renderPreview()};
+  $("#app-name").oninput=e=>{state.name=e.target.value;if(!existing)$("#slug").value=slugify(state.name)+"-"+apiId.slice(0,5).toLowerCase();renderPreview();updateUrl()};$("#app-subtitle").oninput=e=>{state.subtitle=e.target.value;renderPreview()};$("#slug").oninput=updateUrl;
+  $("#sheet").onchange=async e=>{await loadSchema(e.target.value);mergeFields(schema.headers||[],schema.preview||[]);state.subtitle=e.target.value;$("#app-subtitle").value=state.subtitle;renderFields();renderPreview();$("#detected").textContent=t("detected").replace("{n}",String(state.fields.length))};
+  $("#save-draft").onclick=()=>save(false);$("#save-top").onclick=()=>save(false);$("#publish").onclick=()=>save(true);$("#language").onchange=e=>{localStorage.setItem("littleapi:language",e.target.value);translate();renderFields()};
+  translate();init().catch(e=>{$("#status").textContent=e.message||String(e);$("#status").className="status error"});
+})();
+</script>
+</body>
+</html>
