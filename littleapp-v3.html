@@ -26,13 +26,13 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-22">
+<meta name="littleapp-build" content="20260919-23">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
 html[data-boot-theme="dark"]{--bg:#0b1513;--panel:#111d1a;--line:#263933;--text:#eef7f4;--muted:#96aaa4;--accent-soft:#17342d;--shadow:0 18px 55px rgba(0,0,0,.22);color-scheme:dark}
 html[data-boot-theme="light"]{color-scheme:light}
-*{box-sizing:border-box}html,body{margin:0;min-height:100vh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}body.dark{--bg:#0b1513;--panel:#111d1a;--line:#263933;--text:#eef7f4;--muted:#96aaa4;--accent-soft:#17342d;--shadow:0 18px 55px rgba(0,0,0,.22)}button,input,select,textarea{font:inherit}.hidden{display:none!important}button{cursor:pointer}
+*{box-sizing:border-box}html,body{overscroll-behavior-y:none;overscroll-behavior-x:none;margin:0;min-height:100vh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}body.dark{--bg:#0b1513;--panel:#111d1a;--line:#263933;--text:#eef7f4;--muted:#96aaa4;--accent-soft:#17342d;--shadow:0 18px 55px rgba(0,0,0,.22)}button,input,select,textarea{font:inherit}.hidden{display:none!important}button{cursor:pointer}
 .app-header{min-height:68px;padding:10px clamp(14px,3vw,32px);display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel) 95%,transparent);position:sticky;top:0;z-index:30;backdrop-filter:blur(15px)}.identity{display:flex;align-items:center;gap:10px;min-width:190px}.identity img{width:35px;height:35px}.identity strong{display:block;font-size:1rem;line-height:1.05}.identity small{display:block;margin-top:3px;color:var(--muted);font-size:.68rem}.nav{margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}.nav button{border:0;background:transparent;color:var(--text);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:780}.nav button:hover{background:var(--accent-soft)}.nav button.active{background:var(--accent-soft);color:var(--accent)}.nav svg,.action-icon svg,.fab svg,.icon-only svg{width:17px;height:17px}.header-tools{display:flex;align-items:center;gap:7px}.lang{border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);padding:7px 8px;font-size:.76rem}.lang-toggle{width:auto;min-width:40px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);padding:0 9px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.7rem;font-weight:850}.lang-toggle:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}.lang-toggle svg{width:17px;height:17px}
 .app-tool{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.72rem;font-weight:820;white-space:nowrap}
 .app-tool:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));color:var(--accent)}
@@ -669,7 +669,7 @@ async function deleteRow(row){if(!confirm(tr("deleteConfirm")))return;try{await 
 function applyLanguage(){document.documentElement.lang=appLang();if((app.config?.languageMode||"en")==="both")$("#language-toggle").innerHTML=icon("translate")+'<span>'+appLang().toUpperCase()+'</span>';renderNav();$("#search").placeholder=tr("search");if(!state.loading)renderActive(false)}
 async function init(){
 const cached=window.__LITTLEAPP_BOOT__;if(cached?.name)$("#loader-name").textContent=cached.name;
-if(!slug)throw new Error("missing_slug");const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(slug),{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"app_not_found");app=data;state.snapshot=await localGet();$("#loader-name").textContent=app.config?.name||app.name||"LittleApp";activePageId=pages()[0].id;document.title=(app.config?.name||app.name)+" — LittleApp";applyChrome();renderNav();$("#search-icon").innerHTML=icon("search");updateSyncUi();updateInstallUi();if(!state.snapshot||state.snapshot.app_updated_at!==app.updated_at)await syncNow(false);await renderActive(true);requestAnimationFrame(()=>document.body.classList.add("app-ready"))
+if(!slug)throw new Error("missing_slug");const base=cfg.apiBase||"https://littleapi.online/api/v1",r=await fetch(base+"/apps/"+encodeURIComponent(slug),{cache:"no-store"}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.message||data.error||"app_not_found");app=data;state.snapshot=await localGet();$("#loader-name").textContent=app.config?.name||app.name||"LittleApp";activePageId=pages()[0].id;document.title=(app.config?.name||app.name)+" — LittleApp";applyChrome();renderNav();$("#search-icon").innerHTML=icon("search");updateSyncUi();updateInstallUi();if(!state.snapshot)await syncNow(false);await renderActive(true);requestAnimationFrame(()=>document.body.classList.add("app-ready"))
 }
 function bindRuntimeEvents(){
 const search=$("#search");if(search)search.oninput=e=>{clearTimeout(timer);state.search=e.target.value.trim();timer=setTimeout(()=>{state.page=0;void loadRows()},250)};
@@ -691,7 +691,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-22").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-23").catch(()=>{})}
 void boot();
 })();
 </script>
