@@ -45,10 +45,15 @@ function notice(text, kind) {
 function friendlyError(error) {
   const text = String(error && (error.message || error.error_description) || error || "Ha ocurrido un error.");
   if (text.includes("permission denied for table projects") || text.includes("42501")) return "Supabase aún no permite acceder a proyectos. Ejecuta supabase-schema.sql en el SQL Editor y vuelve a cargar.";
-  if (text.includes("insufficientPermissions") || text.includes("Insufficient Permission")) return "Google no concedió permisos suficientes. Cierra sesión, vuelve a entrar y acepta el acceso a Sheets y Drive.";
+  if (
+    text.includes("insufficientPermissions") ||
+    text.includes("Insufficient Permission") ||
+    text.includes("insufficient authentication scopes") ||
+    text.includes("ACCESS_TOKEN_SCOPE_INSUFFICIENT")
+  ) return "Google no concedió acceso a este archivo. Reautoriza esta hoja con LittleAPI mediante drive.file.";
   if (text.includes("access_denied")) return "Google bloqueó el acceso. Comprueba que tu cuenta esté en Audience > Test users del proyecto " + BRAND_NAME + ".";
   if (text.includes("origin_mismatch")) return "Google bloqueó este origen. En Google Cloud → OAuth → Cliente web, añade exactamente " + location.origin + " en Orígenes autorizados de JavaScript.";
-  if (text.includes("google_token_refresh_failed") || text.includes("refresh token")) return "La autorización de Google no pudo renovarse. Cierra sesión, vuelve a entrar y acepta de nuevo los permisos de Sheets y Drive.";
+  if (text.includes("google_token_refresh_failed") || text.includes("refresh token")) return "La autorización de Google no pudo renovarse. Vuelve a iniciar sesión y autoriza únicamente los archivos que quieras usar con LittleAPI.";
   return text;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -466,7 +471,7 @@ async function syncProviderRefreshToken(session) {
   const task = (async () => {
     const response = await fetch(apiBase() + "/auth/google/connect", { method: "POST", headers: { "Content-Type": "application/json", "apikey": cfg.publishableKey, "Authorization": "Bearer " + session.access_token }, body: JSON.stringify({ provider_refresh_token: providerRefreshToken, scopes: GOOGLE_SCOPES.split(" ") }) });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || "No se pudo guardar la conexión segura de Google.");
-    notice("Google conectado de forma segura. Tus APIs ya pueden escribir en Sheets y Drive.", "success");
+    notice("Google conectado de forma segura. LittleAPI puede trabajar únicamente con los archivos autorizados.", "success");
   })();
   providerConnectionPromise = task;
   try {
