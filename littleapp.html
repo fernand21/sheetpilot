@@ -232,7 +232,7 @@ if(!slug)throw new Error("missing_slug");const base=cfg.apiBase||"https://little
 $("#search").oninput=e=>{clearTimeout(timer);state.search=e.target.value.trim();timer=setTimeout(()=>{state.page=0;loadRows()},250)};$("#prev").onclick=()=>{if(state.page>0){state.page--;loadRows()}};$("#next").onclick=()=>{if(state.hasMore){state.page++;loadRows()}};
 $("#fab").onclick=()=>{const fp=pages().find(p=>p.type==="form");if(fp){activePageId=fp.id;renderActive()}else{openEdit({__row:null})}};
 $("#edit-form").onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());try{if(editingRow?.__row)await mutate("PATCH",editingRow.__row,data);else await mutate("POST","",data);$("#edit-dialog").close();await loadRows()}catch(err){alert(err.message||String(err))}};
-$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());$("#language-toggle").onclick=()=>{const next=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",next);applyLanguage()};
+$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());$("#language-toggle").onclick=()=>{const next=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",next);applyLanguage()};
 init().catch(e=>{$("#view").innerHTML='<div class="error">'+esc(e.message||String(e))+'</div>'});
 })();
 </script>
