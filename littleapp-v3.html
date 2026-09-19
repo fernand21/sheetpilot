@@ -120,7 +120,7 @@ const manifest=document.createElement("link");manifest.rel="manifest";manifest.h
 function applyResponsiveNavigation(){const mobile=window.matchMedia("(max-width:760px)").matches;document.body.classList.toggle("sidebar-mode",!mobile);document.body.classList.toggle("bottom-mode",mobile);if(app)renderNav()}
 function renderNav(){
 const c=app.config||{},p=page(),mobile=window.matchMedia("(max-width:760px)").matches,showText=mobile||c.navStyle!=="icons";$("#nav").innerHTML=pages().map(pg=>'<button class="'+(pg.id===p.id?"active":"")+'" data-page="'+esc(pg.id)+'" title="'+esc(pageLabel(pg))+'">'+icon(pg.icon)+'<span class="nav-text">'+(showText?esc(pageLabel(pg)):"")+'</span></button>').join("");
-$("[data-page]").forEach(b=>b.onclick=()=>{activePageId=b.dataset.page;state.page=0;state.search="";const search=$("#search");if(search)search.value="";renderNav();void renderActive()});
+$$("[data-page]").forEach(b=>b.onclick=()=>{activePageId=b.dataset.page;state.page=0;state.search="";const search=$("#search");if(search)search.value="";renderNav();void renderActive()});
 }
 function rowsUrl(limitOverride){
 const base=cfg.apiBase||"https://littleapi.online/api/v1",limit=limitOverride||Math.max(1,Math.min(100,Number(app.config?.pageSize||25))),offset=state.page*limit;
