@@ -122,6 +122,12 @@
             console.error("LittleAPI embeddable widget controls failed", widgetError);
           }
 
+          try {
+            await loadScript("littleapps-dashboard.js?v=20260918-1");
+          } catch (littleAppsError) {
+            console.error("LittleApps dashboard actions failed", littleAppsError);
+          }
+
           const NativeMutationObserver = window.MutationObserver;
           window.MutationObserver = class LittleAPIStableMutationObserver extends NativeMutationObserver {
             observe(target, options) {
