@@ -1234,7 +1234,7 @@ async function publicLittleApp(request: Request, path: string[]) {
   }
 
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-23&app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-24&app=${encodeURIComponent(app.slug)}`;
     const manifestId = `https://littleapi.online/pwa/${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: manifestId,
@@ -1272,7 +1272,7 @@ async function publicLittleApp(request: Request, path: string[]) {
   }
 
   if (path[1] === "sync") {
-    if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para sincronizar una aplicación.");
+    if (!["GET", "POST"].includes(request.method)) return failure(405, "method_not_allowed", "Usa GET o POST para sincronizar una aplicación.");
     const api = await getApi(app.api_id);
     if (!api || api.resource_type !== "sheet") return failure(404, "api_not_found", "La fuente de datos de esta aplicación ya no está disponible.");
 
@@ -1291,67 +1291,200 @@ async function publicLittleApp(request: Request, path: string[]) {
       if (page?.active === false || String(page?.mode || "content") === "content") continue;
       screenDefs.push({ id: String(page.id || crypto.randomUUID()), config: page, sheet: String(page.sheet || app.sheet || api.default_sheet || "Sheet1") });
     }
-    if (!screenDefs.length) {
-      screenDefs.push({ id: "data", config: screens?.data || {}, sheet: String(app.sheet || api.default_sheet || "Sheet1") });
-    }
+    if (!screenDefs.length) screenDefs.push({ id: "data", config: screens?.data || {}, sheet: String(app.sheet || api.default_sheet || "Sheet1") });
 
     const dashboardConfig = screens?.dashboard && typeof screens.dashboard === "object" && screens.dashboard.active === true ? screens.dashboard : null;
     const dashboardSheet = dashboardConfig ? String(dashboardConfig.sheet || app.sheet || api.default_sheet || "Sheet1") : "";
     const sheetNames = new Set(screenDefs.map((item) => item.sheet));
     if (dashboardSheet) sheetNames.add(dashboardSheet);
 
-    const tables = new Map<string, TableData>();
-    for (const sheet of sheetNames) tables.set(sheet, await readAuthorized(api, token, sheet));
+    const readTables = async () => {
+      const map = new Map<string, TableData>();
+      for (const sheet of sheetNames) map.set(sheet, await readAuthorized(api, token, sheet));
+      return map;
+    };
 
-    const pagePayload: Record<string, unknown> = {};
-    for (const def of screenDefs) {
-      const table = tables.get(def.sheet)!;
-      const pageFields = Array.isArray(def.config?.fields) ? def.config.fields.filter((field: any) => field?.name) : [];
-      const fallbackFields = def.sheet === String(app.sheet || "") ? visibleFields : [];
-      const configuredPageFields = pageFields.length ? pageFields : fallbackFields;
-      const names = (configuredPageFields.length
-        ? configuredPageFields.filter((field: any) => field?.visible !== false).map((field: any) => String(field.name))
-        : table.headers
-      ).filter((name: string) => table.headers.includes(name));
-      const allowedNames = new Set(names);
-      const entries = table.rows
-        .map((row, index) => ({ row, sheetRow: index + 2 }))
-        .filter((entry) => rowHasData(entry.row));
-      const rows = await Promise.all(entries.map(async (entry) => {
-        const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
-        for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
-        return object;
-      }));
-      pagePayload[def.id] = { sheet: def.sheet, headers: table.headers.filter((header) => allowedNames.has(header)), rows };
-    }
+    const buildSnapshot = async (tables: Map<string, TableData>) => {
+      const pagePayload: Record<string, unknown> = {};
+      for (const def of screenDefs) {
+        const table = tables.get(def.sheet)!;
+        const pageFields = Array.isArray(def.config?.fields) ? def.config.fields.filter((field: any) => field?.name) : [];
+        const fallbackFields = def.sheet === String(app.sheet || "") ? visibleFields : [];
+        const configuredPageFields = pageFields.length ? pageFields : fallbackFields;
+        const names = (configuredPageFields.length
+          ? configuredPageFields.filter((field: any) => field?.visible !== false).map((field: any) => String(field.name))
+          : table.headers
+        ).filter((name: string) => table.headers.includes(name));
+        const allowedNames = new Set(names);
+        const entries = table.rows.map((row, index) => ({ row, sheetRow: index + 2 })).filter((entry) => rowHasData(entry.row));
+        const rows = await Promise.all(entries.map(async (entry) => {
+          const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
+          for (const header of table.headers) if (allowedNames.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+          return object;
+        }));
+        pagePayload[def.id] = { sheet: def.sheet, headers: table.headers.filter((header) => allowedNames.has(header)), rows };
+      }
 
-    let dashboardPayload: unknown = null;
-    if (dashboardConfig && dashboardSheet) {
-      const table = tables.get(dashboardSheet)!;
-      const referenced = new Set<string>();
-      for (const block of (Array.isArray(dashboardConfig.blocks) ? dashboardConfig.blocks : [])) {
-        for (const key of ["valueField", "categoryField", "seriesField"]) {
-          const name = String(block?.[key] || "");
-          if (name && table.headers.includes(name)) referenced.add(name);
+      let dashboardPayload: unknown = null;
+      if (dashboardConfig && dashboardSheet) {
+        const table = tables.get(dashboardSheet)!;
+        const referenced = new Set<string>();
+        for (const block of (Array.isArray(dashboardConfig.blocks) ? dashboardConfig.blocks : [])) {
+          for (const key of ["valueField", "categoryField", "seriesField"]) {
+            const name = String(block?.[key] || "");
+            if (name && table.headers.includes(name)) referenced.add(name);
+          }
+        }
+        const entries = table.rows.map((row, index) => ({ row, sheetRow: index + 2 })).filter((entry) => rowHasData(entry.row));
+        const rows = await Promise.all(entries.map(async (entry) => {
+          const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
+          for (const header of table.headers) if (referenced.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
+          return object;
+        }));
+        dashboardPayload = { sheet: dashboardSheet, headers: Array.from(referenced), rows };
+      }
+
+      return {
+        synced_at: new Date().toISOString(),
+        app_updated_at: app.updated_at,
+        pages: pagePayload,
+        dashboard: dashboardPayload,
+      };
+    };
+
+    let tables = await readTables();
+
+    if (request.method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      const operations = Array.isArray(body?.operations) ? body.operations.slice(0, 500) : [];
+      if (operations.length > 500) return failure(413, "too_many_operations", "No se pueden sincronizar más de 500 cambios en un solo lote.");
+
+      type Prepared = {
+        id: string;
+        type: "create" | "update" | "delete";
+        pageId: string;
+        sheet: string;
+        table: TableData;
+        rowNumber?: number;
+        data: Record<string, unknown>;
+        editableNames: Set<string>;
+        requiredFields: any[];
+      };
+      const prepared: Prepared[] = [];
+      const fingerprintMaps = new Map<string, Map<string, number[]>>();
+
+      for (const sheet of sheetNames) {
+        const table = tables.get(sheet)!;
+        const map = new Map<string, number[]>();
+        for (let index = 0; index < table.rows.length; index += 1) {
+          const fp = await rowFingerprint(table.headers, table.rows[index] || []);
+          const list = map.get(fp) || [];
+          list.push(index + 2);
+          map.set(fp, list);
+        }
+        fingerprintMaps.set(sheet, map);
+      }
+
+      for (const raw of operations) {
+        const id = String(raw?.id || crypto.randomUUID());
+        const type = String(raw?.type || "") as "create" | "update" | "delete";
+        if (!["create", "update", "delete"].includes(type)) return failure(400, "invalid_sync_operation", "La cola de sincronización contiene una operación no válida.", { id });
+
+        const pageId = String(raw?.page || "data");
+        const def = screenDefs.find((item) => item.id === pageId) || screenDefs.find((item) => item.id === "data") || screenDefs[0];
+        const sheet = String(raw?.sheet || def.sheet);
+        const table = tables.get(sheet);
+        if (!table) return failure(400, "invalid_sync_sheet", "Una operación apunta a una hoja que no pertenece a esta aplicación.", { id, sheet });
+
+        const pageFields = Array.isArray(def.config?.fields) ? def.config.fields.filter((field: any) => field?.name) : [];
+        const fallbackFields = sheet === String(app.sheet || "") ? visibleFields : [];
+        const configuredPageFields = pageFields.length ? pageFields : fallbackFields;
+        const editableNames = new Set((configuredPageFields.length
+          ? configuredPageFields.filter((field: any) => field?.editable !== false).map((field: any) => String(field.name))
+          : table.headers
+        ).filter((name: string) => table.headers.includes(name)));
+        const requiredFields = configuredPageFields.filter((field: any) => field?.required === true && editableNames.has(String(field.name)));
+        const data = raw?.data && typeof raw.data === "object" ? raw.data : {};
+
+        if (type === "create") {
+          prepared.push({ id, type, pageId, sheet, table, data, editableNames, requiredFields });
+          continue;
+        }
+
+        const fingerprint = String(raw?.fingerprint || "");
+        if (!fingerprint) return failure(409, "sync_conflict", "Falta la huella del registro. Sincroniza nuevamente antes de continuar.", { id, page: pageId });
+
+        const candidates = fingerprintMaps.get(sheet)?.get(fingerprint) || [];
+        const hinted = Number(raw?.row || 0);
+        let rowNumber = hinted > 1 && candidates.includes(hinted) ? hinted : (candidates.length === 1 ? candidates[0] : 0);
+        if (!rowNumber) {
+          return failure(409, "sync_conflict", candidates.length > 1 ? "Hay registros idénticos y no se puede decidir cuál modificar de forma segura." : "El registro cambió o fue eliminado en otra aplicación.", {
+            id,
+            page: pageId,
+            sheet,
+            row: hinted || null,
+            matches: candidates.length,
+          });
+        }
+        prepared.push({ id, type, pageId, sheet, table, rowNumber, data, editableNames, requiredFields });
+      }
+
+      // Validate every operation before writing anything.
+      for (const op of prepared) {
+        if (op.type === "delete") continue;
+        const current = op.type === "update" ? (op.table.rows[(op.rowNumber || 2) - 2] || []) : [];
+        const next = op.table.headers.map((header, column) => {
+          if (op.editableNames.has(header) && Object.prototype.hasOwnProperty.call(op.data, header)) return op.data[header];
+          return op.type === "update" ? (current[column] ?? "") : "";
+        });
+        if (!rowHasData(next)) return failure(400, "row_required", "Completa al menos un campo antes de guardar.", { id: op.id });
+        for (const field of op.requiredFields) {
+          const column = op.table.headers.indexOf(String(field.name));
+          if (column >= 0 && String(next[column] ?? "").trim() === "") {
+            return failure(400, "required_field", `El campo ${field.label || field.name} es obligatorio.`, { id: op.id });
+          }
         }
       }
-      const entries = table.rows
-        .map((row, index) => ({ row, sheetRow: index + 2 }))
-        .filter((entry) => rowHasData(entry.row));
-      const rows = await Promise.all(entries.map(async (entry) => {
-        const object: Record<string, unknown> = { __row: entry.sheetRow, __fingerprint: await rowFingerprint(table.headers, entry.row) };
-        for (const header of table.headers) if (referenced.has(header)) object[header] = entry.row[table.headers.indexOf(header)] ?? "";
-        return object;
-      }));
-      dashboardPayload = { sheet: dashboardSheet, headers: Array.from(referenced), rows };
+
+      // Updates first because row numbers are still unchanged.
+      for (const op of prepared.filter((item) => item.type === "update")) {
+        const current = op.table.rows[(op.rowNumber || 2) - 2] || [];
+        const next = op.table.headers.map((header, column) => op.editableNames.has(header) && Object.prototype.hasOwnProperty.call(op.data, header) ? op.data[header] : (current[column] ?? ""));
+        await updateValues(api, token, sheetRange(op.sheet, `A${op.rowNumber}:${columnName(op.table.headers.length)}${op.rowNumber}`), [next]);
+      }
+
+      // Deletes bottom-up per sheet so earlier row numbers remain valid.
+      const deletes = prepared.filter((item) => item.type === "delete").sort((a, b) => {
+        if (a.sheet === b.sheet) return Number(b.rowNumber || 0) - Number(a.rowNumber || 0);
+        return a.sheet.localeCompare(b.sheet);
+      });
+      const metadata = deletes.length ? await spreadsheetMetadata(api, token) : null;
+      for (const op of deletes) {
+        const sheetInfo = metadata?.sheets?.find((item: any) => item.properties?.title === op.sheet);
+        const sheetId = sheetInfo?.properties?.sheetId;
+        if (sheetId === undefined) return failure(404, "sheet_not_found", "No se encontró una hoja durante la sincronización.", { id: op.id, sheet: op.sheet });
+        await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, {
+          method: "POST",
+          body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: Number(op.rowNumber) - 1, endIndex: Number(op.rowNumber) } } }] }),
+        });
+      }
+
+      // Creates last.
+      for (const op of prepared.filter((item) => item.type === "create")) {
+        const values = op.table.headers.map((header) => op.editableNames.has(header) ? (op.data?.[header] ?? "") : "");
+        await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(op.sheet, "A1"))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+          method: "POST",
+          body: JSON.stringify({ majorDimension: "ROWS", values: [values] }),
+        });
+      }
+
+      cache.clear();
+      if (prepared.length) tables = await readTables();
+      const snapshot = await buildSnapshot(tables);
+      return response({ ...snapshot, applied: prepared.map((item) => item.id) }, 200, { "Cache-Control": "no-store" });
     }
 
-    return response({
-      synced_at: new Date().toISOString(),
-      app_updated_at: app.updated_at,
-      pages: pagePayload,
-      dashboard: dashboardPayload,
-    }, 200, { "Cache-Control": "no-store" });
+    return response(await buildSnapshot(tables), 200, { "Cache-Control": "no-store" });
   }
 
   if (path[1] === "dashboard") {
@@ -1642,7 +1775,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-23&app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-24&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
