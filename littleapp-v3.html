@@ -26,7 +26,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-25">
+<meta name="littleapp-build" content="20260919-26">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -276,22 +276,226 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
 }
 
 
+
+/* Desktop drawer shell */
+.desktop-drawer,.desktop-workspace{display:none}
+@media(min-width:901px){
+  :root{--drawer-expanded:272px;--drawer-collapsed:82px;--desktop-topbar-h:72px}
+  body.sidebar-mode{
+    --drawer-current:var(--drawer-expanded);
+    background:var(--bg);
+  }
+  body.sidebar-mode.drawer-collapsed{--drawer-current:var(--drawer-collapsed)}
+  .app-header{display:none!important}
+  .desktop-drawer{
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    inset:0 auto 0 0;
+    width:var(--drawer-current);
+    height:100dvh;
+    z-index:110;
+    border-right:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 96%,var(--accent) 4%),var(--panel));
+    box-shadow:10px 0 34px rgba(14,55,47,.06);
+    overflow:hidden;
+    transition:width .26s cubic-bezier(.2,.8,.2,1);
+  }
+  .drawer-brand{
+    min-height:92px;
+    padding:17px 14px 14px;
+    border-bottom:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .drawer-app{
+    min-width:0;
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    overflow:hidden;
+  }
+  .drawer-app img{
+    width:48px;height:48px;flex:0 0 48px;
+    object-fit:cover;border-radius:14px;
+    background:var(--panel);
+    box-shadow:0 7px 22px rgba(14,55,47,.08);
+  }
+  .drawer-app-copy{min-width:0;opacity:1;transform:translateX(0);transition:opacity .18s ease,transform .24s ease}
+  .drawer-app-copy strong{display:block;font-size:.98rem;line-height:1.13;white-space:normal;color:var(--text)}
+  .drawer-app-copy small{display:block;margin-top:4px;color:var(--muted);font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .drawer-toggle{
+    width:38px;height:38px;flex:0 0 38px;
+    display:grid;place-items:center;
+    border:1px solid var(--line);border-radius:11px;
+    background:color-mix(in srgb,var(--panel) 94%,var(--accent) 6%);
+    color:var(--muted);cursor:pointer;
+    transition:transform .2s ease,border-color .2s ease,color .2s ease,background .2s ease;
+  }
+  .drawer-toggle:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 48%,var(--line));background:var(--accent-soft);transform:translateY(-1px)}
+  .drawer-toggle svg{width:19px;height:19px}
+  #desktop-nav.desktop-nav{
+    display:flex!important;
+    visibility:visible!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:6px!important;
+    padding:16px 11px!important;
+    margin:0!important;
+    width:100%!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    flex:1!important;
+  }
+  #desktop-nav.desktop-nav button{
+    width:100%!important;
+    min-height:50px!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:12px!important;
+    padding:11px 13px!important;
+    margin:0!important;
+    border:1px solid transparent!important;
+    border-radius:14px!important;
+    background:transparent!important;
+    color:var(--text)!important;
+    font-size:.84rem!important;
+    font-weight:790!important;
+    line-height:1!important;
+    text-align:left!important;
+    white-space:nowrap!important;
+    cursor:pointer!important;
+    transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease!important;
+  }
+  #desktop-nav.desktop-nav button:hover{
+    background:color-mix(in srgb,var(--accent-soft) 72%,var(--panel))!important;
+    color:var(--accent)!important;
+    transform:translateX(3px);
+  }
+  #desktop-nav.desktop-nav button.active{
+    background:var(--accent-soft)!important;
+    color:var(--accent)!important;
+    border-color:color-mix(in srgb,var(--accent) 16%,var(--line))!important;
+    box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 9%,transparent)!important;
+  }
+  #desktop-nav.desktop-nav button svg{width:21px!important;height:21px!important;flex:0 0 21px!important}
+  #desktop-nav.desktop-nav .nav-text{
+    display:block!important;
+    opacity:1;
+    transform:translateX(0);
+    transition:opacity .16s ease,transform .22s ease;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .drawer-foot{
+    min-height:47px;padding:12px 18px;
+    border-top:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+    color:var(--muted);font-size:.64rem;font-weight:760;letter-spacing:.08em;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;
+  }
+  .desktop-workspace{
+    display:block;
+    position:fixed;
+    top:0;left:var(--drawer-current);right:0;
+    height:var(--desktop-topbar-h);
+    z-index:100;
+    transition:left .26s cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+  }
+  .desktop-topbar{
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    padding:0 24px;
+    border-bottom:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+    background:color-mix(in srgb,var(--panel) 92%,transparent);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 8px 28px rgba(14,55,47,.035);
+    pointer-events:auto;
+  }
+  .desktop-title{min-width:0}
+  .desktop-title strong{display:block;font-size:1rem;line-height:1.15;color:var(--text)}
+  .desktop-title small{display:block;margin-top:3px;color:var(--muted);font-size:.7rem}
+  .desktop-tools{display:flex;align-items:center;gap:8px}
+  body.sidebar-mode .content{
+    max-width:none!important;
+    margin:0!important;
+    margin-left:var(--drawer-current)!important;
+    padding:calc(var(--desktop-topbar-h) + 24px) clamp(22px,3vw,42px) 36px!important;
+    min-height:100vh!important;
+    transition:margin-left .26s cubic-bezier(.2,.8,.2,1);
+  }
+  body.sidebar-mode .fab{right:28px;bottom:28px}
+  body.sidebar-mode.drawer-collapsed .drawer-brand{justify-content:center;padding-inline:12px}
+  body.sidebar-mode.drawer-collapsed .drawer-app{flex:0 0 48px;justify-content:center}
+  body.sidebar-mode.drawer-collapsed .drawer-app-copy,
+  body.sidebar-mode.drawer-collapsed #desktop-nav.desktop-nav .nav-text,
+  body.sidebar-mode.drawer-collapsed .drawer-foot{opacity:0;pointer-events:none}
+  body.sidebar-mode.drawer-collapsed .drawer-toggle{
+    position:absolute;top:66px;left:50%;transform:translate(-50%,0);
+    width:34px;height:34px;background:var(--panel);
+  }
+  body.sidebar-mode.drawer-collapsed .drawer-toggle:hover{transform:translate(-50%,-1px)}
+  body.sidebar-mode.drawer-collapsed .drawer-brand{min-height:112px;align-items:flex-start}
+  body.sidebar-mode.drawer-collapsed #desktop-nav.desktop-nav{padding-inline:12px!important}
+  body.sidebar-mode.drawer-collapsed #desktop-nav.desktop-nav button{
+    justify-content:center!important;padding:11px!important;gap:0!important;
+  }
+  body.sidebar-mode.drawer-collapsed #desktop-nav.desktop-nav button:hover{transform:translateY(-1px)}
+}
+@media(max-width:900px){
+  .desktop-drawer,.desktop-workspace{display:none!important}
+}
+
 /* Final mobile navigation guard: never show the desktop nav on phones */
 @media(max-width:900px){
   #desktop-nav.desktop-nav{display:none!important;position:static!important;visibility:hidden!important;pointer-events:none!important;height:0!important;min-height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
   #mobile-nav.mobile-bottom-nav{display:grid!important}
 }
 @media(min-width:901px){
-  #desktop-nav.desktop-nav{display:flex!important;visibility:visible!important}
   #mobile-nav.mobile-bottom-nav{display:none!important}
 }
 </style>
 </head>
 <body>
 <div class="app-loader" id="app-loader" aria-live="polite"><div class="app-loader-card"><div class="loader-mark" aria-hidden="true"><i></i><i></i><i></i></div><strong id="loader-name">LittleApp</strong><small id="loader-status">Loading application…</small><div class="loader-track"></div></div></div>
+<aside class="desktop-drawer" id="desktop-drawer" aria-label="Desktop navigation">
+  <div class="drawer-brand">
+    <div class="drawer-app">
+      <img id="drawer-app-icon" src="" alt="" style="visibility:hidden">
+      <div class="drawer-app-copy">
+        <strong id="drawer-app-name">LittleApp</strong>
+        <small id="drawer-app-subtitle"></small>
+      </div>
+    </div>
+    <button class="drawer-toggle" id="drawer-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <nav class="desktop-nav" id="desktop-nav"></nav>
+  <div class="drawer-foot"><span>LittleApps</span></div>
+</aside>
+<div class="desktop-workspace">
+  <header class="desktop-topbar">
+    <div class="desktop-title">
+      <strong id="desktop-page-title">LittleApp</strong>
+      <small id="desktop-page-subtitle"></small>
+    </div>
+    <div class="desktop-tools">
+      <button class="app-tool" id="desktop-sync-button" type="button" title="Sync"></button>
+      <span class="sync-stamp" id="desktop-sync-stamp"></span>
+      <button class="app-tool hidden" id="desktop-install-button" type="button" title="Install app"></button>
+      <button class="lang-toggle hidden" id="desktop-language-toggle" type="button" title="Change language"></button>
+    </div>
+  </header>
+</div>
 <header class="app-header">
 <div class="identity"><img src="" alt="" style="visibility:hidden"><div><strong id="app-name">LittleApp</strong><small id="app-subtitle"></small></div></div>
-<nav class="nav desktop-nav" id="desktop-nav"></nav>
 <div class="header-tools"><button class="app-tool" id="sync-button" type="button" title="Sync"></button><span class="sync-stamp" id="sync-stamp"></span><button class="app-tool hidden" id="install-button" type="button" title="Install app"></button><button class="lang-toggle hidden" id="language-toggle" type="button" title="Change language"></button></div>
 </header>
 <main class="content">
@@ -370,15 +574,17 @@ async function localPut(snapshot){try{const db=await openLocalDb();await new Pro
 function formatSyncTime(value){if(!value)return tr("neverSync");try{return new Intl.DateTimeFormat(appLang(),{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"}).format(new Date(value))}catch(_){return String(value)}}
 function pendingOps(){return Array.isArray(state.snapshot?.pending)?state.snapshot.pending:[]}
 function updateSyncUi(){
- const b=$("#sync-button"),stamp=$("#sync-stamp"),count=pendingOps().length;
- if(b){b.disabled=state.syncing;const label=state.syncing?tr("syncing"):tr("sync")+(count?" ("+count+")":"");b.innerHTML=icon("refresh")+'<span class="tool-text">'+esc(label)+'</span>';b.title=label}
- if(stamp)stamp.textContent=count?tr("pending").replace("{n}",String(count)):tr("lastSync")+": "+formatSyncTime(state.snapshot?.synced_at);
+ const count=pendingOps().length,label=state.syncing?tr("syncing"):tr("sync")+(count?" ("+count+")":"");
+ for(const b of [$("#sync-button"),$("#desktop-sync-button")].filter(Boolean)){b.disabled=state.syncing;b.innerHTML=icon("refresh")+'<span class="tool-text">'+esc(label)+'</span>';b.title=label}
+ const stampText=count?tr("pending").replace("{n}",String(count)):tr("lastSync")+": "+formatSyncTime(state.snapshot?.synced_at);
+ for(const stamp of [$("#sync-stamp"),$("#desktop-sync-stamp")].filter(Boolean))stamp.textContent=stampText;
 }
 function updateInstallUi(){
- const b=$("#install-button");if(!b)return;
  const installed=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
- b.classList.toggle("hidden",installed||!deferredInstallPrompt);
- if(!installed&&deferredInstallPrompt){b.innerHTML=icon("install")+'<span class="tool-text">'+esc(tr("install"))+'</span>';b.title=tr("install")}
+ for(const b of [$("#install-button"),$("#desktop-install-button")].filter(Boolean)){
+   b.classList.toggle("hidden",installed||!deferredInstallPrompt);
+   if(!installed&&deferredInstallPrompt){b.innerHTML=icon("install")+'<span class="tool-text">'+esc(tr("install"))+'</span>';b.title=tr("install")}
+ }
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallUi()});
 window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallUi()});
@@ -430,7 +636,10 @@ const c=app.config||{},a=accent(c.accent);document.documentElement.style.setProp
 const theme=c.theme||"light",dark=theme==="dark"||(theme==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.bootTheme=dark?"dark":"light";document.body.classList.toggle("dark",dark);
 applyResponsiveNavigation();
 $("#app-name").textContent=c.name||app.name;$("#app-subtitle").textContent=c.subtitle||app.sheet||"";
-const appIcon=c.appIcon?.url||"littleapi-icon.svg";const identityIcon=document.querySelector(".identity img");if(identityIcon){identityIcon.src=appIcon;identityIcon.style.visibility="visible"}const favicon=document.querySelector('link[rel="icon"]');if(favicon)favicon.href=appIcon;
+const drawerName=$("#drawer-app-name"),drawerSubtitle=$("#drawer-app-subtitle"),desktopTitle=$("#desktop-page-title"),desktopSubtitle=$("#desktop-page-subtitle");
+if(drawerName)drawerName.textContent=c.name||app.name;if(drawerSubtitle)drawerSubtitle.textContent=c.subtitle||app.sheet||"";
+if(desktopTitle)desktopTitle.textContent=c.name||app.name;if(desktopSubtitle)desktopSubtitle.textContent=c.subtitle||app.sheet||"";
+const appIcon=c.appIcon?.url||"littleapi-icon.svg";const identityIcon=document.querySelector(".identity img"),drawerIcon=$("#drawer-app-icon");if(identityIcon){identityIcon.src=appIcon;identityIcon.style.visibility="visible"}if(drawerIcon){drawerIcon.src=appIcon;drawerIcon.style.visibility="visible"}const favicon=document.querySelector('link[rel="icon"]');if(favicon)favicon.href=appIcon;
 try{localStorage.setItem("littleapp:boot:"+app.slug,JSON.stringify({theme,accent:a,icon:appIcon,name:c.name||app.name,subtitle:c.subtitle||app.sheet||""}))}catch(_){};
 const mode=c.languageMode||"en";$("#language-toggle").classList.toggle("hidden",mode!=="both");if(mode==="both")$("#language-toggle").innerHTML=icon("translate")+'<span>'+appLang().toUpperCase()+'</span>';
 const manifest=document.createElement("link");manifest.rel="manifest";manifest.href=(cfg.apiBase||"https://littleapi.online/api/v1")+"/apps/"+encodeURIComponent(app.slug)+"/manifest.webmanifest";document.head.appendChild(manifest);
@@ -452,19 +661,33 @@ if(mobile){
 }else{
   if(header)header.removeAttribute("style");
   if(content)content.removeAttribute("style");
+  const saved=localStorage.getItem("littleapp:drawer:"+slug);
+  const collapsed=saved===null?(app?.config?.navStyle==="icons"):saved==="1";
+  document.body.classList.toggle("drawer-collapsed",collapsed);
 }
 if(app)renderNav();
 }
 function renderNav(){
-const p=page(),items=pages(),mobile=isMobileLayout(),c=app.config||{};
+const p=page(),items=pages(),mobile=isMobileLayout();
 const desktop=$("#desktop-nav"),mobileNav=$("#mobile-nav");
 const markup=showText=>items.map(pg=>'<button class="'+(pg.id===p.id?"active":"")+'" data-page="'+esc(pg.id)+'" title="'+esc(pageLabel(pg))+'">'+icon(pg.icon)+'<span class="nav-text">'+(showText?esc(pageLabel(pg)):"")+'</span></button>').join("");
-if(desktop)desktop.innerHTML=markup(c.navStyle!=="icons");
+if(desktop)desktop.innerHTML=markup(true);
 if(mobileNav){
   mobileNav.style.setProperty("--mobile-nav-count",String(Math.max(1,Math.min(items.length,6))));
   mobileNav.innerHTML=markup(true);
 }
 $$("[data-page]").forEach(b=>b.onclick=()=>{activePageId=b.dataset.page;state.page=0;state.search="";const search=$("#search");if(search)search.value="";renderNav();void renderActive()});
+}
+function setupDesktopDrawer(){
+ const toggle=$("#drawer-toggle");if(!toggle)return;
+ const refresh=()=>{const collapsed=document.body.classList.contains("drawer-collapsed");toggle.title=collapsed?(appLang()==="es"?"Ampliar menú":"Expand sidebar"):(appLang()==="es"?"Contraer menú":"Collapse sidebar");toggle.setAttribute("aria-label",toggle.title)};
+ refresh();
+ toggle.onclick=()=>{
+   if(isMobileLayout())return;
+   const collapsed=document.body.classList.toggle("drawer-collapsed");
+   localStorage.setItem("littleapp:drawer:"+slug,collapsed?"1":"0");
+   refresh();
+ };
 }
 function rowsUrl(limitOverride){
 const base=cfg.apiBase||"https://littleapi.online/api/v1",limit=limitOverride||Math.max(1,Math.min(100,Number(app.config?.pageSize||25))),offset=state.page*limit;
@@ -713,8 +936,12 @@ const fab=$("#fab");if(fab)fab.onclick=()=>{const fp=pages().find(p=>p.type==="f
 const editForm=$("#edit-form");if(editForm)editForm.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());try{if(editingRow?.__row||editingRow?.__local_id)await mutate("PATCH",rowKey(editingRow),data);else await mutate("POST","",data);$("#edit-dialog")?.close();await loadRows()}catch(err){alert(err.message||String(err))}};
 $$("[data-close]").forEach(b=>{b.onclick=()=>$("#"+b.dataset.close)?.close()});
 const syncButton=$("#sync-button");if(syncButton)syncButton.onclick=()=>void syncNow(true);
+const desktopSyncButton=$("#desktop-sync-button");if(desktopSyncButton)desktopSyncButton.onclick=()=>void syncNow(true);
 const installButton=$("#install-button");if(installButton)installButton.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice.catch(()=>null);deferredInstallPrompt=null;updateInstallUi()};
-const languageToggle=$("#language-toggle");if(languageToggle)languageToggle.onclick=()=>{const nextLang=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",nextLang);applyLanguage()};window.addEventListener("resize",applyResponsiveNavigation);window.addEventListener("orientationchange",()=>setTimeout(applyResponsiveNavigation,120));if(window.visualViewport)window.visualViewport.addEventListener("resize",applyResponsiveNavigation);
+const desktopInstallButton=$("#desktop-install-button");if(desktopInstallButton)desktopInstallButton.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice.catch(()=>null);deferredInstallPrompt=null;updateInstallUi()};
+const languageToggle=$("#language-toggle");if(languageToggle)languageToggle.onclick=()=>{const nextLang=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",nextLang);applyLanguage()};
+const desktopLanguageToggle=$("#desktop-language-toggle");if(desktopLanguageToggle)desktopLanguageToggle.onclick=()=>{const nextLang=appLang()==="es"?"en":"es";localStorage.setItem("littleapp:language",nextLang);applyLanguage()};
+setupDesktopDrawer();window.addEventListener("resize",applyResponsiveNavigation);window.addEventListener("orientationchange",()=>setTimeout(applyResponsiveNavigation,120));if(window.visualViewport)window.visualViewport.addEventListener("resize",applyResponsiveNavigation);
 }
 async function boot(){
 try{
@@ -725,7 +952,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-25").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-26").catch(()=>{})}
 void boot();
 })();
 </script>
