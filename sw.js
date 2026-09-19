@@ -1,4 +1,4 @@
-const CACHE_NAME = 'littleapi-pwa-v2';
+const CACHE_NAME = 'littleapi-pwa-v3';
 const CORE = [
   '/app.html',
   '/styles.css',
@@ -43,6 +43,7 @@ self.addEventListener('fetch', event => {
   // related scripts from the network instead of reusing an older PWA copy.
   if (
     url.pathname.endsWith('/littleapp.html') ||
+    url.pathname.endsWith('/littleapp-v3.html') ||
     url.pathname.endsWith('/app-builder.html') ||
     url.pathname.endsWith('/littleapps-dashboard.js') ||
     url.pathname.endsWith('/config.js')
