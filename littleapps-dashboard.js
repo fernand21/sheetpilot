@@ -39,14 +39,14 @@
 
       const builderLabel = app ? text('✎ Editar app', '✎ Edit app') : text('✦ Crear app', '✦ Create app');
       const open = app?.published
-        ? '<a class="action-button" data-littleapp-open target="_blank" rel="noreferrer" href="littleapp-v3.html?v=20260919-16&app=' + encodeURIComponent(app.slug) + '">' + text('▶ Abrir app', '▶ Open app') + '</a>'
+        ? '<a class="action-button" data-littleapp-open target="_blank" rel="noreferrer" href="littleapp-v3.html?v=20260919-17&app=' + encodeURIComponent(app.slug) + '">' + text('▶ Abrir app', '▶ Open app') + '</a>'
         : '';
       const remove = app
         ? '<button class="action-button" type="button" data-littleapp-delete style="color:#b8443b;border-color:#e2aaa5">' +
           '<svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-3px;margin-right:5px"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>' +
           text('Eliminar app', 'Delete app') + '</button>'
         : '';
-      box.innerHTML = '<a class="button" data-littleapp-builder href="app-builder.html?v=20260919-16&api=' + encodeURIComponent(api.api_id) + '">' + builderLabel + '</a>' + open + remove;
+      box.innerHTML = '<a class="button" data-littleapp-builder href="app-builder.html?v=20260919-17&api=' + encodeURIComponent(api.api_id) + '">' + builderLabel + '</a>' + open + remove;
 
       const deleteButton = box.querySelector('[data-littleapp-delete]');
       if (deleteButton && app) {
