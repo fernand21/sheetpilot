@@ -1,4 +1,4 @@
-const CACHE_NAME = 'littleapi-pwa-v1';
+const CACHE_NAME = 'littleapi-pwa-v2';
 const CORE = [
   '/app.html',
   '/styles.css',
@@ -39,9 +39,21 @@ self.addEventListener('fetch', event => {
     url.pathname.startsWith('/auth/')
   ) return;
 
+  // LittleApps is edited frequently. Always fetch its builder/runtime and
+  // related scripts from the network instead of reusing an older PWA copy.
+  if (
+    url.pathname.endsWith('/littleapp.html') ||
+    url.pathname.endsWith('/app-builder.html') ||
+    url.pathname.endsWith('/littleapps-dashboard.js') ||
+    url.pathname.endsWith('/config.js')
+  ) {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
+    return;
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-store' })
         .then(response => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
@@ -53,7 +65,7 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-store' })
       .then(response => {
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
