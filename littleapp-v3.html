@@ -218,11 +218,26 @@ if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const tot
 function renderChart(block){
 const items=groupedValues(block),type=block.chartType||"bar";if(type==="line")return lineChart(items,false);if(type==="area")return lineChart(items,true);if(type==="pie")return pieChart(items,false);if(type==="doughnut")return pieChart(items,true);return barChart(items)
 }
+function multiBarChart(categories,series){
+if(!categories.length||!series.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';
+const w=820,h=280,padX=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Math.abs(Number(v)||0)))),groupW=(w-padX*2)/Math.max(1,categories.length),barW=Math.max(4,(groupW*.72)/Math.max(1,series.length));
+let shapes='';categories.forEach((category,ci)=>{series.forEach((ser,si)=>{const v=Number(ser.values[ci]||0),bh=Math.abs(v)/max*175,x=padX+ci*groupW+(groupW-series.length*barW)/2+si*barW,y=205-bh;shapes+='<rect x="'+x+'" y="'+y+'" width="'+Math.max(3,barW-2)+'" height="'+bh+'" rx="3" fill="'+chartPalette(si)+'"/>'});shapes+='<text x="'+(padX+ci*groupW+groupW/2)+'" y="232" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(category).slice(0,11))+'</text>'});
+const legend='<div class="series-legend">'+series.map((ser,i)=>'<span><i class="series-dot" style="background:'+chartPalette(i)+'"></i>'+esc(ser.name)+'</span>').join("")+'</div>';
+return legend+'<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><line x1="'+padX+'" y1="205" x2="'+(w-padX)+'" y2="205" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>'
+}
+function multiLineChart(categories,series,area=false){
+if(!categories.length||!series.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';
+const w=820,h=280,pad=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Number(v)||0))),step=categories.length>1?(w-pad*2)/(categories.length-1):0;
+let body='';series.forEach((ser,si)=>{const pts=categories.map((_,i)=>{const x=categories.length===1?w/2:pad+i*step,y=205-(Number(ser.values[i]||0)/max)*165;return{x,y}});const points=pts.map(p=>p.x+","+p.y).join(" ");if(area)body+='<polygon points="'+pad+',205 '+points+' '+(w-pad)+',205" fill="'+chartPalette(si)+'" opacity=".08"/>';body+='<polyline points="'+points+'" fill="none" stroke="'+chartPalette(si)+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="'+chartPalette(si)+'"/>').join("")});
+body+=categories.map((category,i)=>'<text x="'+(categories.length===1?w/2:pad+i*step)+'" y="232" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(category).slice(0,11))+'</text>').join("");
+const legend='<div class="series-legend">'+series.map((ser,i)=>'<span><i class="series-dot" style="background:'+chartPalette(i)+'"></i>'+esc(ser.name)+'</span>').join("")+'</div>';
+return legend+'<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+body+'</svg>'
+}
 function renderDashboard(){
 $("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");
 const blocks=Array.isArray(state.dashboardData?.blocks)?state.dashboardData.blocks:[];
 if(!blocks.length){$("#view").innerHTML='<div class="notice">'+esc(appLang()==="es"?"Este panel todavía no tiene bloques configurados.":"This dashboard has no configured blocks yet.")+'</div>';return}
-$("#view").innerHTML='<section class="dash-grid">'+blocks.map(block=>{const title=appLang()==="es"?(block.titleEs||block.titleEn):(block.titleEn||block.titleEs);if(block.kind==="metric"){return'<article class="dash-block"><h3>'+esc(title||"Metric")+'</h3><div class="metric-value">'+esc(formatNumber(block.value))+'</div><div class="metric-sub">'+esc(block.aggregation||"count")+'</div></article>'}const items=Array.isArray(block.items)?block.items:[],type=block.chartType||"bar",chart=type==="line"?lineChart(items,false):type==="area"?lineChart(items,true):type==="pie"?pieChart(items,false):type==="doughnut"?pieChart(items,true):barChart(items);return'<article class="dash-block chart-wide"><h3>'+esc(title||"Chart")+'</h3>'+chart+'</article>'}).join("")+'</section>';
+$("#view").innerHTML='<section class="dash-grid">'+blocks.map(block=>{const title=appLang()==="es"?(block.titleEs||block.titleEn):(block.titleEn||block.titleEs);if(block.kind==="metric"){return'<article class="dash-block"><h3>'+esc(title||"Metric")+'</h3><div class="metric-value">'+esc(formatNumber(block.value))+'</div><div class="metric-sub">'+esc(block.aggregation||"count")+'</div></article>'}const items=Array.isArray(block.items)?block.items:[],series=Array.isArray(block.series)?block.series:[],categories=Array.isArray(block.categories)?block.categories:[],type=block.chartType||"bar";let chart;if(series.length&&categories.length){chart=type==="line"?multiLineChart(categories,series,false):type==="area"?multiLineChart(categories,series,true):multiBarChart(categories,series)}else{chart=type==="line"?lineChart(items,false):type==="area"?lineChart(items,true):type==="pie"?pieChart(items,false):type==="doughnut"?pieChart(items,true):barChart(items)}return'<article class="dash-block chart-wide"><h3>'+esc(title||"Chart")+'</h3>'+chart+'</article>'}).join("")+'</section>';
 }
 function formatNumber(n){return new Intl.NumberFormat(appLang(),{maximumFractionDigits:2}).format(Number(n||0))}
 function renderChat(){
