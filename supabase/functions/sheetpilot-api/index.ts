@@ -1300,11 +1300,12 @@ async function publicLittleApp(request: Request, path: string[]) {
       });
 
     const resultBlocks = blocks.map((block: any) => {
-      const kind = block?.kind === "chart" ? "chart" : "metric";
       const aggregation = ["count", "sum", "average", "min", "max"].includes(String(block?.aggregation || "")) ? String(block.aggregation) : "count";
       const valueField = table.headers.includes(String(block?.valueField || "")) ? String(block.valueField) : "";
       const categoryField = table.headers.includes(String(block?.categoryField || "")) ? String(block.categoryField) : "";
       const seriesField = table.headers.includes(String(block?.seriesField || "")) ? String(block.seriesField) : "";
+      const requestedKind = String(block?.kind || "");
+      const kind = requestedKind === "compare" || (requestedKind === "chart" && seriesField) ? "compare" : requestedKind === "chart" ? "chart" : "metric";
       const chartType = ["bar", "line", "area", "pie", "doughnut"].includes(String(block?.chartType || "")) ? String(block.chartType) : "bar";
       const common = {
         id: String(block?.id || crypto.randomUUID()),
@@ -1325,8 +1326,11 @@ async function publicLittleApp(request: Request, path: string[]) {
 
       if (!categoryField) return { ...common, items: [], categories: [], series: [] };
       const limit = Math.max(1, Math.min(30, Number(block?.limit || 7)));
+      if (kind === "compare" && (!seriesField || !["bar", "line", "area"].includes(chartType))) {
+        return { ...common, limit, items: [], categories: [], series: [] };
+      }
 
-      if (seriesField && ["bar", "line", "area"].includes(chartType)) {
+      if (kind === "compare" && seriesField && ["bar", "line", "area"].includes(chartType)) {
         const categorySet = new Set<string>();
         const seriesBuckets = new Map<string, Map<string, unknown[]>>();
         for (const row of objects) {
