@@ -67,7 +67,7 @@
     }, 120);
   }
 
-  new MutationObserver(schedule).observe(grid, { childList: true, subtree: true });
+  new MutationObserver(schedule).observe(grid, { childList: true });
   window.addEventListener('littleapi:language-change', decorate);
   setTimeout(() => void loadApps(), 900);
 })();
