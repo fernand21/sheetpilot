@@ -1446,35 +1446,55 @@ async function publicLittleApp(request: Request, path: string[]) {
         }
       }
 
-      // Updates first because row numbers are still unchanged.
-      for (const op of prepared.filter((item) => item.type === "update")) {
-        const current = op.table.rows[(op.rowNumber || 2) - 2] || [];
-        const next = op.table.headers.map((header, column) => op.editableNames.has(header) && Object.prototype.hasOwnProperty.call(op.data, header) ? op.data[header] : (current[column] ?? ""));
-        await updateValues(api, token, sheetRange(op.sheet, `A${op.rowNumber}:${columnName(op.table.headers.length)}${op.rowNumber}`), [next]);
+      // Updates: one values.batchUpdate request for all edited rows.
+      const updates = prepared.filter((item) => item.type === "update");
+      if (updates.length) {
+        const data = updates.map((op) => {
+          const current = op.table.rows[(op.rowNumber || 2) - 2] || [];
+          const next = op.table.headers.map((header, column) => op.editableNames.has(header) && Object.prototype.hasOwnProperty.call(op.data, header) ? op.data[header] : (current[column] ?? ""));
+          return {
+            range: sheetRange(op.sheet, `A${op.rowNumber}:${columnName(op.table.headers.length)}${op.rowNumber}`),
+            majorDimension: "ROWS",
+            values: [next],
+          };
+        });
+        await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values:batchUpdate`, {
+          method: "POST",
+          body: JSON.stringify({ valueInputOption: "USER_ENTERED", data }),
+        });
       }
 
-      // Deletes bottom-up per sheet so earlier row numbers remain valid.
+      // Deletes: one structural batchUpdate request, ordered bottom-up inside each sheet.
       const deletes = prepared.filter((item) => item.type === "delete").sort((a, b) => {
         if (a.sheet === b.sheet) return Number(b.rowNumber || 0) - Number(a.rowNumber || 0);
         return a.sheet.localeCompare(b.sheet);
       });
-      const metadata = deletes.length ? await spreadsheetMetadata(api, token) : null;
-      for (const op of deletes) {
-        const sheetInfo = metadata?.sheets?.find((item: any) => item.properties?.title === op.sheet);
-        const sheetId = sheetInfo?.properties?.sheetId;
-        if (sheetId === undefined) return failure(404, "sheet_not_found", "No se encontró una hoja durante la sincronización.", { id: op.id, sheet: op.sheet });
+      if (deletes.length) {
+        const metadata = await spreadsheetMetadata(api, token);
+        const requests = deletes.map((op) => {
+          const sheetInfo = metadata?.sheets?.find((item: any) => item.properties?.title === op.sheet);
+          const sheetId = sheetInfo?.properties?.sheetId;
+          if (sheetId === undefined) throw new Error(`sheet_not_found:${op.sheet}`);
+          return { deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: Number(op.rowNumber) - 1, endIndex: Number(op.rowNumber) } } };
+        });
         await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}:batchUpdate`, {
           method: "POST",
-          body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: Number(op.rowNumber) - 1, endIndex: Number(op.rowNumber) } } }] }),
+          body: JSON.stringify({ requests }),
         });
       }
 
-      // Creates last.
+      // Creates: one append request per target sheet, containing all new rows for that sheet.
+      const createsBySheet = new Map<string, Prepared[]>();
       for (const op of prepared.filter((item) => item.type === "create")) {
-        const values = op.table.headers.map((header) => op.editableNames.has(header) ? (op.data?.[header] ?? "") : "");
-        await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(op.sheet, "A1"))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+        if (!createsBySheet.has(op.sheet)) createsBySheet.set(op.sheet, []);
+        createsBySheet.get(op.sheet)!.push(op);
+      }
+      for (const [sheet, ops] of createsBySheet.entries()) {
+        const table = ops[0].table;
+        const values = ops.map((op) => table.headers.map((header) => op.editableNames.has(header) ? (op.data?.[header] ?? "") : ""));
+        await sheetsRequest(api, token, `spreadsheets/${encodeURIComponent(api.spreadsheet_id || "")}/values/${encodeURIComponent(sheetRange(sheet, "A1"))}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
           method: "POST",
-          body: JSON.stringify({ majorDimension: "ROWS", values: [values] }),
+          body: JSON.stringify({ majorDimension: "ROWS", values }),
         });
       }
 
