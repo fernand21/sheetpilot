@@ -116,32 +116,125 @@
     updateCode(api);
   }
 
+  async function accountSheetSchema(api, sheet = '') {
+    if (!api?.api_id || typeof sb === 'undefined' || typeof apiBase !== 'function') {
+      throw new Error(text('La sesión de LittleAPI no está disponible.', 'The LittleAPI session is not available.'));
+    }
+
+    const sessionResult = await sb.auth.getSession();
+    const session = sessionResult?.data?.session;
+    if (!session?.access_token) {
+      throw new Error(text('La sesión de LittleAPI ha caducado. Vuelve a iniciar sesión.', 'Your LittleAPI session has expired. Sign in again.'));
+    }
+
+    const params = new URLSearchParams({ api_id: api.api_id });
+    if (sheet) params.set('sheet', sheet);
+
+    const response = await fetch(apiBase() + '/account/sheet-schema?' + params.toString(), {
+      headers: {
+        apikey: cfg.publishableKey,
+        Authorization: 'Bearer ' + session.access_token,
+      },
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error === 'google_file_access_required'
+          ? text(
+              'Esta hoja necesita volver a autorizarse con Google. Usa Reautorizar hoja y selecciona este mismo archivo.',
+              'This spreadsheet needs Google authorization again. Use Reauthorize sheet and select this same file.'
+            )
+          : data.error === 'google_reauthorization_required'
+            ? text(
+                'La conexión con Google ha caducado. Vuelve a iniciar sesión con Google.',
+                'The Google connection has expired. Sign in with Google again.'
+              )
+            : (data.message || data.error || text('No se pudo leer la estructura de la hoja.', 'The spreadsheet schema could not be loaded.'))
+      );
+      error.code = data.error || '';
+      throw error;
+    }
+
+    return data;
+  }
+
+  function applyHeaders(api, headers, status) {
+    currentColumns = (Array.isArray(headers) ? headers : []).map((value, index) => ({
+      name: String(value == null || value === '' ? columnName(index + 1) : value),
+      letter: columnName(index + 1),
+      selected: true,
+    }));
+
+    if (status) {
+      status.textContent = currentColumns.length
+        ? text(
+            `${currentColumns.length} columnas encontradas. Marca las que quieres mostrar y usa ↑ ↓ para cambiar el orden.`,
+            `${currentColumns.length} columns found. Select the ones to show and use ↑ ↓ to change their order.`
+          )
+        : text('No se encontraron encabezados en la primera fila.', 'No headers were found in the first row.');
+      status.className = 'api-widget-schema-status';
+    }
+    renderColumns(api);
+  }
+
+  async function reauthorizeCurrentSpreadsheet() {
+    if (!currentProject?.spreadsheet_id || typeof sb === 'undefined') return;
+    const result = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: location.origin + '/app.html',
+        scopes: 'https://www.googleapis.com/auth/drive.file',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+          include_granted_scopes: 'false',
+          trigger_onepick: 'true',
+          allow_multiple: 'false',
+          file_ids: currentProject.spreadsheet_id,
+          mimetypes: 'application/vnd.google-apps.spreadsheet',
+          ...(user?.email ? { login_hint: user.email } : {}),
+        },
+      },
+    });
+    if (result.error) throw result.error;
+  }
+
+  function showSchemaError(api, status, error) {
+    if (!status) return;
+    const message = typeof friendlyError === 'function' ? friendlyError(error) : (error?.message || String(error));
+    status.className = 'api-widget-schema-status error';
+
+    if (error?.code === 'google_file_access_required') {
+      status.innerHTML = `<span>${escapeHtml(message)}</span> <button type="button" class="action-button" id="api-widget-reauthorize">${text('Reautorizar hoja', 'Reauthorize sheet')}</button>`;
+      const button = status.querySelector('#api-widget-reauthorize');
+      if (button) button.addEventListener('click', () => {
+        button.disabled = true;
+        void reauthorizeCurrentSpreadsheet().catch(authError => {
+          button.disabled = false;
+          status.textContent = typeof friendlyError === 'function' ? friendlyError(authError) : (authError?.message || String(authError));
+        });
+      });
+    } else {
+      status.textContent = message;
+    }
+    renderColumns(api);
+  }
+
   async function loadColumns(api, sheet) {
     const status = document.querySelector('#api-widget-schema-status');
     const token = ++schemaLoadToken;
     if (status) { status.textContent = text('Leyendo columnas…', 'Loading columns…'); status.className = 'api-widget-schema-status'; }
     currentColumns = [];
     renderColumns(api);
+
     try {
-      if (!currentProject?.spreadsheet_id || typeof gf !== 'function') throw new Error(text('No se pudo acceder al libro conectado.', 'The connected workbook could not be accessed.'));
-      const id = encodeURIComponent(currentProject.spreadsheet_id);
-      const range = encodeURIComponent(sheetRange(sheet));
-      const data = await gf(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${range}?majorDimension=ROWS`);
+      const data = await accountSheetSchema(api, sheet);
       if (token !== schemaLoadToken) return;
-      const headers = Array.isArray(data?.values?.[0]) ? data.values[0] : [];
-      currentColumns = headers.map((value, index) => ({
-        name: String(value == null || value === '' ? columnName(index + 1) : value),
-        letter: columnName(index + 1),
-        selected: true,
-      }));
-      if (status) status.textContent = currentColumns.length
-        ? text(`${currentColumns.length} columnas encontradas. Marca las que quieres mostrar y usa ↑ ↓ para cambiar el orden.`, `${currentColumns.length} columns found. Select the ones to show and use ↑ ↓ to change their order.`)
-        : text('No se encontraron encabezados en la primera fila.', 'No headers were found in the first row.');
-      renderColumns(api);
+      applyHeaders(api, data.headers, status);
     } catch (error) {
       if (token !== schemaLoadToken) return;
-      if (status) { status.textContent = typeof friendlyError === 'function' ? friendlyError(error) : (error?.message || String(error)); status.className = 'api-widget-schema-status error'; }
-      renderColumns(api);
+      showSchemaError(api, status, error);
     }
   }
 
@@ -149,21 +242,30 @@
     const select = document.querySelector('#api-widget-sheet');
     const status = document.querySelector('#api-widget-schema-status');
     if (!select) return;
+
     try {
-      if (!currentProject?.spreadsheet_id || typeof gf !== 'function') throw new Error(text('No se pudo acceder al libro conectado.', 'The connected workbook could not be accessed.'));
       if (status) { status.textContent = text('Leyendo pestañas del libro…', 'Loading workbook sheets…'); status.className = 'api-widget-schema-status'; }
-      const id = encodeURIComponent(currentProject.spreadsheet_id);
-      const data = await gf(`https://sheets.googleapis.com/v4/spreadsheets/${id}?includeGridData=false&fields=sheets.properties(title,index)`);
-      const sheets = (data?.sheets || []).map(item => item?.properties).filter(item => item?.title).sort((a, b) => Number(a.index || 0) - Number(b.index || 0));
-      const preferred = api.default_sheet || currentProject.sheet_name || sheets[0]?.title || '';
-      select.innerHTML = sheets.map(sheet => `<option value="${escapeHtml(sheet.title)}" ${sheet.title === preferred ? 'selected' : ''}>${escapeHtml(sheet.title)}</option>`).join('');
+      const data = await accountSheetSchema(api);
+      const sheets = Array.isArray(data?.sheets) ? data.sheets : [];
+      const preferred = data.selected_sheet || api.default_sheet || currentProject?.sheet_name || sheets[0]?.title || '';
+
+      select.innerHTML = sheets
+        .map(sheet => `<option value="${escapeHtml(sheet.title)}" ${sheet.title === preferred ? 'selected' : ''}>${escapeHtml(sheet.title)}</option>`)
+        .join('');
       select.disabled = !sheets.length;
-      if (!sheets.length) throw new Error(text('El libro no tiene pestañas disponibles.', 'The workbook has no available sheets.'));
-      await loadColumns(api, select.value);
+
+      if (!sheets.length) {
+        throw new Error(text('El libro no tiene pestañas disponibles.', 'The workbook has no available sheets.'));
+      }
+
+      if (select.value === data.selected_sheet && Array.isArray(data.headers)) {
+        applyHeaders(api, data.headers, status);
+      } else {
+        await loadColumns(api, select.value);
+      }
     } catch (error) {
       select.innerHTML = `<option value="${escapeHtml(api.default_sheet || currentProject?.sheet_name || '')}">${escapeHtml(api.default_sheet || currentProject?.sheet_name || text('Pestaña predeterminada', 'Default sheet'))}</option>`;
-      if (status) { status.textContent = typeof friendlyError === 'function' ? friendlyError(error) : (error?.message || String(error)); status.className = 'api-widget-schema-status error'; }
-      updateCode(api);
+      showSchemaError(api, status, error);
     }
   }
 
