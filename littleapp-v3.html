@@ -20,7 +20,7 @@
 }catch(_){document.documentElement.dataset.bootTheme="light"}
 })();
 </script>
-<meta name="littleapp-build" content="20260919-17">
+<meta name="littleapp-build" content="20260919-18">
 <link rel="icon" href="littleapi-icon.svg">
 <style>
 :root{--accent:#0b766e;--accent-soft:#e7f4f1;--bg:#f7f9f8;--panel:#fff;--line:#dce6e3;--text:#18312b;--muted:#758780;--danger:#c84f46;--shadow:0 16px 45px rgba(14,55,47,.08)}
@@ -180,14 +180,17 @@ dialog{width:min(720px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1
   }
   .chart-svg{
     width:100%;
-    min-width:620px;
-    height:330px;
+    height:300px;
+    min-width:0;
   }
+  .chart-svg.chart-medium{min-width:500px}
+  .chart-svg.chart-long{min-width:760px}
   .chart-svg text{
-    font-size:13px!important;
     opacity:.9!important;
     font-weight:800!important;
   }
+  .chart-svg.chart-short text{font-size:12px!important}
+  .chart-svg.chart-medium text,.chart-svg.chart-long text{font-size:13px!important}
   .series-legend,.pie-legend{
     position:sticky;
     left:0;
@@ -492,14 +495,15 @@ return Array.from(groups.entries()).map(([label,values])=>({label,value:agg==="c
 }
 function chartPalette(index){const colors=["#0b766e","#2f6fed","#6658e8","#e57c28","#d94f70","#47a36b","#b28b2d","#526b82","#a65aa1","#4f9fa8"];return colors[index%colors.length]}
 function barChart(items){
-const max=Math.max(1,...items.map(x=>Math.abs(Number(x.value)||0))),w=760,h=260,pad=34,gap=14,count=Math.max(1,items.length),bar=Math.max(18,(w-pad*2-gap*(count-1))/count);
-const shapes=items.map((item,i)=>{const bh=(Math.abs(Number(item.value)||0)/max)*170,x=pad+i*(bar+gap),y=195-bh;return '<rect x="'+x+'" y="'+y+'" width="'+bar+'" height="'+bh+'" rx="6" fill="var(--accent)" opacity="'+Math.min(.95,.48+i*.06)+'"/><text x="'+(x+bar/2)+'" y="222" text-anchor="middle" fill="currentColor" opacity=".58" font-size="11">'+esc(String(item.label).slice(0,12))+'</text><text x="'+(x+bar/2)+'" y="'+Math.max(16,y-6)+'" text-anchor="middle" fill="currentColor" opacity=".72" font-size="10">'+esc(formatNumber(item.value))+'</text>'}).join("");
-return '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><line x1="'+pad+'" y1="195" x2="'+(w-pad)+'" y2="195" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>';
+const count=Math.max(1,items.length),short=count<=4,medium=count>4&&count<=7,w=short?Math.max(320,count*105):medium?560:Math.max(760,count*92),h=short?240:260,pad=34,gap=short?12:14,max=Math.max(1,...items.map(x=>Math.abs(Number(x.value)||0))),bar=Math.max(18,(w-pad*2-gap*(count-1))/count),base=h-62,chartH=h-92;
+const shapes=items.map((item,i)=>{const bh=(Math.abs(Number(item.value)||0)/max)*chartH,x=pad+i*(bar+gap),y=base-bh;return '<rect x="'+x+'" y="'+y+'" width="'+bar+'" height="'+bh+'" rx="6" fill="var(--accent)" opacity="'+Math.min(.95,.52+i*.06)+'"/><text x="'+(x+bar/2)+'" y="'+(h-28)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="'+(short?12:11)+'">'+esc(String(item.label).slice(0,short?13:12))+'</text><text x="'+(x+bar/2)+'" y="'+Math.max(18,y-7)+'" text-anchor="middle" fill="currentColor" opacity=".86" font-size="'+(short?12:10)+'">'+esc(formatNumber(item.value))+'</text>'}).join("");
+const cls=short?"chart-short":medium?"chart-medium":"chart-long";
+return '<svg class="chart-svg '+cls+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet"><line x1="'+pad+'" y1="'+base+'" x2="'+(w-pad)+'" y2="'+base+'" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>';
 }
 function lineChart(items,area=false){
-if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const w=760,h=260,pad=38,max=Math.max(1,...items.map(x=>Number(x.value)||0)),min=Math.min(0,...items.map(x=>Number(x.value)||0)),span=Math.max(1,max-min);
-const pts=items.map((item,i)=>{const x=items.length===1?w/2:pad+i*((w-pad*2)/(items.length-1)),y=195-((Number(item.value)-min)/span)*155;return{x,y,item}});const points=pts.map(p=>p.x+","+p.y).join(" "),labels=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="var(--accent)"/><text x="'+p.x+'" y="220" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(p.item.label).slice(0,10))+'</text>').join("");const fill=area?'<polygon points="'+pad+',195 '+points+' '+(w-pad)+',195" fill="var(--accent)" opacity=".13"/>':"";
-return '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+fill+'<polyline points="'+points+'" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+labels+'</svg>';
+if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const count=items.length,short=count<=4,medium=count>4&&count<=7,w=short?Math.max(320,count*105):medium?560:Math.max(760,count*92),h=short?240:260,pad=38,base=h-62,plotH=h-105,max=Math.max(1,...items.map(x=>Number(x.value)||0)),min=Math.min(0,...items.map(x=>Number(x.value)||0)),span=Math.max(1,max-min);
+const pts=items.map((item,i)=>{const x=items.length===1?w/2:pad+i*((w-pad*2)/(items.length-1)),y=base-((Number(item.value)-min)/span)*plotH;return{x,y,item}});const points=pts.map(p=>p.x+","+p.y).join(" "),labels=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="var(--accent)"/><text x="'+p.x+'" y="'+(h-28)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="'+(short?12:10)+'">'+esc(String(p.item.label).slice(0,short?13:10))+'</text>').join("");const fill=area?'<polygon points="'+pad+','+base+' '+points+' '+(w-pad)+','+base+'" fill="var(--accent)" opacity=".13"/>':"",cls=short?"chart-short":medium?"chart-medium":"chart-long";
+return '<svg class="chart-svg '+cls+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+fill+'<polyline points="'+points+'" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+labels+'</svg>';
 }
 function pieChart(items,doughnut=false){
 if(!items.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';const total=Math.max(1,items.reduce((a,b)=>a+Math.max(0,Number(b.value)||0),0));let pos=0,parts=[];items.forEach((item,i)=>{const share=Math.max(0,Number(item.value)||0)/total*100,start=pos,end=pos+share;parts.push(chartPalette(i)+" "+start+"% "+end+"%");pos=end});const legend=items.map((item,i)=>'<span><i class="pie-dot" style="background:'+chartPalette(i)+'"></i>'+esc(item.label)+' · '+esc(formatNumber(item.value))+'</span>').join("");return '<div class="pie-layout"><div class="pie-shell '+(doughnut?"doughnut":"")+'" style="background:conic-gradient('+parts.join(",")+')"></div><div class="pie-legend">'+legend+'</div></div>';
@@ -509,18 +513,18 @@ const items=groupedValues(block),type=block.chartType||"bar";if(type==="line")re
 }
 function multiBarChart(categories,series){
 if(!categories.length||!series.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';
-const w=820,h=280,padX=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Math.abs(Number(v)||0)))),groupW=(w-padX*2)/Math.max(1,categories.length),barW=Math.max(4,(groupW*.72)/Math.max(1,series.length));
+const count=categories.length,short=count<=4,medium=count>4&&count<=7,w=short?Math.max(340,count*112):medium?600:Math.max(820,count*105),h=short?250:280,padX=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Math.abs(Number(v)||0)))),groupW=(w-padX*2)/Math.max(1,count),barW=Math.max(4,(groupW*.72)/Math.max(1,series.length));
 let shapes='';categories.forEach((category,ci)=>{series.forEach((ser,si)=>{const v=Number(ser.values[ci]||0),bh=Math.abs(v)/max*175,x=padX+ci*groupW+(groupW-series.length*barW)/2+si*barW,y=205-bh;shapes+='<rect x="'+x+'" y="'+y+'" width="'+Math.max(3,barW-2)+'" height="'+bh+'" rx="3" fill="'+chartPalette(si)+'"/>'});shapes+='<text x="'+(padX+ci*groupW+groupW/2)+'" y="232" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(category).slice(0,11))+'</text>'});
 const legend='<div class="series-legend">'+series.map((ser,i)=>'<span><i class="series-dot" style="background:'+chartPalette(i)+'"></i>'+esc(ser.name)+'</span>').join("")+'</div>';
-return legend+'<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><line x1="'+padX+'" y1="205" x2="'+(w-padX)+'" y2="205" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>'
+const cls=short?"chart-short":medium?"chart-medium":"chart-long";return legend+'<svg class="chart-svg '+cls+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet"><line x1="'+padX+'" y1="205" x2="'+(w-padX)+'" y2="205" stroke="currentColor" opacity=".12"/>'+shapes+'</svg>'
 }
 function multiLineChart(categories,series,area=false){
 if(!categories.length||!series.length)return'<div class="empty">'+esc(tr("empty"))+'</div>';
-const w=820,h=280,pad=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Number(v)||0))),step=categories.length>1?(w-pad*2)/(categories.length-1):0;
+const count=categories.length,short=count<=4,medium=count>4&&count<=7,w=short?Math.max(340,count*112):medium?600:Math.max(820,count*105),h=short?250:280,pad=42,max=Math.max(1,...series.flatMap(s=>s.values.map(v=>Number(v)||0))),step=count>1?(w-pad*2)/(count-1):0;
 let body='';series.forEach((ser,si)=>{const pts=categories.map((_,i)=>{const x=categories.length===1?w/2:pad+i*step,y=205-(Number(ser.values[i]||0)/max)*165;return{x,y}});const points=pts.map(p=>p.x+","+p.y).join(" ");if(area)body+='<polygon points="'+pad+',205 '+points+' '+(w-pad)+',205" fill="'+chartPalette(si)+'" opacity=".08"/>';body+='<polyline points="'+points+'" fill="none" stroke="'+chartPalette(si)+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="'+chartPalette(si)+'"/>').join("")});
 body+=categories.map((category,i)=>'<text x="'+(categories.length===1?w/2:pad+i*step)+'" y="232" text-anchor="middle" fill="currentColor" opacity=".55" font-size="10">'+esc(String(category).slice(0,11))+'</text>').join("");
 const legend='<div class="series-legend">'+series.map((ser,i)=>'<span><i class="series-dot" style="background:'+chartPalette(i)+'"></i>'+esc(ser.name)+'</span>').join("")+'</div>';
-return legend+'<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+body+'</svg>'
+const cls=short?"chart-short":medium?"chart-medium":"chart-long";return legend+'<svg class="chart-svg '+cls+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+body+'</svg>'
 }
 function renderDashboard(){
 $("#toolbar").classList.add("hidden");$("#pager").classList.add("hidden");$("#fab").classList.add("hidden");
