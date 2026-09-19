@@ -98,6 +98,7 @@ const c=app.config||{},a=accent(c.accent);document.documentElement.style.setProp
 const theme=c.theme||"light";document.body.classList.toggle("dark",theme==="dark"||(theme==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches));
 document.body.classList.toggle("sidebar-mode",c.navigation==="sidebar");document.body.classList.toggle("bottom-mode",c.navigation==="bottom");
 $("#app-name").textContent=c.name||app.name;$("#app-subtitle").textContent=c.subtitle||app.sheet||"";
+const appIcon=c.appIcon?.url||"littleapi-icon.svg";const identityIcon=document.querySelector(".identity img");if(identityIcon)identityIcon.src=appIcon;const favicon=document.querySelector('link[rel="icon"]');if(favicon)favicon.href=appIcon;
 const mode=c.languageMode||"en";$("#language").classList.toggle("hidden",mode!=="both");if(mode==="both")$("#language").value=appLang();
 const manifest=document.createElement("link");manifest.rel="manifest";manifest.href=(cfg.apiBase||"https://littleapi.online/api/v1")+"/apps/"+encodeURIComponent(app.slug)+"/manifest.webmanifest";document.head.appendChild(manifest);
 }
