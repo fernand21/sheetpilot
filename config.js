@@ -1,3 +1,26 @@
+
+// Compatibility guard for LittleApps: a few legacy builder/runtime handlers
+// accidentally call .forEach() on querySelector() results. Treat that element
+// as the representative of its data-* selector so all matching controls are bound.
+(() => {
+  if (typeof Element === "undefined" || Element.prototype.forEach) return;
+  Object.defineProperty(Element.prototype, "forEach", {
+    configurable: true,
+    writable: true,
+    value(callback, thisArg) {
+      if (typeof callback !== "function") return;
+      const dataAttr = Array.from(this.attributes || []).find(attr => attr.name.startsWith("data-"));
+      if (dataAttr) {
+        document.querySelectorAll("[" + CSS.escape(dataAttr.name) + "]").forEach((node, index, list) => {
+          callback.call(thisArg, node, index, list);
+        });
+        return;
+      }
+      callback.call(thisArg, this, 0, [this]);
+    }
+  });
+})();
+
 window.SUPABASE_CONFIG = {
   brandName: "LittleAPI",
   brandDomain: "https://littleapi.online",
