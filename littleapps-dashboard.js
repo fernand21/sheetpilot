@@ -41,7 +41,7 @@
       const open = app?.published
         ? '<a class="action-button" data-littleapp-open target="_blank" rel="noreferrer" href="littleapp.html?app=' + encodeURIComponent(app.slug) + '">' + text('▶ Abrir app', '▶ Open app') + '</a>'
         : '';
-      box.innerHTML = '<a class="button" data-littleapp-builder href="app-builder.html?api=' + encodeURIComponent(api.api_id) + '">' + builderLabel + '</a>' + open;
+      box.innerHTML = '<a class="button" data-littleapp-builder href="app-builder.html?v=20260919-1&api=' + encodeURIComponent(api.api_id) + '">' + builderLabel + '</a>' + open;
     });
   }
 
