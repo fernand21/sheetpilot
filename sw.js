@@ -1,4 +1,4 @@
-const CACHE_NAME = 'littleapi-pwa-v3';
+const CACHE_NAME = 'littleapi-pwa-v4';
 const CORE = [
   '/app.html',
   '/styles.css',
