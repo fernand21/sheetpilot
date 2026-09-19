@@ -1216,6 +1216,99 @@ async function publicLittleApp(request: Request, path: string[]) {
     });
   }
 
+  if (path[1] === "dashboard") {
+    if (request.method !== "GET") return failure(405, "method_not_allowed", "Usa GET para consultar el panel de una aplicación.");
+    const api = await getApi(app.api_id);
+    if (!api || api.resource_type !== "sheet") return failure(404, "api_not_found", "La fuente de datos de esta aplicación ya no está disponible.");
+
+    const quotaError = await consumeQuota(api);
+    if (quotaError) return quotaError;
+
+    const sheet = String(app.sheet || api.default_sheet || "Sheet1");
+    const token = await googleTokenForUser(api.user_id);
+    const table = await readAuthorized(api, token, sheet);
+    const allowedNames = new Set((visibleFields.length ? visibleFields.map((field: any) => String(field.name)) : table.headers).filter((name: string) => table.headers.includes(name)));
+    const objects = table.rows
+      .filter((row: unknown[]) => rowHasData(row))
+      .map((row: unknown[]) => {
+        const object: Record<string, unknown> = {};
+        for (let index = 0; index < table.headers.length; index += 1) {
+          const header = table.headers[index];
+          if (allowedNames.has(header)) object[header] = row[index] ?? "";
+        }
+        return object;
+      });
+
+    const numberValue = (value: unknown) => {
+      const raw = String(value ?? "").trim();
+      if (!raw) return Number.NaN;
+      const compact = raw.replace(/\s/g, "");
+      if (/^-?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?$/.test(compact)) {
+        const lastDot = compact.lastIndexOf(".");
+        const lastComma = compact.lastIndexOf(",");
+        const decimalIndex = Math.max(lastDot, lastComma);
+        const integerPart = compact.slice(0, decimalIndex).replace(/[.,]/g, "");
+        const decimalPart = compact.slice(decimalIndex + 1);
+        return Number(integerPart + "." + decimalPart);
+      }
+      return Number(compact.replace(",", "."));
+    };
+    const aggregate = (values: unknown[], mode: string) => {
+      if (mode === "count") return values.length;
+      const numbers = values.map(numberValue).filter((value) => Number.isFinite(value));
+      if (!numbers.length) return 0;
+      if (mode === "sum") return numbers.reduce((sum, value) => sum + value, 0);
+      if (mode === "average") return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
+      if (mode === "min") return Math.min(...numbers);
+      if (mode === "max") return Math.max(...numbers);
+      return numbers.length;
+    };
+
+    const blocks = Array.isArray(config?.screens?.dashboard?.blocks) ? config.screens.dashboard.blocks : [];
+    const resultBlocks = blocks.map((block: any) => {
+      const kind = block?.kind === "chart" ? "chart" : "metric";
+      const aggregation = String(block?.aggregation || "count");
+      const valueField = String(block?.valueField || "");
+      const categoryField = String(block?.categoryField || "");
+      const common = {
+        id: String(block?.id || crypto.randomUUID()),
+        kind,
+        titleEn: String(block?.titleEn || ""),
+        titleEs: String(block?.titleEs || ""),
+        aggregation,
+        valueField: allowedNames.has(valueField) ? valueField : "",
+      };
+
+      if (kind === "metric") {
+        const values = common.valueField ? objects.map((row) => row[common.valueField]).filter((value) => aggregation !== "count" || String(value ?? "").trim() !== "") : objects;
+        return { ...common, value: aggregation === "count" && !common.valueField ? objects.length : aggregate(values, aggregation) };
+      }
+
+      if (!allowedNames.has(categoryField)) return { ...common, categoryField: "", chartType: String(block?.chartType || "bar"), items: [] };
+      const groups = new Map<string, unknown[]>();
+      for (const row of objects) {
+        const key = String(row[categoryField] ?? "").trim() || "—";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)?.push(common.valueField ? row[common.valueField] : 1);
+      }
+      const limit = Math.max(1, Math.min(30, Number(block?.limit || 7)));
+      const items = Array.from(groups.entries())
+        .map(([label, values]) => ({ label, value: aggregation === "count" ? values.length : aggregate(values, aggregation) }))
+        .sort((left, right) => Number(right.value) - Number(left.value))
+        .slice(0, limit);
+
+      return {
+        ...common,
+        categoryField,
+        chartType: ["bar", "line", "area", "pie", "doughnut"].includes(String(block?.chartType || "")) ? String(block.chartType) : "bar",
+        limit,
+        items,
+      };
+    });
+
+    return response({ total: objects.length, blocks: resultBlocks }, 200, { "Cache-Control": "no-store" });
+  }
+
   if (path[1] === "rows") {
     const api = await getApi(app.api_id);
     if (!api || api.resource_type !== "sheet") return failure(404, "api_not_found", "La fuente de datos de esta aplicación ya no está disponible.");
