@@ -123,7 +123,7 @@
           }
 
           try {
-            await loadScript("littleapps-dashboard.js?v=20260919-21");
+            await loadScript("littleapps-dashboard.js?v=20260919-22");
           } catch (littleAppsError) {
             console.error("LittleApps dashboard actions failed", littleAppsError);
           }
@@ -152,7 +152,7 @@
       (() => {
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js?v=20260919-21').catch(error => console.error('LittleAPI PWA service worker failed', error));
+            navigator.serviceWorker.register('./sw.js?v=20260919-22').catch(error => console.error('LittleAPI PWA service worker failed', error));
           });
         }
 
