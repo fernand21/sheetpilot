@@ -303,7 +303,7 @@ try{
   const view=$("#view");if(view)view.innerHTML='<div class="error"><strong>LittleApp startup error</strong><br>'+esc(e?.message||String(e))+'</div>';const ls=$("#loader-status");if(ls)ls.textContent=e?.message||String(e);document.body.classList.add("app-ready");
 }
 }
-if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-4").catch(()=>{})}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js?v=20260919-5").catch(()=>{})}
 void boot();
 })();
 </script>
