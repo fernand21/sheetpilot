@@ -1191,8 +1191,50 @@ async function publicLittleApp(request: Request, path: string[]) {
     })),
   };
 
+  if (path[1] === "icon.svg" && request.method === "GET") {
+    const requested = Number(new URL(request.url).searchParams.get("size") || 512);
+    const size = requested <= 192 ? 192 : 512;
+    const icon = config?.appIcon && typeof config.appIcon === "object" ? config.appIcon : null;
+    const iconUrl = String(icon?.url || "").trim();
+
+    if (iconUrl) {
+      try {
+        const source = await fetch(iconUrl, { cache: "no-store" });
+        if (source.ok) {
+          const bytes = new Uint8Array(await source.arrayBuffer());
+          let binary = "";
+          for (const byte of bytes) binary += String.fromCharCode(byte);
+          const mime = String(icon?.mime || source.headers.get("content-type") || "image/png").split(";")[0] || "image/png";
+          const embedded = `data:${mime};base64,${btoa(binary)}`;
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" rx="${Math.round(size * 0.22)}" fill="#ffffff"/>
+  <image href="${embedded}" x="0" y="0" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
+          return new Response(svg, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "image/svg+xml; charset=utf-8",
+              "Cache-Control": "public, max-age=86400",
+            },
+          });
+        }
+      } catch (_) { /* Fall back to the default icon below. */ }
+    }
+
+    const fallback = await fetch("https://littleapi.online/littleapi-icon.svg", { cache: "no-store" });
+    return new Response(await fallback.text(), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  }
+
   if (path[1] === "manifest.webmanifest" && request.method === "GET") {
-    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-21&app=${encodeURIComponent(app.slug)}`;
+    const startUrl = `https://littleapi.online/littleapp-v3.html?v=20260919-22&app=${encodeURIComponent(app.slug)}`;
     const manifestId = `https://littleapi.online/pwa/${encodeURIComponent(app.slug)}`;
     return new Response(JSON.stringify({
       id: manifestId,
@@ -1205,25 +1247,20 @@ async function publicLittleApp(request: Request, path: string[]) {
       orientation: "any",
       background_color: "#f7faf9",
       theme_color: "#0b766e",
-      icons: (() => {
-        const icon = config?.appIcon && typeof config.appIcon === "object" ? config.appIcon : null;
-        const url = String(icon?.url || "").trim();
-        const defaults = [
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-          { src: "https://littleapi.online/littleapi-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
-        ];
-        if (url) {
-          const width = Number(icon?.width || 0), height = Number(icon?.height || 0);
-          return [{
-            src: url,
-            sizes: width > 0 && height > 0 ? `${width}x${height}` : "any",
-            type: "image/png",
-            purpose: "any",
-          }, ...defaults];
+      icons: [
+        {
+          src: `https://littleapi.online/api/v1/apps/${encodeURIComponent(app.slug)}/icon.svg?size=192&v=${encodeURIComponent(String(app.updated_at || ""))}`,
+          sizes: "192x192",
+          type: "image/svg+xml",
+          purpose: "any"
+        },
+        {
+          src: `https://littleapi.online/api/v1/apps/${encodeURIComponent(app.slug)}/icon.svg?size=512&v=${encodeURIComponent(String(app.updated_at || ""))}`,
+          sizes: "512x512",
+          type: "image/svg+xml",
+          purpose: "any maskable"
         }
-        return defaults;
-      })(),
+      ],
     }), {
       status: 200,
       headers: {
@@ -1605,7 +1642,7 @@ async function publicLittleApp(request: Request, path: string[]) {
     sheet: app.sheet,
     config: publicConfig,
     updated_at: app.updated_at,
-    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-21&app=${encodeURIComponent(app.slug)}`,
+    app_url: `https://littleapi.online/littleapp-v3.html?v=20260919-22&app=${encodeURIComponent(app.slug)}`,
   }, 200, { "Cache-Control": "no-store" });
 }
 
